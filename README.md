@@ -16,6 +16,20 @@ Run via the CLI entrypoint:
 uv run aisc_gr_statistics
 ```
 
+Create a statewide Illinois certification and membership PDF from a local iMIS
+CSV export:
+
+```bash
+uv run aisc_gr_statistics report \
+  --imis-csv data/raw/imis/membership-export.csv \
+  --output data/processed/illinois-certification-membership.pdf
+```
+
+The source export and generated PDF should stay in the ignored `data/raw/` and
+`data/processed/` folders. The report reads Salesforce only when both
+`SF_CLIENT_ID` and `SF_CLIENT_SECRET` are set; otherwise, certification status
+is shown as a placeholder.
+
 Run with development environment settings:
 
 ```bash

@@ -11,10 +11,11 @@ requires-python = ">=3.13"
 dependencies = [
     "loguru",
     "requests>=2.32",
+    "reportlab>=4.2",
 ]
 
 [project.scripts]
-aisc_gr_statistics = "aisc_gr_statistics.app:main"
+aisc_gr_statistics = "aisc_gr_statistics.app:cli"
 
 [dependency-groups]
 dev = [
@@ -22,6 +23,7 @@ dev = [
     "pytest>=8.0",
     "pytest-cov>=6.0",
     "pytest-env>=1.1",
+    "pypdf>=5.0",
     "mkdocs>=1.6",
     "mkdocs-material>=9.6",
     "mkdocstrings[python]>=0.27",

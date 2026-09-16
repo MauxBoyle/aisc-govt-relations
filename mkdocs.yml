@@ -39,5 +39,6 @@ nav:
   - Home: index.md
   - Usage: usage.md
   - Salesforce Data: salesforce.md
+  - iMIS Data: imis-data.md
   - API Reference: api.md
   - Project Plan: project-plan.md

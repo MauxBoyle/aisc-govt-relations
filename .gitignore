@@ -201,3 +201,12 @@ htmlcov/
 .coverage
 .env
 .env.test
+
+# Project data: keep real source exports and generated results out of Git.
+data/raw/*
+!data/raw/.gitkeep
+!data/raw/imis/
+data/raw/imis/*
+!data/raw/imis/.gitkeep
+data/processed/*
+!data/processed/.gitkeep

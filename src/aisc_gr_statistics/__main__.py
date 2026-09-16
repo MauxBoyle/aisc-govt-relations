@@ -1,6 +1,6 @@
 """Run the package as a module."""
 
-from .app import main
+from .app import cli
 
 if __name__ == "__main__":
-    main()
+    cli()

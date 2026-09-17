@@ -9,6 +9,7 @@ import csv
 import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
@@ -20,7 +21,12 @@ from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from .imis_fields import membership_label
-from .salesforce_fields import CertificationAccountField
+from .salesforce_fields import (
+    CertificationAccountField,
+    CertificationField,
+    CertificationRelationship,
+    is_active_certification,
+)
 
 PLACEHOLDER = "[PLACEHOLDER: unavailable]"
 CERTIFICATION_CATEGORY_PLACEHOLDER = (
@@ -56,7 +62,7 @@ class ReportCompany:
     tonnage: str
     district: str
     certification_status: str
-    certification_category: str
+    certification_categories: tuple[str, ...]
 
 
 HEADER_ALIASES = {
@@ -147,22 +153,33 @@ def read_imis_companies(path: Path | str) -> list[Company]:
 def build_report_companies(
     companies: Iterable[Company],
     salesforce_accounts: Iterable[Mapping[str, object]] = (),
+    as_of: date | str | None = None,
 ) -> list[ReportCompany]:
-    """Combine companies with statuses from only unambiguous Salesforce matches."""
+    """Combine iMIS companies with Salesforce statuses and active categories.
+
+    ``as_of`` is an internal testing seam; production calls use today's date.
+    """
+    companies = list(companies)
+    salesforce_accounts = list(salesforce_accounts)
     matches: dict[str, list[Mapping[str, object]]] = {}
     for account in salesforce_accounts:
         name = account.get(CertificationAccountField.NAME)
         if isinstance(name, str) and name.strip():
             matches.setdefault(normalize_company_name(name), []).append(account)
 
+    imis_names = {normalize_company_name(company.name) for company in companies}
     report_companies = []
     for company in companies:
         matched = matches.get(normalize_company_name(company.name), [])
         status = PLACEHOLDER
+        categories = (CERTIFICATION_CATEGORY_PLACEHOLDER,)
         if len(matched) == 1:
             value = matched[0].get(CertificationAccountField.CERTIFICATION_STATUS)
             if isinstance(value, str) and value.strip():
                 status = value.strip()
+            categories = _active_certification_names(matched[0], as_of)
+            if not categories:
+                categories = (CERTIFICATION_CATEGORY_PLACEHOLDER,)
         report_companies.append(
             ReportCompany(
                 name=company.name,
@@ -171,7 +188,39 @@ def build_report_companies(
                 tonnage=company.tonnage or PLACEHOLDER,
                 district=company.district or PLACEHOLDER,
                 certification_status=status,
-                certification_category=CERTIFICATION_CATEGORY_PLACEHOLDER,
+                certification_categories=categories,
+            )
+        )
+
+    for account in salesforce_accounts:
+        name = account.get(CertificationAccountField.NAME)
+        if not isinstance(name, str) or not name.strip():
+            continue
+        if normalize_company_name(name) in imis_names:
+            continue
+        state = account.get(CertificationAccountField.BILLING_STATE)
+        if not isinstance(state, str) or state.strip().casefold() not in {
+            "il",
+            "illinois",
+        }:
+            continue
+        categories = _active_certification_names(account, as_of)
+        if not categories:
+            continue
+        status = account.get(CertificationAccountField.CERTIFICATION_STATUS)
+        report_companies.append(
+            ReportCompany(
+                name=name.strip(),
+                address=_salesforce_address(account) or PLACEHOLDER,
+                membership_type=PLACEHOLDER,
+                tonnage=PLACEHOLDER,
+                district=PLACEHOLDER,
+                certification_status=(
+                    status.strip()
+                    if isinstance(status, str) and status.strip()
+                    else PLACEHOLDER
+                ),
+                certification_categories=categories,
             )
         )
     return report_companies
@@ -247,7 +296,8 @@ def render_illinois_report(
                 body,
             ),
             Paragraph(
-                f"<b>Certification category:</b> {_escape(company.certification_category)}",
+                "<b>Certification category:</b><br/>"
+                + "<br/>".join(_escape(category) for category in company.certification_categories),
                 body,
             ),
         ]
@@ -326,6 +376,50 @@ def _format_tonnage(value: Decimal) -> str:
     if value == value.to_integral():
         return f"{value:,.0f}"
     return f"{value:,.2f}".rstrip("0").rstrip(".")
+
+
+def _active_certification_names(
+    account: Mapping[str, object], as_of: date | str | None
+) -> tuple[str, ...]:
+    """Return valid active child certification names in Salesforce query order."""
+    relationship = account.get(CertificationRelationship.ACCOUNT_CHILD)
+    if not isinstance(relationship, Mapping):
+        return ()
+    records = relationship.get("records")
+    if not isinstance(records, list):
+        return ()
+    names = []
+    for certification in records:
+        if not isinstance(certification, Mapping):
+            continue
+        name = certification.get(CertificationField.NAME)
+        if (
+            isinstance(name, str)
+            and name.strip()
+            and is_active_certification(
+                certification.get(CertificationField.STATUS),
+                certification.get(CertificationField.START_DATE),
+                certification.get(CertificationField.END_DATE),
+                as_of,
+            )
+        ):
+            names.append(name.strip())
+    return tuple(names)
+
+
+def _salesforce_address(account: Mapping[str, object]) -> str:
+    """Format the available Salesforce billing address without blank segments."""
+    street = _string_value(account.get(CertificationAccountField.BILLING_STREET))
+    city = _string_value(account.get(CertificationAccountField.BILLING_CITY))
+    state = _string_value(account.get(CertificationAccountField.BILLING_STATE))
+    postal_code = _string_value(account.get(CertificationAccountField.BILLING_POSTAL_CODE))
+    country = _string_value(account.get(CertificationAccountField.BILLING_COUNTRY))
+    locality = " ".join(part for part in (state, postal_code) if part)
+    return ", ".join(part for part in (street, city, locality, country) if part)
+
+
+def _string_value(value: object) -> str:
+    return value.strip() if isinstance(value, str) else ""
 
 
 def _escape(value: str) -> str:

@@ -1,5 +1,6 @@
 """Tests for Illinois membership report data and PDF generation."""
 
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -175,7 +176,7 @@ def test_report_data_uses_placeholders_and_unique_normalized_salesforce_match():
 
     assert rows[0].certification_status == "Certified"
     assert rows[0].address == PLACEHOLDER
-    assert rows[0].certification_category == CERTIFICATION_CATEGORY_PLACEHOLDER
+    assert rows[0].certification_categories == (CERTIFICATION_CATEGORY_PLACEHOLDER,)
     assert rows[1].certification_status == PLACEHOLDER
     assert rows[2].certification_status == PLACEHOLDER
     assert normalize_company_name("Example  Steel, Inc.") == "example steel inc"
@@ -184,6 +185,76 @@ def test_report_data_uses_placeholders_and_unique_normalized_salesforce_match():
 def test_report_data_without_salesforce_records_has_status_placeholder():
     rows = build_report_companies([Company(name="Example Steel", state="IL")])
 
+    assert rows[0].certification_status == PLACEHOLDER
+
+
+def test_report_uses_only_active_nested_certifications_and_adds_salesforce_only_il_companies():
+    """Keep child categories separate and omit invalid child certification rows."""
+    companies = [Company(name="A. Lucas & Sons Steel", state="IL")]
+    accounts = [
+        {
+            "Name": "A. Lucas & Sons Steel",
+            "Cert_Certification_Status__c": "Certified",
+            "BillingState": "IL",
+            "Certifications__r": {
+                "records": [
+                    {"Name": "Building Fabricator", "Status__c": "Active", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"},
+                    {"Name": "Highway Component Manufacturer", "Status__c": "Active", "Start_Date__c": "2026-06-01", "End_Date__c": "2026-06-01"},
+                    {"Name": "Inactive Certification", "Status__c": "Inactive", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"},
+                    {"Name": "Expired Certification", "Status__c": "Active", "Start_Date__c": "2025-01-01", "End_Date__c": "2025-12-31"},
+                    {"Name": "Future Certification", "Status__c": "Active", "Start_Date__c": "2026-06-02", "End_Date__c": "2026-12-31"},
+                    {"Name": "Missing Date Certification", "Status__c": "Active", "Start_Date__c": "2026-01-01", "End_Date__c": None},
+                    {"Name": "Malformed Certification", "Status__c": "Active", "Start_Date__c": "nope", "End_Date__c": "2026-12-31"},
+                ]
+            },
+        },
+        {
+            "Name": "A&H Steel, LLC",
+            "Cert_Certification_Status__c": "Certified",
+            "BillingStreet": "10 Steel Way",
+            "BillingCity": "Chicago",
+            "BillingState": "Illinois",
+            "BillingPostalCode": "60601",
+            "Certifications__r": {"records": [{"Name": "Erector", "Status__c": "Active", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"}]},
+        },
+    ]
+
+    rows = build_report_companies(companies, accounts, as_of=date(2026, 6, 1))
+
+    assert rows[0].certification_categories == (
+        "Building Fabricator",
+        "Highway Component Manufacturer",
+    )
+    ah_steel = rows[1]
+    assert ah_steel.name == "A&H Steel, LLC"
+    assert ah_steel.address == "10 Steel Way, Chicago, Illinois 60601"
+    assert ah_steel.membership_type == PLACEHOLDER
+    assert ah_steel.tonnage == PLACEHOLDER
+    assert ah_steel.district == PLACEHOLDER
+    assert ah_steel.certification_categories == ("Erector",)
+
+
+def test_salesforce_only_rows_require_active_certification_and_illinois_billing_state():
+    accounts = [
+        {"Name": "No Certification", "BillingState": "IL", "Certifications__r": {"records": []}},
+        {"Name": "Inactive", "BillingState": "IL", "Certifications__r": {"records": [{"Name": "Inactive", "Status__c": "Inactive", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"}]}},
+        {"Name": "Indiana Steel", "BillingState": "IN", "Certifications__r": {"records": [{"Name": "Erector", "Status__c": "Active", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"}]}},
+    ]
+
+    assert build_report_companies([], accounts, as_of=date(2026, 6, 1)) == []
+
+
+def test_ambiguous_normalized_salesforce_names_do_not_enrich_imis_company():
+    rows = build_report_companies(
+        [Company(name="Example Steel", state="IL")],
+        [
+            {"Name": "Example Steel", "Cert_Certification_Status__c": "Certified", "Certifications__r": {"records": []}},
+            {"Name": "Example-Steel", "Cert_Certification_Status__c": "Initials", "Certifications__r": {"records": []}},
+        ],
+        as_of=date(2026, 6, 1),
+    )
+
+    assert len(rows) == 1
     assert rows[0].certification_status == PLACEHOLDER
 
 
@@ -213,3 +284,24 @@ def test_rendered_pdf_contains_report_text_and_placeholders(tmp_path):
     assert CERTIFICATION_CATEGORY_PLACEHOLDER in text
     assert "[PLACEHOLDER: U.S. Senators needed]" in text
     assert "[PLACEHOLDER: U.S. Representatives needed]" in text
+
+
+def test_rendered_pdf_lists_each_active_certification(tmp_path):
+    output = tmp_path / "certifications.pdf"
+    rows = build_report_companies(
+        [],
+        [{"Name": "A&H Steel, LLC", "BillingState": "IL", "Certifications__r": {"records": [
+            {"Name": "Building Fabricator", "Status__c": "Active", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"},
+            {"Name": "Highway Component Manufacturer", "Status__c": "Active", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"},
+            {"Name": "Excluded Certification", "Status__c": "Inactive", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"},
+        ]}}],
+        as_of=date(2026, 6, 1),
+    )
+
+    render_illinois_report(rows, output)
+
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    assert "A&H Steel, LLC" in text
+    assert "Building Fabricator" in text
+    assert "Highway Component Manufacturer" in text
+    assert "Excluded Certification" not in text

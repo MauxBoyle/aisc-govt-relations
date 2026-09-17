@@ -110,25 +110,20 @@ and matching rule still need confirmation before it is added to the report.
 5. If Salesforce returns multiple result pages, the client follows each page
    and combines the records.
 
-For example, future report code can query Account fields and certification
-children together:
+`REPORT_ACCOUNT_FIELDS` already includes the child subquery for `Name`,
+`Status__c`, `Start_Date__c`, and `End_Date__c`, so report code queries Account
+fields and certification children together:
 
 ```python
 from aisc_gr_statistics.salesforce import create_client
 from aisc_gr_statistics.salesforce_fields import (
-    CertificationField,
-    CertificationRelationship,
     REPORT_ACCOUNT_FIELDS,
 )
 
 client = create_client()
 accounts = client.query_records(
     "Account",
-    [
-        *REPORT_ACCOUNT_FIELDS,
-        f"(SELECT {CertificationField.NAME}, {CertificationField.STATUS} "
-        f"FROM {CertificationRelationship.ACCOUNT_CHILD})",
-    ],
+    REPORT_ACCOUNT_FIELDS,
     order_by="Name",
 )
 ```

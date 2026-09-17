@@ -7,6 +7,7 @@ same preparation step.
 
 import csv
 import re
+from collections import Counter
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date
@@ -101,12 +102,13 @@ class CombinedCompany:
     classification: CompanyClassification
     imis: Company | None
     salesforce: Mapping[str, object] | None
+    duplicate_id_count: int = 0
 
     @property
     def shared_imis_id(self) -> str:
-        if self.imis and self.imis.imis_id:
-            return self.imis.imis_id
-        return _string_value(
+        if self.imis:
+            return _normalize_imis_identifier(self.imis.imis_id)
+        return _normalize_imis_identifier(
             self.salesforce.get(CertificationAccountField.IMIS_ID)
             if self.salesforce
             else None
@@ -212,7 +214,7 @@ def read_imis_companies(path: Path | str) -> list[Company]:
                 Company(
                     name=name,
                     state=state,
-                    imis_id=_cell(row, fields["imis_id"]),
+                    imis_id=_normalize_imis_identifier(_cell(row, fields["imis_id"])),
                     city=_cell(row, fields["city"]),
                     address=_optional_cell(row, fields, "address"),
                     membership_type=membership_label(
@@ -232,38 +234,93 @@ def combine_companies(
     companies: Iterable[Company],
     salesforce_accounts: Iterable[Mapping[str, object]] = (),
 )-> list[CombinedCompany]:
-    """Join Illinois iMIS and Salesforce records only on populated shared IDs."""
+    """Join only unique, populated, exact shared iMIS ID text values."""
     companies = list(companies)
     salesforce_accounts = [
         account for account in salesforce_accounts if _is_illinois(account)
     ]
     accounts_by_imis_id: dict[str, list[Mapping[str, object]]] = {}
     for account in salesforce_accounts:
-        identifier = _string_value(account.get(CertificationAccountField.IMIS_ID))
+        identifier = _normalize_imis_identifier(
+            account.get(CertificationAccountField.IMIS_ID)
+        )
         if identifier:
             accounts_by_imis_id.setdefault(identifier, []).append(account)
+
+    imis_id_counts = _identifier_counts(company.imis_id for company in companies)
+    salesforce_id_counts = _identifier_counts(
+        account.get(CertificationAccountField.IMIS_ID)
+        for account in salesforce_accounts
+    )
 
     used_accounts: set[int] = set()
     combined = []
     for company in companies:
-        matches = accounts_by_imis_id.get(company.imis_id, []) if company.imis_id else []
-        account = next((item for item in matches if id(item) not in used_accounts), None)
+        identifier = _normalize_imis_identifier(company.imis_id)
+        matches = accounts_by_imis_id.get(identifier, []) if identifier else []
+        is_unique_match = (
+            identifier
+            and imis_id_counts[identifier] == 1
+            and salesforce_id_counts[identifier] == 1
+        )
+        account = matches[0] if is_unique_match else None
         if account is not None:
             used_accounts.add(id(account))
             combined.append(CombinedCompany(CompanyClassification.BOTH, company, account))
         else:
-            combined.append(CombinedCompany(CompanyClassification.IMIS_ONLY, company, None))
+            combined.append(
+                CombinedCompany(
+                    CompanyClassification.IMIS_ONLY,
+                    company,
+                    None,
+                    imis_id_counts[identifier] if imis_id_counts[identifier] > 1 else 0,
+                )
+            )
     for account in salesforce_accounts:
         if id(account) in used_accounts:
             continue
-        combined.append(CombinedCompany(CompanyClassification.SALESFORCE_ONLY, None, account))
+        identifier = _normalize_imis_identifier(
+            account.get(CertificationAccountField.IMIS_ID)
+        )
+        combined.append(
+            CombinedCompany(
+                CompanyClassification.SALESFORCE_ONLY,
+                None,
+                account,
+                salesforce_id_counts[identifier]
+                if salesforce_id_counts[identifier] > 1
+                else 0,
+            )
+        )
     return combined
 
 
 def combined_conflicts(companies: Iterable[CombinedCompany]) -> list[Conflict]:
     """Return differing comparable values from ID-joined records."""
     conflicts = []
+    reported_duplicates: set[tuple[CompanyClassification, str]] = set()
     for company in companies:
+        duplicate_key = (company.classification, company.shared_imis_id)
+        if (
+            company.duplicate_id_count > 1
+            and duplicate_key not in reported_duplicates
+        ):
+            reported_duplicates.add(duplicate_key)
+            source = (
+                "iMIS"
+                if company.classification is CompanyClassification.IMIS_ONLY
+                else "Salesforce"
+            )
+            detail = f"{company.duplicate_id_count} {source} records"
+            conflicts.append(
+                Conflict(
+                    company.shared_imis_id,
+                    company.classification,
+                    "duplicate iMIS ID",
+                    detail if source == "iMIS" else "",
+                    detail if source == "Salesforce" else "",
+                )
+            )
         if not company.imis or not company.salesforce:
             continue
         comparisons = {
@@ -286,9 +343,15 @@ def candidate_matches(companies: Iterable[CombinedCompany]) -> list[CandidateMat
             imis = imis_row.imis
             account = salesforce_row.salesforce
             assert imis is not None and account is not None
+            imis_id = _normalize_imis_identifier(imis.imis_id)
+            salesforce_id = _normalize_imis_identifier(
+                account.get(CertificationAccountField.IMIS_ID)
+            )
+            if imis_id and salesforce_id and imis_id == salesforce_id:
+                continue
             name, city, state = (_account_value(account, field) for field in (CertificationAccountField.NAME, CertificationAccountField.BILLING_CITY, CertificationAccountField.BILLING_STATE))
             if all((imis.name, imis.city, imis.state, name, city, state)) and normalize_company_name(imis.name) == normalize_company_name(name) and normalize_company_name(imis.city) == normalize_company_name(city) and _same_value("state", imis.state, state):
-                candidates.append(CandidateMatch(imis.imis_id, _account_value(account, CertificationAccountField.ID), imis.name, name, imis.city, city, imis.state, state))
+                candidates.append(CandidateMatch(imis_id, _account_value(account, CertificationAccountField.ID), imis.name, name, imis.city, city, imis.state, state))
     return candidates
 
 
@@ -524,6 +587,20 @@ def _salesforce_address(account: Mapping[str, object] | None) -> str:
 
 def _string_value(value: object) -> str:
     return value.strip() if isinstance(value, str) else ""
+
+
+def _normalize_imis_identifier(value: object) -> str:
+    """Return a trimmed text iMIS ID without converting numeric-looking values."""
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _identifier_counts(identifiers: Iterable[object]) -> Counter[str]:
+    """Count only populated normalized identifiers for duplicate detection."""
+    return Counter(
+        identifier
+        for value in identifiers
+        if (identifier := _normalize_imis_identifier(value))
+    )
 
 
 def _label_source(source: str, value: str) -> str:

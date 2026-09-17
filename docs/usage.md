@@ -46,7 +46,12 @@ Tonnage`, and `S C Tonnage` into Structural Steel Tonnage.
 
 When both `SF_CLIENT_ID` and `SF_CLIENT_SECRET` are configured, the command
 reads Salesforce Account records with their child certifications. It joins only
-on a populated matching `IMISID__c` value—similar company names do not join.
+on a populated, exact-text matching `IMISID__c` value—similar company names do
+not join. IDs are whitespace-trimmed text keys and are never converted to
+numbers, so `00123` and `123` do not match. If a nonblank ID is duplicated in
+either source, all records using that ID remain source-only rather than being
+automatically joined. This prevents a duplicate export value from silently
+enriching the wrong company.
 When sources disagree on a shared display value, the PDF shows both values with
 `iMIS` and `Salesforce` labels. A child certification is active only when
 its status is `Active` and today's date is inclusively between its start and end
@@ -60,9 +65,14 @@ iMIS-only membership type, tonnage, and congressional district. The report
 continues to use placeholders for U.S. Senators and Representatives.
 
 `--conflicts-csv` always writes columns for shared iMIS ID, classification,
-field, and the two source values. `--candidate-matches-csv` records review-only
-lookalikes when normalized name, city, and state agree but IDs differ or are
-missing; it never changes report matching.
+field, and the two source values. In addition to value conflicts from valid ID
+joins, it records duplicate-ID findings with `duplicate iMIS ID` in the field
+column, the affected source classification, and a count such as `2 iMIS
+records` or `2 Salesforce records`. `--candidate-matches-csv` records
+review-only lookalikes when normalized name, city, and state agree but IDs
+differ or are missing; it never changes report matching. Records with equal
+duplicate IDs are not candidate matches because their duplicate finding is
+already recorded in the conflicts CSV.
 
 ## Environment Variables
 

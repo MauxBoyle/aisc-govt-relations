@@ -103,7 +103,7 @@ def _build_parser():
     )
     report.add_argument(
         "--conflicts-csv", required=True, type=Path,
-        help="Destination CSV for authoritative-ID value conflicts.",
+        help="Destination CSV for ID-joined value conflicts and duplicate-ID review.",
     )
     report.add_argument(
         "--candidate-matches-csv", required=True, type=Path,

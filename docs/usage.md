@@ -34,7 +34,8 @@ uv run aisc_gr_statistics report \
   --conflicts-csv data/processed/field-conflicts.csv \
   --candidate-matches-csv data/processed/candidate-matches.csv \
   --reconciliation-csv data/processed/reconciliation.csv \
-  --reconciliation-log data/processed/reconciliation.log
+  --reconciliation-log data/processed/reconciliation.log \
+  --unknown-imis-codes-csv data/processed/unknown-imis-codes.csv
 ```
 
 Keep real exports under ignored `data/raw/imis/` and generated PDFs under
@@ -84,6 +85,14 @@ the complete, spreadsheet-filterable reconciliation artifact. Its companion
 duplicate IDs, missing IDs, and ID-matched name differences, followed by the
 details of every questionable record. Review both reconciliation files before
 using the PDF.
+
+`--unknown-imis-codes-csv` is a required review file for the source export. It
+scans every row before Illinois filtering and aggregates blank or unconfirmed
+Membership Type and Category values into `iMIS field`, `iMIS code`, `status`,
+and `occurrences` columns. Known codes match after trimming and ignoring case.
+Blank and unknown codes have no PDF label, so the report does not display raw,
+unconfirmed values. Review this CSV, confirm each code’s meaning, and then add
+the confirmed mapping in `src/aisc_gr_statistics/imis_fields.py`.
 
 ## Environment Variables
 

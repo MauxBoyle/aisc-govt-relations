@@ -26,7 +26,8 @@ uv run aisc_gr_statistics report \
   --conflicts-csv data/processed/field-conflicts.csv \
   --candidate-matches-csv data/processed/candidate-matches.csv \
   --reconciliation-csv data/processed/reconciliation.csv \
-  --reconciliation-log data/processed/reconciliation.log
+  --reconciliation-log data/processed/reconciliation.log \
+  --unknown-imis-codes-csv data/processed/unknown-imis-codes.csv
 ```
 
 The source export and generated PDF/CSV files should stay in the ignored `data/raw/` and
@@ -41,6 +42,10 @@ candidate-matches CSV lists name/city/state lookalikes with different or missing
 IDs. The reconciliation CSV is the complete, spreadsheet-filterable source
 review file; its companion log summarizes counts and records needing attention.
 Review both reconciliation files in `data/processed/` before using the PDF.
+Also review `unknown-imis-codes.csv`: it lists blank and unconfirmed iMIS Type
+and Category codes from every export row, including rows outside Illinois.
+Unknown or blank codes have no PDF label. Confirm each code’s meaning, then add
+it to the central mapping in `src/aisc_gr_statistics/imis_fields.py`.
 Without Salesforce access, certification values are shown as placeholders.
 
 Run with development environment settings:

@@ -8,17 +8,19 @@ from pathlib import Path
 from loguru import logger
 
 from .report import (
-    build_report_companies,
     build_reconciliation_rows,
+    build_report_companies,
     candidate_matches,
     combine_companies,
     combined_conflicts,
+    find_undefined_imis_codes,
     read_imis_companies,
     render_illinois_report,
     write_candidate_matches_csv,
     write_conflicts_csv,
     write_reconciliation_csv,
     write_reconciliation_log,
+    write_undefined_imis_codes_csv,
 )
 from .salesforce import SalesforceError, create_client
 from .salesforce_fields import REPORT_ACCOUNT_FIELDS
@@ -120,11 +122,16 @@ def _build_parser():
         "--reconciliation-log", required=True, type=Path,
         help="Destination readable log summarizing reconciliation findings.",
     )
+    report.add_argument(
+        "--unknown-imis-codes-csv", required=True, type=Path,
+        help="Destination CSV for blank and unconfirmed iMIS Type/Category codes.",
+    )
     return parser
 
 
 def _run_report(arguments):
     """Prepare the report and enrich it only when both Salesforce secrets exist."""
+    unknown_imis_codes = find_undefined_imis_codes(arguments.imis_csv)
     companies = read_imis_companies(arguments.imis_csv)
     accounts = _salesforce_accounts_if_configured()
     combined = combine_companies(companies, accounts)
@@ -135,6 +142,9 @@ def _run_report(arguments):
     reconciliation_rows = build_reconciliation_rows(combined)
     write_reconciliation_csv(reconciliation_rows, arguments.reconciliation_csv)
     write_reconciliation_log(reconciliation_rows, arguments.reconciliation_log)
+    write_undefined_imis_codes_csv(
+        unknown_imis_codes, arguments.unknown_imis_codes_csv
+    )
     logger.info("Created Illinois report: {}", arguments.output)
 
 

@@ -5,6 +5,13 @@ from pathlib import Path
 import pytest
 from pypdf import PdfReader
 
+from aisc_gr_statistics.imis_fields import (
+    CATEGORY_LABELS,
+    MEMBERSHIP_TYPE_LABELS,
+    category_label,
+    membership_label,
+    membership_type_label,
+)
 from aisc_gr_statistics.report import (
     CERTIFICATION_CATEGORY_PLACEHOLDER,
     PLACEHOLDER,
@@ -22,6 +29,54 @@ def write_csv(tmp_path, contents):
     path = tmp_path / "members.csv"
     path.write_text(contents, encoding="utf-8")
     return path
+
+
+def test_translates_confirmed_imis_membership_type_codes():
+    assert MEMBERSHIP_TYPE_LABELS == {
+        "ACT": "Full Member",
+        "ACTB": "Full Member Branch",
+        "ASSOC": "Associate Member",
+        "ASSCB": "Associate Member Branch",
+    }
+    assert membership_type_label("act") == "Full Member"
+    assert membership_type_label("Unrecognized") == "Unrecognized"
+
+
+def test_translates_confirmed_imis_category_codes():
+    assert CATEGORY_LABELS == {
+        "BEND": "Bender",
+        "DERC": "Erector",
+        "DET1": "Detailer",
+        "DET10": "Detailer",
+        "EQPM": "Equipment Manufacturer",
+        "EREC": "Erector",
+        "FAB": "Fabricator",
+        "SUPP": "Supplier",
+        "COTM": "Supplier",
+        "WELD": "Detailer",
+        "SOFT": "Software",
+        "BOLT": "Bolt Manufacturer",
+    }
+    assert category_label("erec") == "Erector"
+    assert category_label("Unknown") == "Unknown"
+
+
+def test_combines_membership_type_and_category_labels():
+    assert membership_label("ACT", "FAB") == "Full Member Fabricator"
+    assert membership_label("ACTB", "") == "Full Member Branch"
+    assert membership_label("", "SOFT") == "Software"
+
+
+def test_reads_and_combines_membership_type_and_category(tmp_path):
+    path = write_csv(
+        tmp_path,
+        "Full Name,State Province,Member Type,Category\n"
+        "Example Steel,IL,ACT,EREC\n",
+    )
+
+    companies = read_imis_companies(path)
+
+    assert companies[0].membership_type == "Full Member Erector"
 
 
 def test_reads_common_headers_filters_illinois_and_sorts(tmp_path):

@@ -19,6 +19,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from .imis_fields import membership_label
 from .salesforce_fields import CertificationAccountField
 
 PLACEHOLDER = "[PLACEHOLDER: unavailable]"
@@ -68,6 +69,7 @@ HEADER_ALIASES = {
         "company_type",
         "member type",
     ),
+    "category": ("category", "member category", "membership category"),
     "tonnage": (
         "annual structural steel tonnage",
         "annual_structural_steel_tonnage",
@@ -129,7 +131,10 @@ def read_imis_companies(path: Path | str) -> list[Company]:
                     name=name,
                     state=state,
                     address=_optional_cell(row, fields, "address"),
-                    membership_type=_optional_cell(row, fields, "membership_type"),
+                    membership_type=membership_label(
+                        _optional_cell(row, fields, "membership_type"),
+                        _optional_cell(row, fields, "category"),
+                    ),
                     tonnage=_report_tonnage(row, fields, row_number),
                     district=_optional_cell(row, fields, "district"),
                 )

@@ -327,14 +327,13 @@ def test_combined_model_joins_by_id_preserves_sources_and_reports_conflicts(tmp_
         ("name", "Acme Steel", "ACME Structural"), ("city", "Chicago", "Evanston")
     }
     row = build_report_companies(combined)[0]
-    assert row.name == "iMIS: Acme Steel | Salesforce: ACME Structural"
+    assert row.name == "ACME Structural"
     assert row.address == "iMIS: 1 iMIS Way | Salesforce: 2 SF Way, Evanston, IL"
     output = tmp_path / "conflict.pdf"
     render_illinois_report([row], output, tonnage_year=2025)
     text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
-    assert "iMIS: Acme Steel" in text
-    assert "Salesforce: ACME" in text
-    assert "Structural" in text
+    assert "ACME Structural" in text
+    assert "iMIS: Acme Steel" not in text
     assert "tonnage (2025)" in text
 
 
@@ -659,15 +658,16 @@ def test_report_uses_only_active_nested_certifications_and_adds_salesforce_only_
     assert ah_steel.certification_categories == ("Salesforce: Erector",)
 
 
-def test_salesforce_only_rows_include_all_illinois_accounts():
+def test_salesforce_only_rows_require_certified_status_and_active_children():
     accounts = [
         {"Name": "No Certification", "BillingState": "IL", "Certifications__r": {"records": []}},
-        {"Name": "Inactive", "BillingState": "IL", "Certifications__r": {"records": [{"Name": "Inactive", "Status__c": "Inactive", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"}]}},
+        {"Name": "Inactive", "BillingState": "IL", "Cert_Certification_Status__c": "Certified", "Certifications__r": {"records": [{"Name": "Inactive", "Status__c": "Inactive", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"}]}},
+        {"Name": "Certified Active", "BillingState": "IL", "Cert_Certification_Status__c": "Certified", "Certifications__r": {"records": [{"Name": "Fabricator", "Status__c": "Active", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"}]}},
         {"Name": "Indiana Steel", "BillingState": "IN", "Certifications__r": {"records": [{"Name": "Erector", "Status__c": "Active", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"}]}},
     ]
 
     rows = build_report_companies([], accounts, as_of=date(2026, 6, 1))
-    assert [row.name for row in rows] == ["No Certification", "Inactive"]
+    assert [row.name for row in rows] == ["Certified Active"]
 
 
 def test_ambiguous_normalized_salesforce_names_do_not_enrich_imis_company():
@@ -718,7 +718,7 @@ def test_rendered_pdf_lists_each_active_certification(tmp_path):
     output = tmp_path / "certifications.pdf"
     rows = build_report_companies(
         [],
-        [{"Name": "A&H Steel, LLC", "BillingState": "IL", "Certifications__r": {"records": [
+        [{"Name": "A&H Steel, LLC", "BillingState": "IL", "Cert_Certification_Status__c": "Certified", "Certifications__r": {"records": [
             {"Name": "Building Fabricator", "Status__c": "Active", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"},
             {"Name": "Highway Component Manufacturer", "Status__c": "Active", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"},
             {"Name": "Excluded Certification", "Status__c": "Inactive", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"},
@@ -733,3 +733,73 @@ def test_rendered_pdf_lists_each_active_certification(tmp_path):
     assert "Building Fabricator" in text
     assert "Highway Component Manufacturer" in text
     assert "Excluded Certification" not in text
+
+
+def test_pdf_uses_salesforce_owned_client_type_employee_count_and_name(tmp_path):
+    imis = Company(name="iMIS Name", state="IL", imis_id="1", membership_type="Full Member", tonnage="50")
+    account = {
+        "Id": "sf-1", "IMISID__c": "1", "Name": "Salesforce Name",
+        "BillingState": "IL", "Industry": "Fabricator", "NumberOfEmployees": "12,500",
+    }
+    row = build_report_companies([imis], [account])[0]
+
+    assert row.name == "Salesforce Name"
+    assert row.client_type == "Fabricator"
+    assert row.employee_count == "12,500"
+    assert row.membership_type == "iMIS: Full Member"
+    assert row.tonnage == "iMIS: 50"
+    output = tmp_path / "owned-fields.pdf"
+    render_illinois_report([row], output)
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    assert "Client type: Fabricator" in text
+    assert "Employee count: 12,500" in text
+
+
+@pytest.mark.parametrize("employee_count", (None, "not a number", "3.5"))
+def test_invalid_salesforce_employee_counts_use_unavailable_placeholder(employee_count):
+    row = build_report_companies(
+        [Company(name="Example", state="IL", imis_id="1")],
+        [{"IMISID__c": "1", "Name": "Example", "BillingState": "IL", "NumberOfEmployees": employee_count}],
+    )[0]
+
+    assert row.employee_count == PLACEHOLDER
+
+
+def test_blank_salesforce_name_falls_back_to_imis_but_name_conflict_is_retained():
+    imis = Company(name="iMIS Name", state="IL", imis_id="1")
+    differing = {"Id": "sf-1", "IMISID__c": "1", "Name": "Salesforce Name", "BillingState": "IL"}
+    blank = {**differing, "Name": ""}
+
+    assert build_report_companies([imis], [differing])[0].name == "Salesforce Name"
+    assert build_reconciliation_rows(combine_companies([imis], [differing]))[0].issues == ("name difference",)
+    assert build_report_companies([imis], [blank])[0].name == "iMIS Name"
+
+
+def test_erector_client_type_never_infers_a_certification_category():
+    imis = Company(name="Erector Co", state="IL", imis_id="1")
+    account = {"Id": "sf-1", "IMISID__c": "1", "Name": "Erector Co", "BillingState": "IL", "Industry": "Erector", "Cert_Certification_Status__c": "Certified", "Certifications__r": {"records": []}}
+
+    row = build_report_companies([imis], [account], as_of=date(2026, 6, 1))[0]
+
+    assert row.client_type == "Erector"
+    assert row.certification_categories == (CERTIFICATION_CATEGORY_PLACEHOLDER,)
+
+
+def test_certified_matched_account_without_active_children_stays_in_pdf_and_reconciliation(tmp_path):
+    imis = Company(name="Example", state="IL", imis_id="A")
+    account = {"Id": "sf-1", "IMISID__c": "A", "Name": "Example", "BillingState": "IL", "Cert_Certification_Status__c": "Certified", "Certifications__r": {"records": [{"Name": "Expired", "Status__c": "Active", "Start_Date__c": "2025-01-01", "End_Date__c": "2025-12-31"}]}}
+    combined = combine_companies([imis], [account])
+
+    rows = build_report_companies(combined, as_of=date(2026, 6, 1))
+    reconciliation = build_reconciliation_rows(combined, as_of=date(2026, 6, 1))
+
+    assert [row.name for row in rows] == ["Example"]
+    assert rows[0].certification_categories == (CERTIFICATION_CATEGORY_PLACEHOLDER,)
+    assert reconciliation[0].issues == ("certified account without active certifications",)
+    csv_output = tmp_path / "reconciliation.csv"
+    log_output = tmp_path / "reconciliation.log"
+    write_reconciliation_csv(reconciliation, csv_output)
+    write_reconciliation_log(reconciliation, log_output)
+    assert "matched,A,sf-1,Example,Example,certified account without active certifications" in csv_output.read_text(encoding="utf-8")
+    assert "Certified accounts without active certifications: 1" in log_output.read_text(encoding="utf-8")
+    assert "iMIS ID=A, Salesforce Account ID=sf-1" in log_output.read_text(encoding="utf-8")

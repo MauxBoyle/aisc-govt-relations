@@ -31,6 +31,7 @@ from .salesforce_fields import (
     CertificationAccountField,
     CertificationField,
     CertificationRelationship,
+    CertificationStatus,
     is_active_certification,
 )
 
@@ -79,6 +80,8 @@ class ReportCompany:
 
     name: str
     address: str
+    client_type: str
+    employee_count: str
     membership_type: str
     tonnage: str
     district: str
@@ -552,6 +555,7 @@ def candidate_matches(companies: Iterable[CombinedCompany]) -> list[CandidateMat
 
 def build_reconciliation_rows(
     companies: Iterable[CombinedCompany],
+    as_of: date | str | None = None,
 ) -> list[ReconciliationRow]:
     """Build one complete review row per combined source record.
 
@@ -587,6 +591,8 @@ def build_reconciliation_rows(
             and not _same_value("name", imis.name, salesforce_name)
         ):
             issues.append("name difference")
+        if account and _is_certified_account(account) and not _active_certification_names(account, as_of):
+            issues.append("certified account without active certifications")
         if company.classification is CompanyClassification.BOTH:
             classification = "matched"
         else:
@@ -609,7 +615,11 @@ def build_report_companies(
     salesforce_accounts: Iterable[Mapping[str, object]] = (),
     as_of: date | str | None = None,
 ) -> list[ReportCompany]:
-    """Turn the ID-based combined model into source-labelled PDF rows."""
+    """Turn the ID-based combined model into PDF rows with owned fields.
+
+    iMIS owns membership, tonnage, and district. Salesforce owns the Account
+    name, Client Type, employee count, and certification data when available.
+    """
     rows = list(companies)
     combined = (
         rows
@@ -619,14 +629,23 @@ def build_report_companies(
     report_companies = []
     for company in combined:
         imis, account = company.imis, company.salesforce
-        name = SourcedValue(imis.name if imis else "", _account_value(account, CertificationAccountField.NAME)).display()
+        categories = _active_certification_names(account, as_of) if _is_certified_account(account) else ()
+        if (
+            company.classification is CompanyClassification.SALESFORCE_ONLY
+            and (not _is_certified_account(account) or not categories)
+        ):
+            continue
+        # A valid ID join gives Salesforce ownership of the displayed Account
+        # name; iMIS remains the fallback for a blank Salesforce name.
+        name = _account_value(account, CertificationAccountField.NAME) or (imis.name if imis else "") or PLACEHOLDER
         address = SourcedValue(imis.address if imis else "", _salesforce_address(account) if account else "").display()
         status = _account_value(account, CertificationAccountField.CERTIFICATION_STATUS)
-        categories = _active_certification_names(account, as_of) if account else ()
         report_companies.append(
             ReportCompany(
                 name,
                 address,
+                _account_value(account, CertificationAccountField.CLIENT_TYPE) or PLACEHOLDER,
+                _format_employee_count(_account_value(account, CertificationAccountField.EMPLOYEE_COUNT)),
                 _label_source("iMIS", imis.membership_type) if imis and imis.membership_type else PLACEHOLDER,
                 _label_source("iMIS", imis.tonnage) if imis and imis.tonnage else PLACEHOLDER,
                 _label_source("iMIS", imis.district) if imis and imis.district else PLACEHOLDER,
@@ -693,6 +712,12 @@ def render_illinois_report(
             Paragraph(_escape(company.address), body),
         ]
         details_cell = [
+            Paragraph(
+                f"<b>Client type:</b> {_escape(company.client_type)}", body
+            ),
+            Paragraph(
+                f"<b>Employee count:</b> {_escape(company.employee_count)}", body
+            ),
             Paragraph(
                 f"<b>Membership type:</b> {_escape(company.membership_type)}", body
             ),
@@ -838,6 +863,24 @@ def _active_certification_names(
         ):
             names.append(name.strip())
     return tuple(names)
+
+
+def _is_certified_account(account: Mapping[str, object] | None) -> bool:
+    """Return whether an Account is eligible to display child certifications."""
+    return bool(account) and _account_value(
+        account, CertificationAccountField.CERTIFICATION_STATUS
+    ) == CertificationStatus.CERTIFIED
+
+
+def _format_employee_count(value: str) -> str:
+    """Format Salesforce's whole-person employee count, or show unavailable."""
+    try:
+        count = Decimal(value.replace(",", ""))
+    except (AttributeError, InvalidOperation):
+        return PLACEHOLDER
+    if not count.is_finite() or count != count.to_integral_value() or count < 0:
+        return PLACEHOLDER
+    return f"{count:,.0f}"
 
 
 def _salesforce_address(account: Mapping[str, object] | None) -> str:
@@ -1000,6 +1043,10 @@ def write_reconciliation_log(
     }
     missing_ids = [row for row in rows if "missing iMIS ID" in row.issues]
     name_differences = [row for row in rows if "name difference" in row.issues]
+    missing_active_certifications = [
+        row for row in rows
+        if "certified account without active certifications" in row.issues
+    ]
     lines = [
         "Reconciliation summary",
         "======================",
@@ -1009,6 +1056,7 @@ def write_reconciliation_log(
         f"Distinct duplicate iMIS IDs: {len(duplicate_ids)}",
         f"Records missing iMIS IDs: {len(missing_ids)}",
         f"ID-matched name differences: {len(name_differences)}",
+        f"Certified accounts without active certifications: {len(missing_active_certifications)}",
         "",
         "Questionable records:",
     ]
@@ -1016,6 +1064,7 @@ def write_reconciliation_log(
         ("Missing iMIS IDs", "missing iMIS ID"),
         ("Duplicate iMIS IDs", "duplicate iMIS ID"),
         ("ID-matched name differences", "name difference"),
+        ("Certified accounts without active certifications", "certified account without active certifications"),
     )
     for heading, issue in categories:
         lines.append(heading + ":")

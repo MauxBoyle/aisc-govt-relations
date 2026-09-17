@@ -49,6 +49,19 @@ Unknown or blank codes have no PDF label. Confirm each code’s meaning, then ad
 it to the central mapping in `src/aisc_gr_statistics/imis_fields.py`.
 Without Salesforce access, certification values are shown as placeholders.
 
+For an ID-matched company, Salesforce owns the displayed company name (with
+iMIS used only if Salesforce's name is blank), Client Type, employee count, and
+certification data. iMIS owns membership type/category, annual structural steel
+tonnage, and congressional district. Employee counts are displayed as whole
+numbers with thousands separators. A certification category is shown only when
+the Account status is exactly `Certified` and its child certification is
+`Active` and effective on the report date. Client Type, including `Erector`,
+never creates a certification label. Salesforce-only Illinois Accounts appear
+only when they are `Certified` and have at least one active child certification.
+Certified Accounts without active child certifications are retained when
+matched to iMIS, show the certification placeholder, and are listed in the
+reconciliation CSV and log for review.
+
 Tonnage submissions may be monthly or irregular. Each report selects the most
 recently completed calendar year (a 2026 run selects 2025) and totals unique
 `(iMIS ID, Tonnage Year, Submission Date)` entries. Submission Date accepts ISO

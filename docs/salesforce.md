@@ -39,10 +39,11 @@ a SOQL subquery such as `(SELECT Name ... FROM Certifications__r)`.
 
 | Report value | Object | API field | Field type | Relationship path | Report meaning | Active rule |
 |---|---|---|---|---|---|---|
-| Company name | Account | `Name` | string | Direct | Company label and review-only candidate value | Not applicable |
+| Company name | Account | `Name` | string | Direct | Displayed company label for ID-matched records; blank names fall back to iMIS | Not applicable |
 | Shared iMIS ID | Account | `IMISID__c` | string | Direct | Stable cross-system key when populated | Not applicable; a blank value does not mean the Account is absent from Salesforce |
 | Client Type | Account | `Industry` | picklist | Direct | Account-level business/client classification | Not applicable; this is **not** a certification category |
-| Certification summary status | Account | `Cert_Certification_Status__c` | picklist | Direct | Account-level summary, for example `Certified` | Not the child-certification active rule |
+| Employee count | Account | `NumberOfEmployees` | double | Direct | Whole-person Account employee count | Display as a comma-separated integer; blank, invalid, or fractional values are unavailable |
+| Certification summary status | Account | `Cert_Certification_Status__c` | picklist | Direct | Account-level certification eligibility | Must be exactly `Certified` before any child category can display |
 | Active certification count | Account | `Cert_Active_Certification_Count__c` | double | Direct | Account-level summary count for validation | Not the child-certification active rule |
 | Certification category | `Cert_Certification__c` | `Name` | string | `Account.Certifications__r.Name` | A distinct certified category; an Account can return multiple rows | `Status__c` must be `Active` and the report date must be within `Start_Date__c` through `End_Date__c`, inclusive |
 | Certification type | `Cert_Certification__c` | `Cert_Certification_Type_Skill__c` | string | `Account.Certifications__r.Cert_Certification_Type_Skill__c` | Certification object's type label | Same child-certification rule when the row is used as a certification |
@@ -72,6 +73,22 @@ company does, while the child records identify every certification category it
 holds. Do not use `Industry` as a substitute for `Certifications__r.Name`, and
 do not collapse multiple child rows into one category without an explicit
 reporting decision.
+
+### Report systems of record and inclusion
+
+iMIS owns membership type/category, annual tonnage, and congressional district.
+Salesforce owns Account name, Client Type, employee count, certification status,
+and child certification categories. On an exact shared iMIS ID match, the PDF
+uses Salesforce's nonblank Account name while the reconciliation artifacts keep
+both names and flag material name differences.
+
+Only an Account whose status is exactly `Certified` may display child categories;
+each child must also be `Active` and effective on the report date. A matched iMIS
+company is still reportable if a Certified Account has no active children, but
+its category is unavailable and reconciliation records `certified account
+without active certifications`. A Salesforce-only Illinois Account is reportable
+only when it meets both conditions: Certified Account status and at least one
+active child certification.
 
 ### Sanitized validation conclusions
 

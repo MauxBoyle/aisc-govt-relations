@@ -138,16 +138,17 @@ def _build_parser():
 def _run_report(arguments):
     """Prepare the report and enrich it only when both Salesforce secrets exist."""
     unknown_imis_codes = find_undefined_imis_codes(arguments.imis_csv)
+    report_date = date.today()
     companies, tonnage_findings, tonnage_year = read_imis_companies_with_tonnage_review(
-        arguments.imis_csv, report_date=date.today()
+        arguments.imis_csv, report_date=report_date
     )
     accounts = _salesforce_accounts_if_configured()
     combined = combine_companies(companies, accounts)
-    report_companies = build_report_companies(combined)
+    report_companies = build_report_companies(combined, as_of=report_date)
     render_illinois_report(report_companies, arguments.output, tonnage_year)
     write_conflicts_csv(combined_conflicts(combined), arguments.conflicts_csv)
     write_candidate_matches_csv(candidate_matches(combined), arguments.candidate_matches_csv)
-    reconciliation_rows = build_reconciliation_rows(combined)
+    reconciliation_rows = build_reconciliation_rows(combined, as_of=report_date)
     write_reconciliation_csv(reconciliation_rows, arguments.reconciliation_csv)
     write_reconciliation_log(reconciliation_rows, arguments.reconciliation_log)
     write_undefined_imis_codes_csv(

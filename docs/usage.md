@@ -62,17 +62,27 @@ numbers, so `00123` and `123` do not match. If a nonblank ID is duplicated in
 either source, all records using that ID remain source-only rather than being
 automatically joined. This prevents a duplicate export value from silently
 enriching the wrong company.
-When sources disagree on a shared display value, the PDF shows both values with
-`iMIS` and `Salesforce` labels. A child certification is active only when
-its status is `Active` and today's date is inclusively between its start and end
-dates. If more than one Salesforce Account shares a normalized name, the iMIS
-company is not enriched.
+Each report field has one source of record. Salesforce owns the displayed
+company name for an ID match (falling back to iMIS only if Salesforce's name is
+blank), Client Type, employee count, and certification data. iMIS owns
+membership type/category, annual tonnage, and congressional district. Employee
+counts must be whole numbers and are displayed with thousands separators.
 
-The report also adds every Salesforce-only Account whose `BillingState` is
-`IL` or `Illinois`, even if it has no active child certification. These
-rows use Salesforce billing-address data when available and placeholders for
-iMIS-only membership type, tonnage, and congressional district. The report
-continues to use placeholders for U.S. Senators and Representatives.
+A child certification is displayed only when the Account status is exactly
+`Certified`, the child status is `Active`, and the report date is inclusively
+between its start and end dates. Client Type is descriptive only: an `Erector`
+Client Type never implies an `AISC Certified Erector` label. If more than one
+Salesforce Account shares a normalized name, the iMIS company is not enriched.
+
+The report adds a Salesforce-only Account whose `BillingState` is `IL` or
+`Illinois` only if its Account status is `Certified` and it has at least one
+active child certification on the report date. These rows use Salesforce
+billing-address data when available and placeholders for iMIS-only membership
+type, tonnage, and congressional district. A matched iMIS company remains in
+the PDF when its Salesforce Account is `Certified` but has no active child
+certifications; it receives the certification-category placeholder and a
+`certified account without active certifications` reconciliation issue. The
+report continues to use placeholders for U.S. Senators and Representatives.
 
 `--conflicts-csv` always writes columns for shared iMIS ID, classification,
 field, and the two source values. In addition to value conflicts from valid ID
@@ -89,9 +99,9 @@ company record. It includes matched, iMIS-only, and Salesforce-only records,
 source IDs and names, the Salesforce Account ID, and any review issues. It is
 the complete, spreadsheet-filterable reconciliation artifact. Its companion
 `--reconciliation-log` writes readable counts for matches, source-only records,
-duplicate IDs, missing IDs, and ID-matched name differences, followed by the
-details of every questionable record. Review both reconciliation files before
-using the PDF.
+duplicate IDs, missing IDs, ID-matched name differences, and certified Accounts
+without active child certifications, followed by the details of every
+questionable record. Review both reconciliation files before using the PDF.
 
 `--unknown-imis-codes-csv` is a required review file for the source export. It
 scans every row before Illinois filtering and aggregates blank or unconfirmed

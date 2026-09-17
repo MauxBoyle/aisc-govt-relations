@@ -35,6 +35,8 @@ def test_report_command_creates_a_pdf_without_salesforce_credentials(tmp_path):
     output = tmp_path / "report.pdf"
     conflicts = tmp_path / "conflicts.csv"
     candidates = tmp_path / "candidates.csv"
+    reconciliation_csv = tmp_path / "reconciliation.csv"
+    reconciliation_log = tmp_path / "reconciliation.log"
 
     main(
         [
@@ -47,10 +49,16 @@ def test_report_command_creates_a_pdf_without_salesforce_credentials(tmp_path):
             str(conflicts),
             "--candidate-matches-csv",
             str(candidates),
+            "--reconciliation-csv",
+            str(reconciliation_csv),
+            "--reconciliation-log",
+            str(reconciliation_log),
         ]
     )
 
     assert output.read_bytes().startswith(b"%PDF")
     assert conflicts.read_text(encoding="utf-8").startswith("shared iMIS ID")
     assert candidates.read_text(encoding="utf-8").startswith("iMIS ID")
+    assert reconciliation_csv.read_text(encoding="utf-8").startswith("classification")
+    assert "Matched records:" in reconciliation_log.read_text(encoding="utf-8")
     assert _salesforce_accounts_if_configured({"SF_CLIENT_ID": "id"}) == []

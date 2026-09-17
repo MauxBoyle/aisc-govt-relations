@@ -140,6 +140,22 @@ class CandidateMatch:
     salesforce_state: str
 
 
+@dataclass(frozen=True)
+class ReconciliationRow:
+    """One spreadsheet-ready row for reviewing the two source systems.
+
+    This model is deliberately separate from ``ReportCompany``: it describes
+    source-data quality and never affects the ID-only join or PDF content.
+    """
+
+    classification: str
+    imis_id: str
+    salesforce_account_id: str
+    imis_name: str
+    salesforce_name: str
+    issues: tuple[str, ...]
+
+
 HEADER_ALIASES = {
     "imis_id": ("imis id", "imisid", "iMISID", "shared imis id"),
     "name": ("company name", "company_name", "company", "full name"),
@@ -353,6 +369,60 @@ def candidate_matches(companies: Iterable[CombinedCompany]) -> list[CandidateMat
             if all((imis.name, imis.city, imis.state, name, city, state)) and normalize_company_name(imis.name) == normalize_company_name(name) and normalize_company_name(imis.city) == normalize_company_name(city) and _same_value("state", imis.state, state):
                 candidates.append(CandidateMatch(imis_id, _account_value(account, CertificationAccountField.ID), imis.name, name, imis.city, city, imis.state, state))
     return candidates
+
+
+def build_reconciliation_rows(
+    companies: Iterable[CombinedCompany],
+) -> list[ReconciliationRow]:
+    """Build one complete review row per combined source record.
+
+    A matched pair becomes one row. Source-only records, including every
+    record affected by a duplicate identifier, remain individual rows so a
+    reviewer can filter and investigate them in a spreadsheet.
+    """
+    companies = list(companies)
+    duplicate_ids = {
+        company.shared_imis_id
+        for company in companies
+        if company.duplicate_id_count > 1 and company.shared_imis_id
+    }
+    rows = []
+    for company in companies:
+        imis = company.imis
+        account = company.salesforce
+        imis_id = _normalize_imis_identifier(imis.imis_id if imis else None)
+        salesforce_id = _normalize_imis_identifier(
+            account.get(CertificationAccountField.IMIS_ID) if account else None
+        )
+        shared_id = imis_id or salesforce_id
+        issues = []
+        if not shared_id:
+            issues.append("missing iMIS ID")
+        if shared_id in duplicate_ids:
+            issues.append("duplicate iMIS ID")
+        if (
+            imis
+            and account
+            and imis.name
+            and (salesforce_name := _account_value(account, CertificationAccountField.NAME))
+            and not _same_value("name", imis.name, salesforce_name)
+        ):
+            issues.append("name difference")
+        if company.classification is CompanyClassification.BOTH:
+            classification = "matched"
+        else:
+            classification = company.classification.value
+        rows.append(
+            ReconciliationRow(
+                classification=classification,
+                imis_id=shared_id,
+                salesforce_account_id=_account_value(account, CertificationAccountField.ID),
+                imis_name=imis.name if imis else "",
+                salesforce_name=_account_value(account, CertificationAccountField.NAME),
+                issues=tuple(issues),
+            )
+        )
+    return rows
 
 
 def build_report_companies(
@@ -654,6 +724,92 @@ def write_candidate_matches_csv(
             for item in matches
         ),
     )
+
+
+def write_reconciliation_csv(
+    rows: Iterable[ReconciliationRow], output: Path | str
+) -> None:
+    """Write the complete spreadsheet-filterable reconciliation artifact."""
+    _write_csv(
+        output,
+        (
+            "classification",
+            "shared iMIS ID",
+            "Salesforce Account ID",
+            "iMIS name",
+            "Salesforce name",
+            "issues",
+        ),
+        (
+            (
+                row.classification,
+                row.imis_id,
+                row.salesforce_account_id,
+                row.imis_name,
+                row.salesforce_name,
+                "; ".join(row.issues),
+            )
+            for row in rows
+        ),
+    )
+
+
+def write_reconciliation_log(
+    rows: Iterable[ReconciliationRow], output: Path | str
+) -> None:
+    """Write a concise count summary and details for questionable records."""
+    rows = list(rows)
+    matched = sum(row.classification == "matched" for row in rows)
+    imis_only = sum(row.classification == "imis-only" for row in rows)
+    salesforce_only = sum(row.classification == "salesforce-only" for row in rows)
+    duplicate_ids = {
+        row.imis_id for row in rows if "duplicate iMIS ID" in row.issues and row.imis_id
+    }
+    missing_ids = [row for row in rows if "missing iMIS ID" in row.issues]
+    name_differences = [row for row in rows if "name difference" in row.issues]
+    lines = [
+        "Reconciliation summary",
+        "======================",
+        f"Matched records: {matched}",
+        f"iMIS-only records: {imis_only}",
+        f"Salesforce-only records: {salesforce_only}",
+        f"Distinct duplicate iMIS IDs: {len(duplicate_ids)}",
+        f"Records missing iMIS IDs: {len(missing_ids)}",
+        f"ID-matched name differences: {len(name_differences)}",
+        "",
+        "Questionable records:",
+    ]
+    categories = (
+        ("Missing iMIS IDs", "missing iMIS ID"),
+        ("Duplicate iMIS IDs", "duplicate iMIS ID"),
+        ("ID-matched name differences", "name difference"),
+    )
+    for heading, issue in categories:
+        lines.append(heading + ":")
+        category_rows = [row for row in rows if issue in row.issues]
+        if not category_rows:
+            lines.append("- None")
+            continue
+        for row in category_rows:
+            names = " | ".join(
+                name for name in (row.imis_name, row.salesforce_name) if name
+            )
+            identifiers = ", ".join(
+                value
+                for value in (
+                    f"iMIS ID={row.imis_id}" if row.imis_id else "",
+                    f"Salesforce Account ID={row.salesforce_account_id}"
+                    if row.salesforce_account_id
+                    else "",
+                )
+                if value
+            )
+            detail = "; ".join(part for part in (names, identifiers) if part)
+            lines.append(f"- {detail}")
+
+    output_path = Path(output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def _write_csv(output: Path | str, headers: tuple[str, ...], rows: Iterable[tuple[object, ...]]) -> None:

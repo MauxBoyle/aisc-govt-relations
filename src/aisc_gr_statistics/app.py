@@ -9,6 +9,7 @@ from loguru import logger
 
 from .report import (
     build_report_companies,
+    build_reconciliation_rows,
     candidate_matches,
     combine_companies,
     combined_conflicts,
@@ -16,6 +17,8 @@ from .report import (
     render_illinois_report,
     write_candidate_matches_csv,
     write_conflicts_csv,
+    write_reconciliation_csv,
+    write_reconciliation_log,
 )
 from .salesforce import SalesforceError, create_client
 from .salesforce_fields import REPORT_ACCOUNT_FIELDS
@@ -109,6 +112,14 @@ def _build_parser():
         "--candidate-matches-csv", required=True, type=Path,
         help="Destination CSV for review-only name/location candidates.",
     )
+    report.add_argument(
+        "--reconciliation-csv", required=True, type=Path,
+        help="Destination CSV for complete iMIS/Salesforce reconciliation review.",
+    )
+    report.add_argument(
+        "--reconciliation-log", required=True, type=Path,
+        help="Destination readable log summarizing reconciliation findings.",
+    )
     return parser
 
 
@@ -121,6 +132,9 @@ def _run_report(arguments):
     render_illinois_report(report_companies, arguments.output)
     write_conflicts_csv(combined_conflicts(combined), arguments.conflicts_csv)
     write_candidate_matches_csv(candidate_matches(combined), arguments.candidate_matches_csv)
+    reconciliation_rows = build_reconciliation_rows(combined)
+    write_reconciliation_csv(reconciliation_rows, arguments.reconciliation_csv)
+    write_reconciliation_log(reconciliation_rows, arguments.reconciliation_log)
     logger.info("Created Illinois report: {}", arguments.output)
 
 

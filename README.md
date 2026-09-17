@@ -24,7 +24,9 @@ uv run aisc_gr_statistics report \
   --imis-csv data/raw/imis/membership-export.csv \
   --output data/processed/illinois-certification-membership.pdf \
   --conflicts-csv data/processed/field-conflicts.csv \
-  --candidate-matches-csv data/processed/candidate-matches.csv
+  --candidate-matches-csv data/processed/candidate-matches.csv \
+  --reconciliation-csv data/processed/reconciliation.csv \
+  --reconciliation-log data/processed/reconciliation.log
 ```
 
 The source export and generated PDF/CSV files should stay in the ignored `data/raw/` and
@@ -36,7 +38,10 @@ nonblank ID appears more than once in either source, none of the records with
 that ID are joined; they remain separate for review. The conflicts CSV lists
 both differing values on valid ID joins and duplicate-ID findings. The
 candidate-matches CSV lists name/city/state lookalikes with different or missing
-IDs. Without Salesforce access, certification values are shown as placeholders.
+IDs. The reconciliation CSV is the complete, spreadsheet-filterable source
+review file; its companion log summarizes counts and records needing attention.
+Review both reconciliation files in `data/processed/` before using the PDF.
+Without Salesforce access, certification values are shown as placeholders.
 
 Run with development environment settings:
 

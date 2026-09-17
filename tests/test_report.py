@@ -22,6 +22,7 @@ from aisc_gr_statistics.report import (
     CompanyClassification,
     ReportDataError,
     build_report_companies,
+    build_reconciliation_rows,
     candidate_matches,
     combine_companies,
     combined_conflicts,
@@ -30,6 +31,8 @@ from aisc_gr_statistics.report import (
     render_illinois_report,
     write_candidate_matches_csv,
     write_conflicts_csv,
+    write_reconciliation_csv,
+    write_reconciliation_log,
 )
 
 
@@ -337,6 +340,79 @@ def test_review_csvs_write_required_headers_even_when_empty(tmp_path):
     assert candidates.read_text(encoding="utf-8").startswith(
         "iMIS ID,Salesforce Account ID,iMIS name,Salesforce name,"
     )
+
+
+def test_reconciliation_rows_include_every_company_and_report_review_issues(tmp_path):
+    companies = [
+        Company(name="Acme Steel", state="IL", imis_id="MATCH"),
+        Company(name="No ID Steel", state="IL"),
+        Company(name="Duplicate One", state="IL", imis_id="DUP"),
+        Company(name="Duplicate Two", state="IL", imis_id="DUP"),
+    ]
+    accounts = [
+        {"Id": "001", "IMISID__c": "MATCH", "Name": "ACME Structural", "BillingState": "IL"},
+        {"Id": "002", "Name": "Salesforce No ID", "BillingState": "IL"},
+        {"Id": "003", "IMISID__c": "DUP", "Name": "Duplicate SF", "BillingState": "IL"},
+    ]
+
+    rows = build_reconciliation_rows(combine_companies(companies, accounts))
+
+    assert [(row.classification, row.imis_id, row.salesforce_account_id, row.issues) for row in rows] == [
+        ("matched", "MATCH", "001", ("name difference",)),
+        ("imis-only", "", "", ("missing iMIS ID",)),
+        ("imis-only", "DUP", "", ("duplicate iMIS ID",)),
+        ("imis-only", "DUP", "", ("duplicate iMIS ID",)),
+        ("salesforce-only", "", "002", ("missing iMIS ID",)),
+        ("salesforce-only", "DUP", "003", ("duplicate iMIS ID",)),
+    ]
+
+    csv_output = tmp_path / "reconciliation.csv"
+    log_output = tmp_path / "reconciliation.log"
+    write_reconciliation_csv(rows, csv_output)
+    write_reconciliation_log(rows, log_output)
+
+    assert list(csv.reader(csv_output.open(encoding="utf-8"))) == [
+        ["classification", "shared iMIS ID", "Salesforce Account ID", "iMIS name", "Salesforce name", "issues"],
+        ["matched", "MATCH", "001", "Acme Steel", "ACME Structural", "name difference"],
+        ["imis-only", "", "", "No ID Steel", "", "missing iMIS ID"],
+        ["imis-only", "DUP", "", "Duplicate One", "", "duplicate iMIS ID"],
+        ["imis-only", "DUP", "", "Duplicate Two", "", "duplicate iMIS ID"],
+        ["salesforce-only", "", "002", "", "Salesforce No ID", "missing iMIS ID"],
+        ["salesforce-only", "DUP", "003", "", "Duplicate SF", "duplicate iMIS ID"],
+    ]
+    log = log_output.read_text(encoding="utf-8")
+    assert "Matched records: 1" in log
+    assert "iMIS-only records: 3" in log
+    assert "Salesforce-only records: 2" in log
+    assert "Distinct duplicate iMIS IDs: 1" in log
+    assert "Records missing iMIS IDs: 2" in log
+    assert "ID-matched name differences: 1" in log
+    assert "Acme Steel | ACME Structural" in log
+    assert "Duplicate One" in log
+
+
+def test_reconciliation_writers_keep_empty_outputs_reviewable(tmp_path):
+    csv_output = tmp_path / "reconciliation.csv"
+    log_output = tmp_path / "reconciliation.log"
+
+    write_reconciliation_csv([], csv_output)
+    write_reconciliation_log([], log_output)
+
+    assert csv_output.read_text(encoding="utf-8") == (
+        "classification,shared iMIS ID,Salesforce Account ID,iMIS name,Salesforce name,issues\n"
+    )
+    log = log_output.read_text(encoding="utf-8")
+    assert "Matched records: 0" in log
+    assert "Questionable records:" in log
+
+
+def test_reconciliation_ignores_cosmetic_name_differences():
+    imis = Company(name="Example  Steel, Inc.", state="IL", imis_id="A")
+    account = {"Id": "001", "IMISID__c": "A", "Name": "example-steel inc", "BillingState": "IL"}
+
+    row = build_reconciliation_rows(combine_companies([imis], [account]))[0]
+
+    assert row.issues == ()
 
 
 def test_report_data_uses_only_shared_imis_id_not_a_similar_name():

@@ -32,7 +32,9 @@ uv run aisc_gr_statistics report \
   --imis-csv data/raw/imis/membership-export.csv \
   --output data/processed/illinois-certification-membership.pdf \
   --conflicts-csv data/processed/field-conflicts.csv \
-  --candidate-matches-csv data/processed/candidate-matches.csv
+  --candidate-matches-csv data/processed/candidate-matches.csv \
+  --reconciliation-csv data/processed/reconciliation.csv \
+  --reconciliation-log data/processed/reconciliation.log
 ```
 
 Keep real exports under ignored `data/raw/imis/` and generated PDFs under
@@ -73,6 +75,15 @@ review-only lookalikes when normalized name, city, and state agree but IDs
 differ or are missing; it never changes report matching. Records with equal
 duplicate IDs are not candidate matches because their duplicate finding is
 already recorded in the conflicts CSV.
+
+`--reconciliation-csv` writes one row in `data/processed/` for every combined
+company record. It includes matched, iMIS-only, and Salesforce-only records,
+source IDs and names, the Salesforce Account ID, and any review issues. It is
+the complete, spreadsheet-filterable reconciliation artifact. Its companion
+`--reconciliation-log` writes readable counts for matches, source-only records,
+duplicate IDs, missing IDs, and ID-matched name differences, followed by the
+details of every questionable record. Review both reconciliation files before
+using the PDF.
 
 ## Environment Variables
 

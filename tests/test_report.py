@@ -231,6 +231,101 @@ def test_candidate_matches_require_name_city_and_state_and_never_change_join():
     assert candidate_matches(no_city) == []
 
 
+def test_joins_only_exact_trimmed_text_ids_and_preserves_leading_zeroes():
+    imis = Company(name="Leading Zero Steel", state="IL", imis_id=" 00123 ")
+    accounts = [
+        {"Id": "matching", "IMISID__c": "00123", "Name": "Leading Zero Steel", "BillingState": "IL"},
+        {"Id": "different", "IMISID__c": "123", "Name": "Different Steel", "BillingState": "IL"},
+    ]
+
+    combined = combine_companies([imis], accounts)
+
+    assert [row.classification for row in combined] == [
+        CompanyClassification.BOTH,
+        CompanyClassification.SALESFORCE_ONLY,
+    ]
+    assert combined[0].shared_imis_id == "00123"
+    assert combined[0].salesforce == accounts[0]
+
+
+@pytest.mark.parametrize(
+    "companies, accounts, expected_classifications, expected_source, expected_detail",
+    [
+        (
+            [
+                Company(name="Duplicate One", state="IL", city="Chicago", imis_id="DUP"),
+                Company(name="Duplicate Two", state="IL", city="Chicago", imis_id="DUP"),
+            ],
+            [{"Id": "sf-1", "IMISID__c": "DUP", "Name": "Duplicate One", "BillingCity": "Chicago", "BillingState": "IL"}],
+            [CompanyClassification.IMIS_ONLY, CompanyClassification.IMIS_ONLY, CompanyClassification.SALESFORCE_ONLY],
+            CompanyClassification.IMIS_ONLY,
+            "2 iMIS records",
+        ),
+        (
+            [Company(name="Duplicate One", state="IL", city="Chicago", imis_id="DUP")],
+            [
+                {"Id": "sf-1", "IMISID__c": "DUP", "Name": "Duplicate One", "BillingCity": "Chicago", "BillingState": "IL"},
+                {"Id": "sf-2", "IMISID__c": "DUP", "Name": "Duplicate Two", "BillingCity": "Chicago", "BillingState": "IL"},
+            ],
+            [CompanyClassification.IMIS_ONLY, CompanyClassification.SALESFORCE_ONLY, CompanyClassification.SALESFORCE_ONLY],
+            CompanyClassification.SALESFORCE_ONLY,
+            "2 Salesforce records",
+        ),
+    ],
+)
+def test_duplicate_nonblank_ids_remain_source_only_and_create_review_conflicts(
+    companies, accounts, expected_classifications, expected_source, expected_detail
+):
+    combined = combine_companies(companies, accounts)
+
+    assert [row.classification for row in combined] == expected_classifications
+    duplicate_conflicts = [
+        conflict for conflict in combined_conflicts(combined)
+        if conflict.field == "duplicate iMIS ID"
+    ]
+    assert [(conflict.shared_imis_id, conflict.company_classification, conflict.imis_value, conflict.salesforce_value) for conflict in duplicate_conflicts] == [
+        ("DUP", expected_source, expected_detail if expected_source is CompanyClassification.IMIS_ONLY else "", expected_detail if expected_source is CompanyClassification.SALESFORCE_ONLY else "")
+    ]
+
+
+def test_candidate_matches_include_different_or_missing_ids_but_exclude_equal_duplicates():
+    imis = [
+        Company(name="Missing ID Steel", state="IL", city="Chicago"),
+        Company(name="Different ID Steel", state="IL", city="Aurora", imis_id="iMIS-1"),
+        Company(name="Duplicate Steel", state="IL", city="Joliet", imis_id="DUP"),
+        Company(name="Duplicate Steel Two", state="IL", city="Joliet", imis_id="DUP"),
+    ]
+    accounts = [
+        {"Id": "missing", "Name": "Missing ID Steel", "BillingCity": "Chicago", "BillingState": "IL"},
+        {"Id": "different", "IMISID__c": "sf-1", "Name": "Different-ID Steel", "BillingCity": "Aurora", "BillingState": "IL"},
+        {"Id": "duplicate", "IMISID__c": "DUP", "Name": "Duplicate Steel", "BillingCity": "Joliet", "BillingState": "IL"},
+    ]
+
+    matches = candidate_matches(combine_companies(imis, accounts))
+
+    assert {(match.imis_id, match.salesforce_account_id) for match in matches} == {
+        ("", "missing"),
+        ("iMIS-1", "different"),
+    }
+
+
+def test_duplicate_conflicts_are_written_to_the_existing_conflicts_csv(tmp_path):
+    combined = combine_companies(
+        [
+            Company(name="One", state="IL", imis_id="DUP"),
+            Company(name="Two", state="IL", imis_id="DUP"),
+        ]
+    )
+    output = tmp_path / "conflicts.csv"
+
+    write_conflicts_csv(combined_conflicts(combined), output)
+
+    assert list(csv.reader(output.open(encoding="utf-8"))) == [
+        ["shared iMIS ID", "company classification", "field", "iMIS value", "Salesforce value"],
+        ["DUP", "imis-only", "duplicate iMIS ID", "2 iMIS records", ""],
+    ]
+
+
 def test_review_csvs_write_required_headers_even_when_empty(tmp_path):
     conflicts = tmp_path / "conflicts.csv"
     candidates = tmp_path / "candidates.csv"

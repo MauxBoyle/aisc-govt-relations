@@ -30,9 +30,13 @@ uv run aisc_gr_statistics report \
 The source export and generated PDF/CSV files should stay in the ignored `data/raw/` and
 `data/processed/` folders. The report reads Salesforce only when both
 `SF_CLIENT_ID` and `SF_CLIENT_SECRET` are set. iMIS and Salesforce records are
-joined only by their shared iMIS ID; names never create a join. The two required
-review CSVs list field conflicts and name/city/state lookalikes. Without
-Salesforce access, certification values are shown as placeholders.
+joined only by an exact shared iMIS ID; names never create a join. IDs are
+trimmed text keys, not numbers, so `00123` and `123` remain different IDs. If a
+nonblank ID appears more than once in either source, none of the records with
+that ID are joined; they remain separate for review. The conflicts CSV lists
+both differing values on valid ID joins and duplicate-ID findings. The
+candidate-matches CSV lists name/city/state lookalikes with different or missing
+IDs. Without Salesforce access, certification values are shown as placeholders.
 
 Run with development environment settings:
 

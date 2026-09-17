@@ -30,11 +30,13 @@ from aisc_gr_statistics.report import (
     find_undefined_imis_codes,
     normalize_company_name,
     read_imis_companies,
+    read_imis_companies_with_tonnage_review,
     render_illinois_report,
     write_candidate_matches_csv,
     write_conflicts_csv,
     write_reconciliation_csv,
     write_reconciliation_log,
+    write_tonnage_review_csv,
     write_undefined_imis_codes_csv,
 )
 
@@ -147,6 +149,112 @@ def test_reads_actual_imis_headers_and_totals_three_tonnage_columns(tmp_path):
     ]
 
 
+def test_aggregates_unique_completed_year_submissions_and_uses_latest_details(tmp_path):
+    path = write_csv(
+        tmp_path,
+        "iMIS ID,Full Name,State Province,City,Tonnage Year,Submission Date,Bridge Tonnage,Building Tonnage,S C Tonnage\n"
+        "A,Older Name,IL,Chicago,2025,2025-01-01,10,20,30\n"
+        "A,Latest Name,IL,Aurora,2025,2025-12-01,1,2,3\n"
+        "A,Old Year,IL,Chicago,2024,2024-12-01,100,100,100\n"
+        "A,Current Year,IL,Chicago,2026,2026-01-01,100,100,100\n",
+    )
+
+    companies, findings, tonnage_year = read_imis_companies_with_tonnage_review(
+        path, report_date=date(2026, 9, 17)
+    )
+
+    assert tonnage_year == 2025
+    assert findings == []
+    assert companies == [
+        Company(
+            name="Latest Name", state="IL", city="Aurora", imis_id="A", tonnage="66"
+        )
+    ]
+
+
+def test_aggregates_selected_year_am_pm_submissions(tmp_path):
+    path = write_csv(
+        tmp_path,
+        "iMIS ID,Full Name,State Province,City,Tonnage Year,Submission Date,Bridge Tonnage,Building Tonnage,S C Tonnage\n"
+        "AM-1,Morning Steel,IL,Chicago,2025,5/7/2025 9:30:00 AM,100,50,25\n"
+        "AM-2,Afternoon Steel,IL,Aurora,2025,6/15/2025 1:45:00 PM,200,75,50\n",
+    )
+
+    companies, findings, tonnage_year = read_imis_companies_with_tonnage_review(
+        path, report_date=date(2026, 9, 17)
+    )
+
+    assert tonnage_year == 2025
+    assert findings == []
+    assert sum(int(company.tonnage) for company in companies) == 500
+
+
+def test_treats_equivalent_24_hour_and_am_pm_timestamps_as_duplicates(tmp_path):
+    path = write_csv(
+        tmp_path,
+        "iMIS ID,Full Name,State Province,City,Tonnage Year,Submission Date,Bridge Tonnage,Building Tonnage,S C Tonnage\n"
+        "DUP-1,Duplicate Steel,IL,Chicago,2025,2025-01-15 13:30:00,1,2,3\n"
+        "DUP-1,Duplicate Steel,IL,Chicago,2025,01/15/2025 01:30:00 PM,1,2,3\n",
+    )
+
+    companies, findings, _ = read_imis_companies_with_tonnage_review(
+        path, report_date=date(2026, 1, 1)
+    )
+
+    assert companies == [
+        Company(
+            name="Duplicate Steel", state="IL", city="Chicago", imis_id="DUP-1", tonnage="6"
+        )
+    ]
+    assert [(finding.submission_date, finding.reason) for finding in findings] == [
+        ("01/15/2025 01:30:00 PM", "exact duplicate submission key")
+    ]
+
+
+def test_excludes_invalid_submission_timestamp_and_preserves_it_in_review(tmp_path):
+    path = write_csv(
+        tmp_path,
+        "iMIS ID,Full Name,State Province,City,Tonnage Year,Submission Date,Bridge Tonnage,Building Tonnage,S C Tonnage\n"
+        "BAD-1,Invalid Date Steel,IL,Chicago,2025,01/15/2025 13:30:00 PM,1,2,3\n",
+    )
+
+    companies, findings, _ = read_imis_companies_with_tonnage_review(
+        path, report_date=date(2026, 1, 1)
+    )
+
+    assert companies == []
+    assert [(finding.submission_date, finding.reason) for finding in findings] == [
+        ("01/15/2025 13:30:00 PM", "invalid submission date: '01/15/2025 13:30:00 PM'")
+    ]
+
+
+def test_excludes_duplicate_and_conflicting_annual_submission_keys_for_review(tmp_path):
+    path = write_csv(
+        tmp_path,
+        "iMIS ID,Full Name,State Province,City,Tonnage Year,Submission Date,Bridge Tonnage,Building Tonnage,S C Tonnage\n"
+        "A,Acme,IL,Chicago,2025,2025-01-01,1,2,3\n"
+        "A,Acme,IL,Chicago,2025,2025-01-01,1,2,3\n"
+        "A,Acme,IL,Chicago,2025,2025-02-01,4,5,6\n"
+        "A,Acme,IL,Chicago,2025,2025-02-01,4,5,7\n"
+        "B,Blank Date,IL,Chicago,2025,,4,5,6\n",
+    )
+
+    companies, findings, _ = read_imis_companies_with_tonnage_review(
+        path, report_date=date(2026, 1, 1)
+    )
+
+    assert companies == [Company(name="Acme", state="IL", city="Chicago", imis_id="A", tonnage="6")]
+    assert {(finding.imis_id, finding.reason) for finding in findings} == {
+        ("A", "exact duplicate submission key"),
+        ("A", "conflicting tonnage for submission key"),
+        ("B", "missing submission date"),
+    }
+    assert sum(finding.reason == "conflicting tonnage for submission key" for finding in findings) == 2
+    output = tmp_path / "tonnage-review.csv"
+    write_tonnage_review_csv(findings, output)
+    assert "reason" in output.read_text(encoding="utf-8")
+
+
 def test_rejects_invalid_actual_imis_tonnage(tmp_path):
     path = write_csv(
         tmp_path,
@@ -222,11 +330,12 @@ def test_combined_model_joins_by_id_preserves_sources_and_reports_conflicts(tmp_
     assert row.name == "iMIS: Acme Steel | Salesforce: ACME Structural"
     assert row.address == "iMIS: 1 iMIS Way | Salesforce: 2 SF Way, Evanston, IL"
     output = tmp_path / "conflict.pdf"
-    render_illinois_report([row], output)
+    render_illinois_report([row], output, tonnage_year=2025)
     text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
     assert "iMIS: Acme Steel" in text
     assert "Salesforce: ACME" in text
     assert "Structural" in text
+    assert "tonnage (2025)" in text
 
 
 def test_candidate_matches_require_name_city_and_state_and_never_change_join():

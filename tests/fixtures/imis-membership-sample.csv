@@ -1,2 +1,2 @@
-company_name,company_type,annual_structural_steel_tonnage,state,city,iMIS ID,congressional_district
-Example Steel Company,Producer,12500,IL,Chicago,IMIS-1,7
+company_name,company_type,annual_structural_steel_tonnage,state,city,iMIS ID,congressional_district,Tonnage Year,Submission Date
+Example Steel Company,Producer,12500,IL,Chicago,IMIS-1,7,2025,2025-11-01

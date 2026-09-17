@@ -27,7 +27,8 @@ uv run aisc_gr_statistics report \
   --candidate-matches-csv data/processed/candidate-matches.csv \
   --reconciliation-csv data/processed/reconciliation.csv \
   --reconciliation-log data/processed/reconciliation.log \
-  --unknown-imis-codes-csv data/processed/unknown-imis-codes.csv
+  --unknown-imis-codes-csv data/processed/unknown-imis-codes.csv \
+  --tonnage-review-csv data/processed/tonnage-review.csv
 ```
 
 The source export and generated PDF/CSV files should stay in the ignored `data/raw/` and
@@ -47,6 +48,18 @@ and Category codes from every export row, including rows outside Illinois.
 Unknown or blank codes have no PDF label. Confirm each code’s meaning, then add
 it to the central mapping in `src/aisc_gr_statistics/imis_fields.py`.
 Without Salesforce access, certification values are shown as placeholders.
+
+Tonnage submissions may be monthly or irregular. Each report selects the most
+recently completed calendar year (a 2026 run selects 2025) and totals unique
+`(iMIS ID, Tonnage Year, Submission Date)` entries. Submission Date accepts ISO
+timestamps, `MM/DD/YYYY`, 24-hour `MM/DD/YYYY HH:MM:SS`, and iMIS 12-hour
+`MM/DD/YYYY HH:MM:SS AM/PM` timestamps. Valid timestamps are normalized in
+memory, so equivalent 24-hour and AM/PM forms are duplicate keys. Exact
+duplicate keys with the same tonnage are counted once. Missing timestamps,
+conflicting same-key tonnage, and other invalid selected-year rows are excluded
+and written to the required `--tonnage-review-csv`; review rows retain the
+original exported timestamp, and the newest valid submission supplies company
+display fields. The PDF labels the selected tonnage year.
 
 Run with development environment settings:
 

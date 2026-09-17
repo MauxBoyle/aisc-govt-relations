@@ -10,7 +10,7 @@ import re
 from collections import Counter
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from pathlib import Path
@@ -58,6 +58,19 @@ class Company:
     membership_type: str = ""
     tonnage: str = ""
     district: str = ""
+
+
+@dataclass(frozen=True)
+class TonnageReviewFinding:
+    """A selected-year iMIS row excluded from annual tonnage totals."""
+
+    imis_id: str
+    tonnage_year: str
+    submission_date: str
+    reason: str
+    bridge_tonnage: str
+    building_tonnage: str
+    sc_tonnage: str
 
 
 @dataclass(frozen=True)
@@ -187,6 +200,8 @@ HEADER_ALIASES = {
     "bridge_tonnage": ("bridge tonnage",),
     "building_tonnage": ("building tonnage",),
     "sc_tonnage": ("s c tonnage",),
+    "tonnage_year": ("tonnage year",),
+    "submission_date": ("submission date",),
 }
 
 
@@ -195,8 +210,23 @@ def normalize_company_name(name: str) -> str:
     return " ".join(re.sub(r"[^a-z0-9]+", " ", name.lower()).split())
 
 
-def read_imis_companies(path: Path | str) -> list[Company]:
+def read_imis_companies(
+    path: Path | str, report_date: date | None = None
+) -> list[Company]:
     """Read an iMIS CSV with shared ID/city columns and return Illinois rows."""
+    companies, _, _ = read_imis_companies_with_tonnage_review(path, report_date)
+    return companies
+
+
+def read_imis_companies_with_tonnage_review(
+    path: Path | str, report_date: date | None = None
+) -> tuple[list[Company], list[TonnageReviewFinding], int | None]:
+    """Read Illinois iMIS data, aggregating the prior calendar year when dated.
+
+    ``report_date`` is injectable so scheduled runs and tests choose their year
+    deterministically. Without it, this retains the legacy one-row-per-company
+    reader behavior for callers that do not have a dated tonnage export.
+    """
     source_path = Path(path)
     try:
         file_handle = source_path.open(newline="", encoding="utf-8-sig")
@@ -216,8 +246,22 @@ def read_imis_companies(path: Path | str) -> list[Company]:
                 + ". Re-export iMIS including these columns."
             )
 
+        rows = list(reader)
+        if report_date is not None:
+            annual_fields = ("tonnage_year", "submission_date")
+            missing_annual = [field for field in annual_fields if field not in fields]
+            if missing_annual:
+                names = {"tonnage_year": "Tonnage Year", "submission_date": "Submission Date"}
+                raise ReportDataError(
+                    "The dated iMIS CSV is missing required column(s): "
+                    + ", ".join(names[field] for field in missing_annual)
+                    + ". Re-export iMIS including these columns."
+                )
+            selected_year = report_date.year - 1
+            return _aggregate_annual_imis_companies(rows, fields, selected_year)
+
         companies = []
-        for row_number, row in enumerate(reader, start=2):
+        for row_number, row in enumerate(rows, start=2):
             state = _cell(row, fields["state"])
             if not state:
                 raise ReportDataError(f"Row {row_number} is missing a state.")
@@ -245,8 +289,112 @@ def read_imis_companies(path: Path | str) -> list[Company]:
                     district=_optional_cell(row, fields, "district"),
                 )
             )
-    return sorted(
-        companies, key=lambda company: (company.name.casefold(), company.name)
+    return (
+        sorted(companies, key=lambda company: (company.name.casefold(), company.name)),
+        [],
+        None,
+    )
+
+
+def _aggregate_annual_imis_companies(
+    rows: Iterable[Mapping[str | None, str | None]],
+    fields: Mapping[str, str],
+    selected_year: int,
+) -> tuple[list[Company], list[TonnageReviewFinding], int]:
+    """Sum unique Illinois submissions for one completed calendar year."""
+    selected = []
+    findings = []
+    for row_number, row in enumerate(rows, start=2):
+        state = _cell(row, fields["state"])
+        if not state:
+            raise ReportDataError(f"Row {row_number} is missing a state.")
+        if state.casefold() not in {"il", "illinois"}:
+            continue
+        if _cell(row, fields["tonnage_year"]) != str(selected_year):
+            continue
+        imis_id = _normalize_imis_identifier(_cell(row, fields["imis_id"]))
+        submission_date = _cell(row, fields["submission_date"])
+        if not submission_date:
+            findings.append(_tonnage_finding(row, fields, imis_id, "missing submission date"))
+            continue
+        try:
+            timestamp = _parse_submission_date(submission_date)
+            tonnage = _tonnage_decimal(row, fields, row_number)
+        except ReportDataError as error:
+            findings.append(_tonnage_finding(row, fields, imis_id, str(error)))
+            continue
+        selected.append((imis_id, submission_date, timestamp, tonnage, row, row_number))
+
+    grouped: dict[tuple[str, int, datetime], list[tuple[str, str, datetime, Decimal, Mapping[str | None, str | None], int]]] = {}
+    for item in selected:
+        grouped.setdefault((item[0], selected_year, item[2]), []).append(item)
+
+    accepted = []
+    for key, submissions in grouped.items():
+        values = {submission[3] for submission in submissions}
+        if len(values) > 1:
+            for submission in submissions:
+                findings.append(_tonnage_finding(submission[4], fields, key[0], "conflicting tonnage for submission key"))
+            continue
+        accepted.append(submissions[0])
+        for submission in submissions[1:]:
+            findings.append(_tonnage_finding(submission[4], fields, key[0], "exact duplicate submission key"))
+
+    companies = []
+    by_imis_id: dict[str, list[tuple[str, str, datetime, Decimal, Mapping[str | None, str | None], int]]] = {}
+    for submission in accepted:
+        by_imis_id.setdefault(submission[0], []).append(submission)
+    for imis_id, submissions in by_imis_id.items():
+        latest = max(submissions, key=lambda submission: submission[2])
+        row, row_number = latest[4], latest[5]
+        name = _cell(row, fields["name"])
+        if not name:
+            raise ReportDataError(
+                f"Row {row_number} is missing a company name. This report needs "
+                "company-name data for Illinois rows. Re-export iMIS with the "
+                "organization/company name field included."
+            )
+        companies.append(
+            Company(
+                name=name,
+                state=_cell(row, fields["state"]),
+                imis_id=imis_id,
+                city=_cell(row, fields["city"]),
+                address=_optional_cell(row, fields, "address"),
+                membership_type=membership_label(_optional_cell(row, fields, "membership_type"), _optional_cell(row, fields, "category")),
+                tonnage=_format_tonnage(sum((submission[3] for submission in submissions), Decimal())),
+                district=_optional_cell(row, fields, "district"),
+            )
+        )
+    return sorted(companies, key=lambda company: (company.name.casefold(), company.name)), findings, selected_year
+
+
+def _parse_submission_date(value: str) -> datetime:
+    """Parse common iMIS timestamp formats into a comparison-safe timestamp."""
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        for format_string in (
+            "%m/%d/%Y",
+            "%m/%d/%Y %H:%M:%S",
+            "%m/%d/%Y %I:%M:%S %p",
+        ):
+            try:
+                parsed = datetime.strptime(value, format_string)
+                break
+            except ValueError:
+                continue
+        else:
+            raise ReportDataError(f"invalid submission date: {value!r}") from None
+    return parsed.replace(tzinfo=None)
+
+
+def _tonnage_finding(
+    row: Mapping[str | None, str | None], fields: Mapping[str, str], imis_id: str, reason: str
+) -> TonnageReviewFinding:
+    return TonnageReviewFinding(
+        imis_id, _cell(row, fields["tonnage_year"]), _cell(row, fields["submission_date"]), reason,
+        _optional_cell(row, fields, "bridge_tonnage"), _optional_cell(row, fields, "building_tonnage"), _optional_cell(row, fields, "sc_tonnage"),
     )
 
 
@@ -491,7 +639,7 @@ def build_report_companies(
 
 
 def render_illinois_report(
-    companies: Iterable[ReportCompany], output: Path | str
+    companies: Iterable[ReportCompany], output: Path | str, tonnage_year: int | None = None
 ) -> None:
     """Create a printable, letter-size statewide Illinois PDF report."""
     output_path = Path(output)
@@ -549,7 +697,7 @@ def render_illinois_report(
                 f"<b>Membership type:</b> {_escape(company.membership_type)}", body
             ),
             Paragraph(
-                f"<b>Structural steel tonnage:</b> {_escape(company.tonnage)}",
+                f"<b>Structural steel tonnage{f' ({tonnage_year})' if tonnage_year else ''}:</b> {_escape(company.tonnage)}",
                 body,
             ),
             Paragraph(
@@ -619,6 +767,25 @@ def _report_tonnage(
     if not any(field in fields for field in source_fields):
         return _optional_cell(row, fields, "tonnage")
 
+    return _format_tonnage(_tonnage_decimal(row, fields, row_number))
+
+
+def _tonnage_decimal(
+    row: Mapping[str | None, str | None], fields: Mapping[str, str], row_number: int
+) -> Decimal:
+    """Return the numeric total of the three current iMIS tonnage columns."""
+    source_fields = ("bridge_tonnage", "building_tonnage", "sc_tonnage")
+    if not any(field in fields for field in source_fields):
+        value = _optional_cell(row, fields, "tonnage")
+        if not value:
+            return Decimal()
+        try:
+            return Decimal(value.replace(",", ""))
+        except InvalidOperation as error:
+            raise ReportDataError(
+                f"Row {row_number} has an invalid {fields['tonnage']} value: {value!r}."
+            ) from error
+
     total = Decimal()
     for field in source_fields:
         if field not in fields:
@@ -632,7 +799,7 @@ def _report_tonnage(
             raise ReportDataError(
                 f"Row {row_number} has an invalid {fields[field]} value: {value!r}."
             ) from error
-    return _format_tonnage(total)
+    return total
 
 
 def _format_tonnage(value: Decimal) -> str:
@@ -752,6 +919,27 @@ def write_undefined_imis_codes_csv(
         ("iMIS field", "iMIS code", "status", "occurrences"),
         (
             (finding.field, finding.code, finding.status, finding.occurrences)
+            for finding in findings
+        ),
+    )
+
+
+def write_tonnage_review_csv(
+    findings: Iterable[TonnageReviewFinding], output: Path | str
+) -> None:
+    """Write selected-year tonnage rows excluded from the annual total."""
+    _write_csv(
+        output,
+        (
+            "iMIS ID", "Tonnage Year", "Submission Date", "reason",
+            "Bridge Tonnage", "Building Tonnage", "S C Tonnage",
+        ),
+        (
+            (
+                finding.imis_id, finding.tonnage_year, finding.submission_date,
+                finding.reason, finding.bridge_tonnage, finding.building_tonnage,
+                finding.sc_tonnage,
+            )
             for finding in findings
         ),
     )

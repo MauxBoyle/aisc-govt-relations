@@ -35,7 +35,8 @@ uv run aisc_gr_statistics report \
   --candidate-matches-csv data/processed/candidate-matches.csv \
   --reconciliation-csv data/processed/reconciliation.csv \
   --reconciliation-log data/processed/reconciliation.log \
-  --unknown-imis-codes-csv data/processed/unknown-imis-codes.csv
+  --unknown-imis-codes-csv data/processed/unknown-imis-codes.csv \
+  --tonnage-review-csv data/processed/tonnage-review.csv
 ```
 
 Keep real exports under ignored `data/raw/imis/` and generated PDFs under
@@ -44,8 +45,14 @@ common forms of the company-name, state, city, shared-iMIS-ID, membership-type,
 tonnage, and congressional-district headers. Company name, state, city, and a
 recognizable shared iMIS ID column are required (individual ID and city values
 may be blank).
-For the current iMIS export, the report totals `Bridge Tonnage`, `Building
-Tonnage`, and `S C Tonnage` into Structural Steel Tonnage.
+Tonnage submissions may be monthly or irregular. The report selects the most
+recently completed calendar year (so a 2026 run selects 2025), then totals each
+unique `(iMIS ID, Tonnage Year, Submission Date)` entry's `Bridge Tonnage`,
+`Building Tonnage`, and `S C Tonnage`. The PDF labels the selected year. Exact
+duplicate keys with identical tonnage count once; missing timestamps,
+conflicting same-key tonnage, and other invalid selected-year rows are excluded
+and written to the required `--tonnage-review-csv`. Company display fields come
+from the latest valid selected-year submission.
 
 When both `SF_CLIENT_ID` and `SF_CLIENT_SECRET` are configured, the command
 reads Salesforce Account records with their child certifications. It joins only

@@ -38,6 +38,7 @@ def test_report_command_creates_a_pdf_without_salesforce_credentials(tmp_path):
     reconciliation_csv = tmp_path / "reconciliation.csv"
     reconciliation_log = tmp_path / "reconciliation.log"
     unknown_imis_codes = tmp_path / "unknown-imis-codes.csv"
+    tonnage_review = tmp_path / "tonnage-review.csv"
 
     main(
         [
@@ -56,6 +57,8 @@ def test_report_command_creates_a_pdf_without_salesforce_credentials(tmp_path):
             str(reconciliation_log),
             "--unknown-imis-codes-csv",
             str(unknown_imis_codes),
+            "--tonnage-review-csv",
+            str(tonnage_review),
         ]
     )
 
@@ -65,4 +68,5 @@ def test_report_command_creates_a_pdf_without_salesforce_credentials(tmp_path):
     assert reconciliation_csv.read_text(encoding="utf-8").startswith("classification")
     assert "Matched records:" in reconciliation_log.read_text(encoding="utf-8")
     assert unknown_imis_codes.read_text(encoding="utf-8").startswith("iMIS field")
+    assert tonnage_review.read_text(encoding="utf-8").startswith("iMIS ID")
     assert _salesforce_accounts_if_configured({"SF_CLIENT_ID": "id"}) == []

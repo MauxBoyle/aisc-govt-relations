@@ -39,7 +39,7 @@ a SOQL subquery such as `(SELECT Name ... FROM Certifications__r)`.
 
 | Report value | Object | API field | Field type | Relationship path | Report meaning | Active rule |
 |---|---|---|---|---|---|---|
-| Company name | Account | `Name` | string | Direct | Company label and a cautious fallback lookup value | Not applicable |
+| Company name | Account | `Name` | string | Direct | Company label and review-only candidate value | Not applicable |
 | Shared iMIS ID | Account | `IMISID__c` | string | Direct | Stable cross-system key when populated | Not applicable; a blank value does not mean the Account is absent from Salesforce |
 | Client Type | Account | `Industry` | picklist | Direct | Account-level business/client classification | Not applicable; this is **not** a certification category |
 | Certification summary status | Account | `Cert_Certification_Status__c` | picklist | Direct | Account-level summary, for example `Certified` | Not the child-certification active rule |
@@ -91,10 +91,10 @@ results or Salesforce IDs:
   **Erector**. That record was effective on the validation date and ends on
   2027-02-28.
 
-These checks show why an iMIS ID is preferred for joining systems when it is
-available, but why a missing iMIS ID must not exclude a company already known
-to Salesforce. They also show that the two A. Lucas certifications must remain
-separate report values.
+These checks show why the shared iMIS ID is the authoritative join key. A
+missing iMIS ID does not exclude a company from the report, but it cannot create
+a join; a matching normalized name, city, and state is written for human review
+only. The two A. Lucas certifications remain separate report values.
 
 Congressional district is not in this verified Salesforce mapping. Its source
 and matching rule still need confirmation before it is added to the report.

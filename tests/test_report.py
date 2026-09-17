@@ -1,6 +1,8 @@
 """Tests for Illinois membership report data and PDF generation."""
 
+import csv
 from datetime import date
+from io import StringIO
 from pathlib import Path
 
 import pytest
@@ -17,18 +19,34 @@ from aisc_gr_statistics.report import (
     CERTIFICATION_CATEGORY_PLACEHOLDER,
     PLACEHOLDER,
     Company,
+    CompanyClassification,
     ReportDataError,
     build_report_companies,
+    candidate_matches,
+    combine_companies,
+    combined_conflicts,
     normalize_company_name,
     read_imis_companies,
     render_illinois_report,
+    write_candidate_matches_csv,
+    write_conflicts_csv,
 )
 
 
 def write_csv(tmp_path, contents):
     """Create a small CSV fixture for a focused test."""
     path = tmp_path / "members.csv"
-    path.write_text(contents, encoding="utf-8")
+    # Older focused tests exercise fields unrelated to the now-required
+    # shared-ID and city headers.  Supply blank values for those columns.
+    rows = list(csv.reader(StringIO(contents)))
+    headers = rows[0]
+    for header in ("iMIS ID", "City"):
+        if header not in headers:
+            headers.append(header)
+            for row in rows[1:]:
+                row.append("")
+    with path.open("w", newline="", encoding="utf-8") as file_handle:
+        csv.writer(file_handle).writerows(rows)
     return path
 
 
@@ -160,21 +178,87 @@ def test_requires_company_name_and_state(tmp_path, contents, message):
         read_imis_companies(write_csv(tmp_path, contents))
 
 
-def test_report_data_uses_placeholders_and_unique_normalized_salesforce_match():
+def test_imis_requires_shared_id_and_city_headers_but_allows_blank_values(tmp_path):
+    path = tmp_path / "members.csv"
+    path.write_text("Company Name,State\nExample Steel,IL\n", encoding="utf-8")
+    with pytest.raises(ReportDataError, match="shared iMIS ID, city.*Re-export"):
+        read_imis_companies(path)
+
+    path.write_text(
+        "Company Name,State,City,iMIS ID\nExample Steel,IL,,\n", encoding="utf-8"
+    )
+    assert read_imis_companies(path)[0].imis_id == ""
+
+
+def test_combined_model_joins_by_id_preserves_sources_and_reports_conflicts(tmp_path):
+    imis = Company(
+        name="Acme Steel", state="IL", city="Chicago", imis_id="42", address="1 iMIS Way"
+    )
+    account = {
+        "Id": "001", "IMISID__c": "42", "Name": "ACME Structural",
+        "BillingCity": "Evanston", "BillingState": "IL", "BillingStreet": "2 SF Way",
+    }
+    combined = combine_companies([imis], [account])
+
+    assert combined[0].classification is CompanyClassification.BOTH
+    assert combined[0].imis == imis
+    assert combined[0].salesforce == account
+    assert {(item.field, item.imis_value, item.salesforce_value) for item in combined_conflicts(combined)} == {
+        ("name", "Acme Steel", "ACME Structural"), ("city", "Chicago", "Evanston")
+    }
+    row = build_report_companies(combined)[0]
+    assert row.name == "iMIS: Acme Steel | Salesforce: ACME Structural"
+    assert row.address == "iMIS: 1 iMIS Way | Salesforce: 2 SF Way, Evanston, IL"
+    output = tmp_path / "conflict.pdf"
+    render_illinois_report([row], output)
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    assert "iMIS: Acme Steel" in text
+    assert "Salesforce: ACME" in text
+    assert "Structural" in text
+
+
+def test_candidate_matches_require_name_city_and_state_and_never_change_join():
+    imis = Company(name="Acme Steel", state="IL", city="Chicago", imis_id="A")
+    account = {"Id": "001", "IMISID__c": "B", "Name": "Acme-Steel", "BillingCity": "Chicago", "BillingState": "Illinois"}
+    combined = combine_companies([imis], [account])
+
+    assert [row.classification for row in combined] == [
+        CompanyClassification.IMIS_ONLY, CompanyClassification.SALESFORCE_ONLY
+    ]
+    assert candidate_matches(combined)[0].salesforce_account_id == "001"
+
+    no_city = combine_companies([imis], [{**account, "BillingCity": "Aurora"}])
+    assert candidate_matches(no_city) == []
+
+
+def test_review_csvs_write_required_headers_even_when_empty(tmp_path):
+    conflicts = tmp_path / "conflicts.csv"
+    candidates = tmp_path / "candidates.csv"
+    write_conflicts_csv([], conflicts)
+    write_candidate_matches_csv([], candidates)
+    assert conflicts.read_text(encoding="utf-8") == (
+        "shared iMIS ID,company classification,field,iMIS value,Salesforce value\n"
+    )
+    assert candidates.read_text(encoding="utf-8").startswith(
+        "iMIS ID,Salesforce Account ID,iMIS name,Salesforce name,"
+    )
+
+
+def test_report_data_uses_only_shared_imis_id_not_a_similar_name():
     companies = [
-        Company(name="Example  Steel, Inc.", state="IL"),
+        Company(name="Example  Steel, Inc.", state="IL", imis_id="A"),
         Company(name="No Match Steel", state="IL"),
         Company(name="Ambiguous Steel", state="IL"),
     ]
     accounts = [
-        {"Name": "example steel inc", "Cert_Certification_Status__c": "Certified"},
+        {"Name": "example steel inc", "IMISID__c": "B", "BillingState": "IL", "Cert_Certification_Status__c": "Certified"},
         {"Name": "Ambiguous Steel", "Cert_Certification_Status__c": "Initials"},
         {"Name": "ambiguous-steel", "Cert_Certification_Status__c": "Certified"},
     ]
 
     rows = build_report_companies(companies, accounts)
 
-    assert rows[0].certification_status == "Certified"
+    assert rows[0].certification_status == PLACEHOLDER
     assert rows[0].address == PLACEHOLDER
     assert rows[0].certification_categories == (CERTIFICATION_CATEGORY_PLACEHOLDER,)
     assert rows[1].certification_status == PLACEHOLDER
@@ -190,10 +274,11 @@ def test_report_data_without_salesforce_records_has_status_placeholder():
 
 def test_report_uses_only_active_nested_certifications_and_adds_salesforce_only_il_companies():
     """Keep child categories separate and omit invalid child certification rows."""
-    companies = [Company(name="A. Lucas & Sons Steel", state="IL")]
+    companies = [Company(name="A. Lucas & Sons Steel", state="IL", imis_id="LUCAS")]
     accounts = [
         {
             "Name": "A. Lucas & Sons Steel",
+            "IMISID__c": "LUCAS",
             "Cert_Certification_Status__c": "Certified",
             "BillingState": "IL",
             "Certifications__r": {
@@ -222,8 +307,8 @@ def test_report_uses_only_active_nested_certifications_and_adds_salesforce_only_
     rows = build_report_companies(companies, accounts, as_of=date(2026, 6, 1))
 
     assert rows[0].certification_categories == (
-        "Building Fabricator",
-        "Highway Component Manufacturer",
+        "Salesforce: Building Fabricator",
+        "Salesforce: Highway Component Manufacturer",
     )
     ah_steel = rows[1]
     assert ah_steel.name == "A&H Steel, LLC"
@@ -231,17 +316,18 @@ def test_report_uses_only_active_nested_certifications_and_adds_salesforce_only_
     assert ah_steel.membership_type == PLACEHOLDER
     assert ah_steel.tonnage == PLACEHOLDER
     assert ah_steel.district == PLACEHOLDER
-    assert ah_steel.certification_categories == ("Erector",)
+    assert ah_steel.certification_categories == ("Salesforce: Erector",)
 
 
-def test_salesforce_only_rows_require_active_certification_and_illinois_billing_state():
+def test_salesforce_only_rows_include_all_illinois_accounts():
     accounts = [
         {"Name": "No Certification", "BillingState": "IL", "Certifications__r": {"records": []}},
         {"Name": "Inactive", "BillingState": "IL", "Certifications__r": {"records": [{"Name": "Inactive", "Status__c": "Inactive", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"}]}},
         {"Name": "Indiana Steel", "BillingState": "IN", "Certifications__r": {"records": [{"Name": "Erector", "Status__c": "Active", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"}]}},
     ]
 
-    assert build_report_companies([], accounts, as_of=date(2026, 6, 1)) == []
+    rows = build_report_companies([], accounts, as_of=date(2026, 6, 1))
+    assert [row.name for row in rows] == ["No Certification", "Inactive"]
 
 
 def test_ambiguous_normalized_salesforce_names_do_not_enrich_imis_company():
@@ -266,6 +352,8 @@ def test_rendered_pdf_contains_report_text_and_placeholders(tmp_path):
         [
             {
                 "Name": "Example Steel Company",
+                "IMISID__c": "IMIS-1",
+                "BillingState": "IL",
                 "Cert_Certification_Status__c": "Certified",
             }
         ],
@@ -279,8 +367,8 @@ def test_rendered_pdf_contains_report_text_and_placeholders(tmp_path):
     assert "Illinois Certification & Membership Report" in text
     assert "Illinois" in text
     assert "Example Steel Company" in text
-    assert "Membership type: Producer" in text
-    assert "Certification status: Certified" in text
+    assert "Membership type: iMIS: Producer" in text
+    assert "Certification status: Salesforce: Certified" in text
     assert CERTIFICATION_CATEGORY_PLACEHOLDER in text
     assert "[PLACEHOLDER: U.S. Senators needed]" in text
     assert "[PLACEHOLDER: U.S. Representatives needed]" in text

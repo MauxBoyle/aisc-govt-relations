@@ -73,7 +73,7 @@ class ChildCertificationStatus(StrEnum):
 REPORT_ACCOUNT_FIELDS = (
     *CertificationAccountField,
     "(SELECT "
-    f"{CertificationField.NAME}, {CertificationField.STATUS}, "
+    f"{CertificationField.NAME}, {CertificationField.TYPE}, {CertificationField.STATUS}, "
     f"{CertificationField.START_DATE}, {CertificationField.END_DATE} "
     f"FROM {CertificationRelationship.ACCOUNT_CHILD})",
 )

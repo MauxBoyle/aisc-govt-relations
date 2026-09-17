@@ -7,7 +7,16 @@ from pathlib import Path
 
 from loguru import logger
 
-from .report import build_report_companies, read_imis_companies, render_illinois_report
+from .report import (
+    build_report_companies,
+    candidate_matches,
+    combine_companies,
+    combined_conflicts,
+    read_imis_companies,
+    render_illinois_report,
+    write_candidate_matches_csv,
+    write_conflicts_csv,
+)
 from .salesforce import SalesforceError, create_client
 from .salesforce_fields import REPORT_ACCOUNT_FIELDS
 
@@ -30,6 +39,7 @@ def configure_logging():
 
 def main(argv=()):
     """Run the application with explicitly supplied command-line arguments."""
+    load_local_environment()
     configure_logging()
     parser = _build_parser()
     arguments = parser.parse_args(argv)
@@ -44,6 +54,41 @@ def cli():
     main(sys.argv[1:])
 
 
+def load_local_environment(path=Path(".env"), environment=None):
+    """Load simple ``KEY=value`` entries from a local .env file.
+
+    Existing environment variables win, which lets a shell or deployment
+    environment intentionally override local development settings.
+    """
+    environment = environment if environment is not None else os.environ
+    environment_path = Path(path)
+    if not environment_path.is_file():
+        return
+    for line_number, raw_line in enumerate(
+        environment_path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line.removeprefix("export ").lstrip()
+        if "=" not in line:
+            logger.warning("Ignoring invalid .env line {}.", line_number)
+            continue
+        name, value = line.split("=", maxsplit=1)
+        name = name.strip()
+        value = _unquote_environment_value(value.strip())
+        if name and name not in environment:
+            environment[name] = value
+
+
+def _unquote_environment_value(value):
+    """Remove one matching pair of quotes from a .env value."""
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        return value[1:-1]
+    return value
+
+
 def _build_parser():
     parser = argparse.ArgumentParser(prog="aisc_gr_statistics")
     subcommands = parser.add_subparsers(dest="command")
@@ -56,6 +101,14 @@ def _build_parser():
     report.add_argument(
         "--output", required=True, type=Path, help="Destination PDF path."
     )
+    report.add_argument(
+        "--conflicts-csv", required=True, type=Path,
+        help="Destination CSV for authoritative-ID value conflicts.",
+    )
+    report.add_argument(
+        "--candidate-matches-csv", required=True, type=Path,
+        help="Destination CSV for review-only name/location candidates.",
+    )
     return parser
 
 
@@ -63,8 +116,11 @@ def _run_report(arguments):
     """Prepare the report and enrich it only when both Salesforce secrets exist."""
     companies = read_imis_companies(arguments.imis_csv)
     accounts = _salesforce_accounts_if_configured()
-    report_companies = build_report_companies(companies, accounts)
+    combined = combine_companies(companies, accounts)
+    report_companies = build_report_companies(combined)
     render_illinois_report(report_companies, arguments.output)
+    write_conflicts_csv(combined_conflicts(combined), arguments.conflicts_csv)
+    write_candidate_matches_csv(candidate_matches(combined), arguments.candidate_matches_csv)
     logger.info("Created Illinois report: {}", arguments.output)
 
 

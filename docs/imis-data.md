@@ -15,7 +15,9 @@ The initial membership report needs these fields:
 
 | Field | Purpose |
 | --- | --- |
-| Company name | Match a membership record to a certification record. |
+| Shared iMIS ID | Authoritatively join a membership record to Salesforce `IMISID__c`. |
+| Company name | Display the membership company name. |
+| City | Compare location with Salesforce and identify review-only candidates. |
 | Company type | Group companies in the report. |
 | Annual structural steel tonnage | Calculate membership totals. |
 | State | Group totals by state. |
@@ -24,8 +26,11 @@ The initial membership report needs these fields:
 Export names can differ from these labels. The report recognizes common
 space-separated and underscore-separated variants, including the current iMIS
 labels `Full Name`, `State Province`, `Full Address`, `Member Type`, and `US
-Congress`. Company name and state are required; unavailable address,
-membership type, and district display as placeholders.
+Congress`. A recognizable shared iMIS-ID column and city column are also
+required. Individual ID or city cells may be blank. The report never joins by
+company name: blank IDs remain separate records and may only appear in the
+candidate-match review file. Unavailable address, membership type, and district
+display as placeholders.
 
 ## Membership Type codes
 

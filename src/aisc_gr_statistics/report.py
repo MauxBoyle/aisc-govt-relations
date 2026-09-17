@@ -325,9 +325,9 @@ def _aggregate_annual_imis_companies(
             continue
         selected.append((imis_id, submission_date, timestamp, tonnage, row, row_number))
 
-    grouped: dict[tuple[str, int, str], list[tuple[str, str, datetime, Decimal, Mapping[str | None, str | None], int]]] = {}
+    grouped: dict[tuple[str, int, datetime], list[tuple[str, str, datetime, Decimal, Mapping[str | None, str | None], int]]] = {}
     for item in selected:
-        grouped.setdefault((item[0], selected_year, item[1]), []).append(item)
+        grouped.setdefault((item[0], selected_year, item[2]), []).append(item)
 
     accepted = []
     for key, submissions in grouped.items():
@@ -374,7 +374,11 @@ def _parse_submission_date(value: str) -> datetime:
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
-        for format_string in ("%m/%d/%Y", "%m/%d/%Y %H:%M:%S"):
+        for format_string in (
+            "%m/%d/%Y",
+            "%m/%d/%Y %H:%M:%S",
+            "%m/%d/%Y %I:%M:%S %p",
+        ):
             try:
                 parsed = datetime.strptime(value, format_string)
                 break

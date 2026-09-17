@@ -87,12 +87,17 @@ year. For example, a report run in 2026 totals rows whose `Tonnage Year` is
 
 For that selected year, each unique `(iMIS ID, Tonnage Year, Submission Date)`
 entry contributes `Bridge Tonnage + Building Tonnage + S C Tonnage`; blank
-component values count as zero. Exact duplicate keys with the same tonnage are
+component values count as zero. Submission Date accepts ISO timestamps,
+`MM/DD/YYYY`, 24-hour `MM/DD/YYYY HH:MM:SS`, and iMIS 12-hour
+`MM/DD/YYYY HH:MM:SS AM/PM` timestamps. The report normalizes valid timestamps
+in memory before checking duplicate keys, so equivalent 24-hour and AM/PM
+representations count once. Exact duplicate keys with the same tonnage are
 counted once. Rows sharing a key but having different tonnage, rows without a
 Submission Date, and other invalid selected-year rows are excluded and written
-to the required `--tonnage-review-csv` file. When accepted submissions have
-different company details, the latest valid Submission Date supplies the
-display fields. Older and current-year rows are not included.
+to the required `--tonnage-review-csv` file; review rows retain the original
+exported timestamp. When accepted submissions have different company details,
+the latest valid Submission Date supplies the display fields. Older and
+current-year rows are not included.
 
 ## Workflow
 

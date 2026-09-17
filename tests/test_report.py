@@ -172,6 +172,62 @@ def test_aggregates_unique_completed_year_submissions_and_uses_latest_details(tm
     ]
 
 
+def test_aggregates_selected_year_am_pm_submissions(tmp_path):
+    path = write_csv(
+        tmp_path,
+        "iMIS ID,Full Name,State Province,City,Tonnage Year,Submission Date,Bridge Tonnage,Building Tonnage,S C Tonnage\n"
+        "AM-1,Morning Steel,IL,Chicago,2025,5/7/2025 9:30:00 AM,100,50,25\n"
+        "AM-2,Afternoon Steel,IL,Aurora,2025,6/15/2025 1:45:00 PM,200,75,50\n",
+    )
+
+    companies, findings, tonnage_year = read_imis_companies_with_tonnage_review(
+        path, report_date=date(2026, 9, 17)
+    )
+
+    assert tonnage_year == 2025
+    assert findings == []
+    assert sum(int(company.tonnage) for company in companies) == 500
+
+
+def test_treats_equivalent_24_hour_and_am_pm_timestamps_as_duplicates(tmp_path):
+    path = write_csv(
+        tmp_path,
+        "iMIS ID,Full Name,State Province,City,Tonnage Year,Submission Date,Bridge Tonnage,Building Tonnage,S C Tonnage\n"
+        "DUP-1,Duplicate Steel,IL,Chicago,2025,2025-01-15 13:30:00,1,2,3\n"
+        "DUP-1,Duplicate Steel,IL,Chicago,2025,01/15/2025 01:30:00 PM,1,2,3\n",
+    )
+
+    companies, findings, _ = read_imis_companies_with_tonnage_review(
+        path, report_date=date(2026, 1, 1)
+    )
+
+    assert companies == [
+        Company(
+            name="Duplicate Steel", state="IL", city="Chicago", imis_id="DUP-1", tonnage="6"
+        )
+    ]
+    assert [(finding.submission_date, finding.reason) for finding in findings] == [
+        ("01/15/2025 01:30:00 PM", "exact duplicate submission key")
+    ]
+
+
+def test_excludes_invalid_submission_timestamp_and_preserves_it_in_review(tmp_path):
+    path = write_csv(
+        tmp_path,
+        "iMIS ID,Full Name,State Province,City,Tonnage Year,Submission Date,Bridge Tonnage,Building Tonnage,S C Tonnage\n"
+        "BAD-1,Invalid Date Steel,IL,Chicago,2025,01/15/2025 13:30:00 PM,1,2,3\n",
+    )
+
+    companies, findings, _ = read_imis_companies_with_tonnage_review(
+        path, report_date=date(2026, 1, 1)
+    )
+
+    assert companies == []
+    assert [(finding.submission_date, finding.reason) for finding in findings] == [
+        ("01/15/2025 13:30:00 PM", "invalid submission date: '01/15/2025 13:30:00 PM'")
+    ]
+
+
 def test_excludes_duplicate_and_conflicting_annual_submission_keys_for_review(tmp_path):
     path = write_csv(
         tmp_path,

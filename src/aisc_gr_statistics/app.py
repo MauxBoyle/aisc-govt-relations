@@ -3,6 +3,7 @@
 import argparse
 import os
 import sys
+from datetime import date
 from pathlib import Path
 
 from loguru import logger
@@ -14,12 +15,13 @@ from .report import (
     combine_companies,
     combined_conflicts,
     find_undefined_imis_codes,
-    read_imis_companies,
+    read_imis_companies_with_tonnage_review,
     render_illinois_report,
     write_candidate_matches_csv,
     write_conflicts_csv,
     write_reconciliation_csv,
     write_reconciliation_log,
+    write_tonnage_review_csv,
     write_undefined_imis_codes_csv,
 )
 from .salesforce import SalesforceError, create_client
@@ -126,17 +128,23 @@ def _build_parser():
         "--unknown-imis-codes-csv", required=True, type=Path,
         help="Destination CSV for blank and unconfirmed iMIS Type/Category codes.",
     )
+    report.add_argument(
+        "--tonnage-review-csv", required=True, type=Path,
+        help="Destination CSV for selected-year tonnage rows excluded from totals.",
+    )
     return parser
 
 
 def _run_report(arguments):
     """Prepare the report and enrich it only when both Salesforce secrets exist."""
     unknown_imis_codes = find_undefined_imis_codes(arguments.imis_csv)
-    companies = read_imis_companies(arguments.imis_csv)
+    companies, tonnage_findings, tonnage_year = read_imis_companies_with_tonnage_review(
+        arguments.imis_csv, report_date=date.today()
+    )
     accounts = _salesforce_accounts_if_configured()
     combined = combine_companies(companies, accounts)
     report_companies = build_report_companies(combined)
-    render_illinois_report(report_companies, arguments.output)
+    render_illinois_report(report_companies, arguments.output, tonnage_year)
     write_conflicts_csv(combined_conflicts(combined), arguments.conflicts_csv)
     write_candidate_matches_csv(candidate_matches(combined), arguments.candidate_matches_csv)
     reconciliation_rows = build_reconciliation_rows(combined)
@@ -145,6 +153,7 @@ def _run_report(arguments):
     write_undefined_imis_codes_csv(
         unknown_imis_codes, arguments.unknown_imis_codes_csv
     )
+    write_tonnage_review_csv(tonnage_findings, arguments.tonnage_review_csv)
     logger.info("Created Illinois report: {}", arguments.output)
 
 

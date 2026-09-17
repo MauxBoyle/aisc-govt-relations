@@ -19,7 +19,8 @@ The initial membership report needs these fields:
 | Company name | Display the membership company name. |
 | City | Compare location with Salesforce and identify review-only candidates. |
 | Company type | Group companies in the report. |
-| Annual structural steel tonnage | Calculate membership totals. |
+| Tonnage Year and Submission Date | Select annual submissions and identify each unique entry. |
+| Bridge Tonnage, Building Tonnage, and S C Tonnage | Calculate the annual structural-steel total. |
 | State | Group totals by state. |
 | Congressional district | Group totals by congressional district. |
 
@@ -77,10 +78,21 @@ should no longer appear as unknown and should receive its approved PDF label.
 Blank values remain separate findings. Review each unknown code with the data
 owner, then add confirmed mappings to `src/aisc_gr_statistics/imis_fields.py`.
 
-For the current iMIS export, **Structural Steel Tonnage** is calculated as:
-`Bridge Tonnage + Building Tonnage + S C Tonnage`. Blank values are treated as
-zero. A non-numeric tonnage value stops the report and identifies its row and
-column so the source export can be corrected.
+## Annual tonnage submissions
+
+Tonnage submissions can be monthly or irregular; the report does not expect a
+fixed number of entries. Each run selects the most recently completed calendar
+year. For example, a report run in 2026 totals rows whose `Tonnage Year` is
+`2025` and labels the PDF value `Structural steel tonnage (2025)`.
+
+For that selected year, each unique `(iMIS ID, Tonnage Year, Submission Date)`
+entry contributes `Bridge Tonnage + Building Tonnage + S C Tonnage`; blank
+component values count as zero. Exact duplicate keys with the same tonnage are
+counted once. Rows sharing a key but having different tonnage, rows without a
+Submission Date, and other invalid selected-year rows are excluded and written
+to the required `--tonnage-review-csv` file. When accepted submissions have
+different company details, the latest valid Submission Date supplies the
+display fields. Older and current-year rows are not included.
 
 ## Workflow
 
@@ -92,7 +104,8 @@ column so the source export can be corrected.
    data/processed/candidate-matches.csv --reconciliation-csv
    data/processed/reconciliation.csv --reconciliation-log
    data/processed/reconciliation.log --unknown-imis-codes-csv
-   data/processed/unknown-imis-codes.csv`.
+   data/processed/unknown-imis-codes.csv --tonnage-review-csv
+   data/processed/tonnage-review.csv`.
 3. Put generated results in `data/processed/`; this folder is also ignored by
    Git because it may contain sensitive data.
 4. Review `unknown-imis-codes.csv`, confirm any code meanings, and update the

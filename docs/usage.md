@@ -42,11 +42,18 @@ For the current iMIS export, the report totals `Bridge Tonnage`, `Building
 Tonnage`, and `S C Tonnage` into Structural Steel Tonnage.
 
 When both `SF_CLIENT_ID` and `SF_CLIENT_SECRET` are configured, the command
-reads Salesforce Account records and displays a certification status only for
-an exact normalized company-name match. Missing credentials, no match, or more
-than one match leave the status as a placeholder. The report also intentionally
-uses placeholders for the certification category and U.S. Senators and
-Representatives because those data sources are not yet available.
+reads Salesforce Account records with their child certifications. It displays
+the Account certification status and each active child certification for an
+exact normalized company-name match. A child certification is active only when
+its status is `Active` and today's date is inclusively between its start and end
+dates. If more than one Salesforce Account shares a normalized name, the iMIS
+company is not enriched.
+
+The report also adds Salesforce-only Accounts when their `BillingState` is
+`IL` or `Illinois` and they have at least one active child certification. These
+rows use Salesforce billing-address data when available and placeholders for
+iMIS-only membership type, tonnage, and congressional district. The report
+continues to use placeholders for U.S. Senators and Representatives.
 
 ## Environment Variables
 

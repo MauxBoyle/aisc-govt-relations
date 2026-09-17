@@ -38,9 +38,6 @@ class CertificationStatus(StrEnum):
     SUSPENDED = "Suspended"
 
 
-REPORT_ACCOUNT_FIELDS = tuple(CertificationAccountField)
-"""The Account fields selected by the first Certification data query."""
-
 ACTIVE_CERTIFICATION_STATUSES = frozenset(
     {CertificationStatus.CERTIFIED, CertificationStatus.INITIALS}
 )
@@ -71,6 +68,16 @@ class ChildCertificationStatus(StrEnum):
 
     ACTIVE = "Active"
     INACTIVE = "Inactive"
+
+
+REPORT_ACCOUNT_FIELDS = (
+    *CertificationAccountField,
+    "(SELECT "
+    f"{CertificationField.NAME}, {CertificationField.STATUS}, "
+    f"{CertificationField.START_DATE}, {CertificationField.END_DATE} "
+    f"FROM {CertificationRelationship.ACCOUNT_CHILD})",
+)
+"""Account fields and read-only child query used by the Illinois report."""
 
 
 def is_active_certification(status, start_date, end_date, as_of=None):

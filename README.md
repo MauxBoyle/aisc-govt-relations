@@ -27,8 +27,10 @@ uv run aisc_gr_statistics report \
 
 The source export and generated PDF should stay in the ignored `data/raw/` and
 `data/processed/` folders. The report reads Salesforce only when both
-`SF_CLIENT_ID` and `SF_CLIENT_SECRET` are set; otherwise, certification status
-is shown as a placeholder.
+`SF_CLIENT_ID` and `SF_CLIENT_SECRET` are set. It then lists each active child
+certification and includes Illinois Salesforce-only Accounts that have at least
+one active certification. Without Salesforce access, certification values are
+shown as placeholders.
 
 Run with development environment settings:
 

@@ -12,6 +12,7 @@ from aisc_gr_statistics.salesforce import (
     get_oauth_url,
 )
 from aisc_gr_statistics.salesforce_fields import (
+    REPORT_ACCOUNT_FIELDS,
     CertificationAccountField,
     CertificationField,
     CertificationRelationship,
@@ -74,6 +75,14 @@ def test_verified_salesforce_mapping_constants_use_api_names():
     assert CertificationField.END_DATE == "End_Date__c"
     assert ChildCertificationStatus.ACTIVE == "Active"
     assert ChildCertificationStatus.INACTIVE == "Inactive"
+
+
+def test_report_query_includes_the_nested_certification_fields():
+    """Fetch child fields needed to apply the active-certification rule locally."""
+    assert REPORT_ACCOUNT_FIELDS[-1] == (
+        "(SELECT Name, Status__c, Start_Date__c, End_Date__c "
+        "FROM Certifications__r)"
+    )
 
 
 @pytest.mark.parametrize(

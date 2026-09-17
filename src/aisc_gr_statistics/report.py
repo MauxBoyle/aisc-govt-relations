@@ -645,7 +645,11 @@ def build_report_companies(
                 name,
                 address,
                 _account_value(account, CertificationAccountField.CLIENT_TYPE) or PLACEHOLDER,
-                _format_employee_count(_account_value(account, CertificationAccountField.EMPLOYEE_COUNT)),
+                _format_employee_count(
+                    account.get(CertificationAccountField.EMPLOYEE_COUNT)
+                    if account
+                    else None
+                ),
                 _label_source("iMIS", imis.membership_type) if imis and imis.membership_type else PLACEHOLDER,
                 _label_source("iMIS", imis.tonnage) if imis and imis.tonnage else PLACEHOLDER,
                 _label_source("iMIS", imis.district) if imis and imis.district else PLACEHOLDER,
@@ -872,11 +876,20 @@ def _is_certified_account(account: Mapping[str, object] | None) -> bool:
     ) == CertificationStatus.CERTIFIED
 
 
-def _format_employee_count(value: str) -> str:
+def _format_employee_count(value: object) -> str:
     """Format Salesforce's whole-person employee count, or show unavailable."""
+    if isinstance(value, bool):
+        return PLACEHOLDER
     try:
-        count = Decimal(value.replace(",", ""))
-    except (AttributeError, InvalidOperation):
+        if isinstance(value, str):
+            count = Decimal(value.replace(",", ""))
+        elif isinstance(value, int):
+            count = Decimal(value)
+        elif isinstance(value, float):
+            count = Decimal(str(value))
+        else:
+            return PLACEHOLDER
+    except (InvalidOperation, ValueError):
         return PLACEHOLDER
     if not count.is_finite() or count != count.to_integral_value() or count < 0:
         return PLACEHOLDER

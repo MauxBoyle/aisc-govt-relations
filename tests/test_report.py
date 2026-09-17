@@ -755,7 +755,19 @@ def test_pdf_uses_salesforce_owned_client_type_employee_count_and_name(tmp_path)
     assert "Employee count: 12,500" in text
 
 
-@pytest.mark.parametrize("employee_count", (None, "not a number", "3.5"))
+@pytest.mark.parametrize("employee_count", (12500, 12500.0))
+def test_numeric_whole_salesforce_employee_counts_are_formatted(employee_count):
+    row = build_report_companies(
+        [Company(name="Example", state="IL", imis_id="1")],
+        [{"IMISID__c": "1", "Name": "Example", "BillingState": "IL", "NumberOfEmployees": employee_count}],
+    )[0]
+
+    assert row.employee_count == "12,500"
+
+
+@pytest.mark.parametrize(
+    "employee_count", (None, "not a number", "3.5", 3.5, -1, True, float("inf"))
+)
 def test_invalid_salesforce_employee_counts_use_unavailable_placeholder(employee_count):
     row = build_report_companies(
         [Company(name="Example", state="IL", imis_id="1")],

@@ -27,6 +27,42 @@ labels `Full Name`, `State Province`, `Full Address`, `Member Type`, and `US
 Congress`. Company name and state are required; unavailable address,
 membership type, and district display as placeholders.
 
+## Membership Type codes
+
+The report translates these confirmed iMIS codes into readable labels:
+
+| iMIS code | Report label |
+| --- | --- |
+| `ACT` | Full Member |
+| `ACTB` | Full Member Branch |
+| `ASSOC` | Associate Member |
+| `ASSCB` | Associate Member Branch |
+
+The report combines the Membership Type label with the Category label, such as
+`Full Member Fabricator`.
+
+## Category codes
+
+The currently confirmed Category codes are:
+
+| iMIS code | Report label |
+| --- | --- |
+| `BEND` | Bender |
+| `DERC` | Erector |
+| `DET1` | Detailer |
+| `DET10` | Detailer |
+| `EQPM` | Equipment Manufacturer |
+| `EREC` | Erector |
+| `FAB` | Fabricator |
+| `SUPP` | Supplier |
+| `COTM` | Supplier |
+| `WELD` | Detailer |
+| `SOFT` | Software |
+| `BOLT` | Bolt Manufacturer |
+
+This list may not yet include every Category. An unknown code is retained in
+the report so it can be reviewed and added to the dictionary later.
+
 For the current iMIS export, **Structural Steel Tonnage** is calculated as:
 `Bridge Tonnage + Building Tonnage + S C Tonnage`. Blank values are treated as
 zero. A non-numeric tonnage value stops the report and identifies its row and

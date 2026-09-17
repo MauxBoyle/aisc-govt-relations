@@ -14,6 +14,7 @@ from aisc_gr_statistics.imis_fields import (
     category_label,
     membership_label,
     membership_type_label,
+    scan_undefined_imis_codes,
 )
 from aisc_gr_statistics.report import (
     CERTIFICATION_CATEGORY_PLACEHOLDER,
@@ -21,11 +22,12 @@ from aisc_gr_statistics.report import (
     Company,
     CompanyClassification,
     ReportDataError,
-    build_report_companies,
     build_reconciliation_rows,
+    build_report_companies,
     candidate_matches,
     combine_companies,
     combined_conflicts,
+    find_undefined_imis_codes,
     normalize_company_name,
     read_imis_companies,
     render_illinois_report,
@@ -33,6 +35,7 @@ from aisc_gr_statistics.report import (
     write_conflicts_csv,
     write_reconciliation_csv,
     write_reconciliation_log,
+    write_undefined_imis_codes_csv,
 )
 
 
@@ -61,7 +64,7 @@ def test_translates_confirmed_imis_membership_type_codes():
         "ASSCB": "Associate Member Branch",
     }
     assert membership_type_label("act") == "Full Member"
-    assert membership_type_label("Unrecognized") == "Unrecognized"
+    assert membership_type_label("Unrecognized") == ""
 
 
 def test_translates_confirmed_imis_category_codes():
@@ -80,13 +83,16 @@ def test_translates_confirmed_imis_category_codes():
         "BOLT": "Bolt Manufacturer",
     }
     assert category_label("erec") == "Erector"
-    assert category_label("Unknown") == "Unknown"
+    assert category_label("Unknown") == ""
 
 
 def test_combines_membership_type_and_category_labels():
     assert membership_label("ACT", "FAB") == "Full Member Fabricator"
     assert membership_label("ACTB", "") == "Full Member Branch"
     assert membership_label("", "SOFT") == "Software"
+    assert membership_label("unknown", "FAB") == "Fabricator"
+    assert membership_label("ACT", "unknown") == "Full Member"
+    assert membership_label("unknown", "also unknown") == ""
 
 
 def test_reads_and_combines_membership_type_and_category(tmp_path):
@@ -113,7 +119,7 @@ def test_reads_common_headers_filters_illinois_and_sorts(tmp_path):
     companies = read_imis_companies(path)
 
     assert [company.name for company in companies] == ["Alpha Steel", "Zulu Steel"]
-    assert companies[0].membership_type == "Fabricator"
+    assert companies[0].membership_type == ""
     assert companies[0].district == "7"
 
 
@@ -131,7 +137,7 @@ def test_reads_actual_imis_headers_and_totals_three_tonnage_columns(tmp_path):
             name="Example Steel",
             state="IL",
             address="1 Main St",
-            membership_type="Producer",
+            membership_type="",
             district="7",
             tonnage="1,525.5",
         )
@@ -332,14 +338,65 @@ def test_duplicate_conflicts_are_written_to_the_existing_conflicts_csv(tmp_path)
 def test_review_csvs_write_required_headers_even_when_empty(tmp_path):
     conflicts = tmp_path / "conflicts.csv"
     candidates = tmp_path / "candidates.csv"
+    unknown_codes = tmp_path / "unknown-imis-codes.csv"
     write_conflicts_csv([], conflicts)
     write_candidate_matches_csv([], candidates)
+    write_undefined_imis_codes_csv([], unknown_codes)
     assert conflicts.read_text(encoding="utf-8") == (
         "shared iMIS ID,company classification,field,iMIS value,Salesforce value\n"
     )
     assert candidates.read_text(encoding="utf-8").startswith(
         "iMIS ID,Salesforce Account ID,iMIS name,Salesforce name,"
     )
+    assert unknown_codes.read_text(encoding="utf-8") == (
+        "iMIS field,iMIS code,status,occurrences\n"
+    )
+
+
+def test_scans_undefined_imis_codes_case_insensitively_and_aggregates():
+    findings = scan_undefined_imis_codes(
+        [
+            ("Type", " act "),
+            ("Type", "Other"),
+            ("Type", "other"),
+            ("Type", ""),
+            ("Category", "fab"),
+            ("Category", "MILL"),
+            ("Category", " "),
+        ]
+    )
+
+    assert [
+        (finding.field, finding.code, finding.status, finding.occurrences)
+        for finding in findings
+    ] == [
+        ("Category", "", "blank", 1),
+        ("Category", "MILL", "unknown", 1),
+        ("Type", "", "blank", 1),
+        ("Type", "OTHER", "unknown", 2),
+    ]
+
+
+def test_scans_every_export_row_for_undefined_imis_codes(tmp_path):
+    path = write_csv(
+        tmp_path,
+        "Company Name,State,Member Type,Category\n"
+        "Illinois Known,IL,ACT,FAB\n"
+        "Indiana Unknown,IN, other ,MILL\n"
+        "Ohio Blank,OH,,\n",
+    )
+
+    findings = find_undefined_imis_codes(path)
+
+    assert [
+        (finding.field, finding.code, finding.status, finding.occurrences)
+        for finding in findings
+    ] == [
+        ("Category", "", "blank", 1),
+        ("Category", "MILL", "unknown", 1),
+        ("Type", "", "blank", 1),
+        ("Type", "OTHER", "unknown", 1),
+    ]
 
 
 def test_reconciliation_rows_include_every_company_and_report_review_issues(tmp_path):
@@ -538,7 +595,7 @@ def test_rendered_pdf_contains_report_text_and_placeholders(tmp_path):
     assert "Illinois Certification & Membership Report" in text
     assert "Illinois" in text
     assert "Example Steel Company" in text
-    assert "Membership type: iMIS: Producer" in text
+    assert "Membership type: [PLACEHOLDER: unavailable]" in text
     assert "Certification status: Salesforce: Certified" in text
     assert CERTIFICATION_CATEGORY_PLACEHOLDER in text
     assert "[PLACEHOLDER: U.S. Senators needed]" in text

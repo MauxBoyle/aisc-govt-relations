@@ -22,7 +22,11 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from .imis_fields import membership_label
+from .imis_fields import (
+    UndefinedImisCodeFinding,
+    membership_label,
+    scan_undefined_imis_codes,
+)
 from .salesforce_fields import (
     CertificationAccountField,
     CertificationField,
@@ -244,6 +248,33 @@ def read_imis_companies(path: Path | str) -> list[Company]:
     return sorted(
         companies, key=lambda company: (company.name.casefold(), company.name)
     )
+
+
+def find_undefined_imis_codes(path: Path | str) -> list[UndefinedImisCodeFinding]:
+    """Scan every iMIS export row for blank or unconfirmed Type/Category codes.
+
+    This deliberately does not use ``read_imis_companies``: the review artifact
+    must include every source row, including non-Illinois rows.
+    """
+    source_path = Path(path)
+    try:
+        file_handle = source_path.open(newline="", encoding="utf-8-sig")
+    except OSError as error:
+        raise ReportDataError(f"Could not read iMIS CSV: {source_path}") from error
+
+    with file_handle:
+        reader = csv.DictReader(file_handle)
+        fields = _recognized_fields(reader.fieldnames)
+        source_fields = {
+            "Type": fields.get("membership_type"),
+            "Category": fields.get("category"),
+        }
+        return scan_undefined_imis_codes(
+            (label, _cell(row, field))
+            for row in reader
+            for label, field in source_fields.items()
+            if field is not None
+        )
 
 
 def combine_companies(
@@ -708,6 +739,20 @@ def write_conflicts_csv(conflicts: Iterable[Conflict], output: Path | str) -> No
         (
             (item.shared_imis_id, item.company_classification, item.field, item.imis_value, item.salesforce_value)
             for item in conflicts
+        ),
+    )
+
+
+def write_undefined_imis_codes_csv(
+    findings: Iterable[UndefinedImisCodeFinding], output: Path | str
+) -> None:
+    """Write the required undefined-iMIS-code review CSV, including its header."""
+    _write_csv(
+        output,
+        ("iMIS field", "iMIS code", "status", "occurrences"),
+        (
+            (finding.field, finding.code, finding.status, finding.occurrences)
+            for finding in findings
         ),
     )
 

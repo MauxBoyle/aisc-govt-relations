@@ -81,6 +81,9 @@ def test_translates_confirmed_imis_category_codes():
         "WELD": "Detailer",
         "SOFT": "Software",
         "BOLT": "Bolt Manufacturer",
+        "MILL": "Steel Mill",
+        "SVC": "Service Center",
+        "JOIS": "Joist Manufacturer",
     }
     assert category_label("erec") == "Erector"
     assert category_label("Unknown") == ""
@@ -361,7 +364,7 @@ def test_scans_undefined_imis_codes_case_insensitively_and_aggregates():
             ("Type", "other"),
             ("Type", ""),
             ("Category", "fab"),
-            ("Category", "MILL"),
+            ("Category", "UNCONFIRMED"),
             ("Category", " "),
         ]
     )
@@ -371,7 +374,7 @@ def test_scans_undefined_imis_codes_case_insensitively_and_aggregates():
         for finding in findings
     ] == [
         ("Category", "", "blank", 1),
-        ("Category", "MILL", "unknown", 1),
+        ("Category", "UNCONFIRMED", "unknown", 1),
         ("Type", "", "blank", 1),
         ("Type", "OTHER", "unknown", 2),
     ]
@@ -382,7 +385,7 @@ def test_scans_every_export_row_for_undefined_imis_codes(tmp_path):
         tmp_path,
         "Company Name,State,Member Type,Category\n"
         "Illinois Known,IL,ACT,FAB\n"
-        "Indiana Unknown,IN, other ,MILL\n"
+        "Indiana Unknown,IN, other ,UNCONFIRMED\n"
         "Ohio Blank,OH,,\n",
     )
 
@@ -393,7 +396,7 @@ def test_scans_every_export_row_for_undefined_imis_codes(tmp_path):
         for finding in findings
     ] == [
         ("Category", "", "blank", 1),
-        ("Category", "MILL", "unknown", 1),
+        ("Category", "UNCONFIRMED", "unknown", 1),
         ("Type", "", "blank", 1),
         ("Type", "OTHER", "unknown", 1),
     ]

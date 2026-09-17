@@ -70,11 +70,12 @@ Category codes have no PDF label. The required `--unknown-imis-codes-csv`
 output records them separately, including rows outside Illinois, so they can be
 reviewed without showing an unconfirmed raw code in the report.
 
-For the current raw export, `MILL` is an unconfirmed Category (47 occurrences)
-and blank Categories are separately reported (12 occurrences). Do not invent a
-label for either finding. Review `unknown-imis-codes.csv`, confirm the code’s
-meaning with the data owner, and then add the confirmed mapping to
-`src/aisc_gr_statistics/imis_fields.py`.
+The review CSV is intentionally data-driven: its unknown-code rows change as
+confirmed mappings are added to the central dictionary. For example, a code
+such as `MILL` may be confirmed and added by the data owner; once mapped, it
+should no longer appear as unknown and should receive its approved PDF label.
+Blank values remain separate findings. Review each unknown code with the data
+owner, then add confirmed mappings to `src/aisc_gr_statistics/imis_fields.py`.
 
 For the current iMIS export, **Structural Steel Tonnage** is calculated as:
 `Bridge Tonnage + Building Tonnage + S C Tonnage`. Blank values are treated as

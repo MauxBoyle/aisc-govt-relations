@@ -1,5 +1,7 @@
 """Tests for read-only Salesforce helpers."""
 
+from datetime import date
+
 import pytest
 
 from aisc_gr_statistics.salesforce import (
@@ -11,7 +13,11 @@ from aisc_gr_statistics.salesforce import (
 )
 from aisc_gr_statistics.salesforce_fields import (
     CertificationAccountField,
+    CertificationField,
+    CertificationRelationship,
     CertificationStatus,
+    ChildCertificationStatus,
+    is_active_certification,
 )
 
 
@@ -51,6 +57,55 @@ def test_report_field_catalog_uses_salesforce_api_names():
     assert CertificationAccountField.EMPLOYEE_COUNT == "NumberOfEmployees"
     assert CertificationAccountField.BILLING_STATE == "BillingState"
     assert CertificationStatus.CERTIFIED == "Certified"
+
+
+def test_verified_salesforce_mapping_constants_use_api_names():
+    """Keep the iMIS, Client Type, and child-certification mapping explicit."""
+    assert CertificationAccountField.IMIS_ID == "IMISID__c"
+    assert CertificationAccountField.CLIENT_TYPE == "Industry"
+    assert CertificationRelationship.OBJECT == "Cert_Certification__c"
+    assert CertificationRelationship.ACCOUNT_FIELD == "Cert_Account__c"
+    assert CertificationRelationship.ACCOUNT_PARENT == "Cert_Account__r"
+    assert CertificationRelationship.ACCOUNT_CHILD == "Certifications__r"
+    assert CertificationField.NAME == "Name"
+    assert CertificationField.TYPE == "Cert_Certification_Type_Skill__c"
+    assert CertificationField.STATUS == "Status__c"
+    assert CertificationField.START_DATE == "Start_Date__c"
+    assert CertificationField.END_DATE == "End_Date__c"
+    assert ChildCertificationStatus.ACTIVE == "Active"
+    assert ChildCertificationStatus.INACTIVE == "Inactive"
+
+
+@pytest.mark.parametrize(
+    ("status", "start_date", "end_date", "as_of", "expected"),
+    [
+        ("Active", "2026-01-01", "2026-12-31", "2026-06-01", True),
+        ("Active", "2026-06-01", "2026-06-01", "2026-06-01", True),
+        ("Inactive", "2026-01-01", "2026-12-31", "2026-06-01", False),
+        ("Active", "2026-07-01", "2026-12-31", "2026-06-01", False),
+        ("Active", "2026-01-01", "2026-05-31", "2026-06-01", False),
+        ("", "2026-01-01", "2026-12-31", "2026-06-01", False),
+        ("Unknown", "2026-01-01", "2026-12-31", "2026-06-01", False),
+        ("Active", "", "2026-12-31", "2026-06-01", False),
+        ("Active", "2026-01-01", None, "2026-06-01", False),
+        ("Active", "not-a-date", "2026-12-31", "2026-06-01", False),
+    ],
+)
+def test_active_child_certification_rule(
+    status, start_date, end_date, as_of, expected
+):
+    """Require active status and an inclusive, complete effective date range."""
+    assert is_active_certification(status, start_date, end_date, as_of) is expected
+
+
+def test_active_child_certification_accepts_date_objects():
+    """The helper also supports date values after Salesforce data is parsed."""
+    assert is_active_certification(
+        ChildCertificationStatus.ACTIVE,
+        date(2026, 1, 1),
+        date(2026, 12, 31),
+        date(2026, 6, 1),
+    )
 
 
 def test_credentials_require_client_id_and_secret():
@@ -143,3 +198,39 @@ def test_query_records_rejects_an_incomplete_page_sequence():
 
     with pytest.raises(SalesforceError, match="ended without a next page"):
         client.query_records("Account", ["Name"])
+
+
+def test_describe_object_requests_salesforce_metadata():
+    """Retrieve metadata through the documented describe endpoint."""
+    payload = {"name": "Account", "fields": [], "childRelationships": []}
+    session = Session([Response(payload)])
+    client = SalesforceClient("https://example", "token", session)
+
+    assert client.describe_object("Account") == payload
+    method, args, kwargs = session.calls[0]
+    assert method == "get"
+    assert args[0] == "https://example/services/data/v60.0/sobjects/Account/describe"
+    assert kwargs["headers"] == {"Authorization": "Bearer token"}
+    assert kwargs["params"] is None
+
+
+def test_describe_object_reports_a_salesforce_error():
+    """Make describe failures as clear as query failures."""
+    client = SalesforceClient(
+        "https://example",
+        "token",
+        Session([Response({"message": "Unknown object"}, ok=False)]),
+    )
+
+    with pytest.raises(
+        SalesforceError, match="failed to describe Account: Unknown object"
+    ):
+        client.describe_object("Account")
+
+
+def test_describe_object_rejects_invalid_metadata():
+    """Avoid treating an unexpected JSON response as object metadata."""
+    client = SalesforceClient("https://example", "token", Session([Response([])]))
+
+    with pytest.raises(SalesforceError, match="Invalid Salesforce describe response"):
+        client.describe_object("Account")

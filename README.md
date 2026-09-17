@@ -71,6 +71,10 @@ uv run pytest --cov
 
 ## Documentation
 
+The [verified Salesforce mapping](docs/salesforce.md) documents the Account,
+iMIS ID, Client Type, and child-certification relationships. Its live
+validation uses read-only Salesforce metadata and SOQL requests only.
+
 Preview documentation locally:
 
 ```bash

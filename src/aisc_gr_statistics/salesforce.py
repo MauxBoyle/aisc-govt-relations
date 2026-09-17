@@ -108,6 +108,25 @@ class SalesforceClient:
             params = None
         return records
 
+    def describe_object(self, object_name):
+        """Return Salesforce metadata for one object without changing data."""
+        url = (
+            f"{self.instance_url}/services/data/{API_VERSION}/sobjects/"
+            f"{object_name}/describe"
+        )
+        response = self._get(url, None, f"describe {object_name}")
+        try:
+            payload = response.json()
+        except ValueError as error:
+            raise SalesforceError(
+                f"Invalid Salesforce describe response for {object_name}."
+            ) from error
+        if not isinstance(payload, dict):
+            raise SalesforceError(
+                f"Invalid Salesforce describe response for {object_name}."
+            )
+        return payload
+
     def _get(self, url, params, action):
         try:
             response = self.session.get(

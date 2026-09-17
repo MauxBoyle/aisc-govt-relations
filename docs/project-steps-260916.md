@@ -2,7 +2,7 @@
 
   ### P0 — Reliable statewide company data
 
-  3. Identify and document the required Salesforce fields and relationships
+  A. Identify and document the required Salesforce fields and relationships - Done
 
      Determine the exact Salesforce API fields for:
       - Imis_Id
@@ -17,7 +17,7 @@
 
      Done when Salesforce returns enough information to explain every Salesforce-derived value shown for those two examples.
 
-  5. Pull Salesforce Accounts and Active Certifications into the report
+  B. Pull Salesforce Accounts and Active Certifications into the report - Done
 
      Extend the existing read-only Salesforce connection to retrieve Accounts plus their attached Active Certifications.
 
@@ -31,7 +31,7 @@
       - A. Lucas shows Building Fabricator and Highway Component Manufacturer.
       - A&H Steel appears even though it has no iMIS record.
 
-  7. Create one combined company data model
+  C. Create one combined company data model - Done
 
      The current report starts with iMIS companies and merely enriches them from Salesforce. That means Salesforce-only companies cannot appear.
 
@@ -43,7 +43,7 @@
 
      This becomes the dependable input for PDF generation.
 
-  9. Match Salesforce and iMIS companies by their shared iMIS identifier
+  D. Match Salesforce and iMIS companies by their shared iMIS identifier - Done
 
      Replace normalized company-name matching as the primary rule with:
 
@@ -58,7 +58,7 @@
 
      Name matching should only produce a review suggestion—not silently combine records.
 
-  11. Create a reconciliation report for unmatched and questionable companies
+  E. Create a reconciliation report for unmatched and questionable companies - Done
 
      Generate a CSV or log summary showing:
       - matched companies;
@@ -70,7 +70,7 @@
 
      This will make data problems visible before they become incorrect PDF content.
 
-  13. Define Membership Type and Category lookup dictionaries
+  F. Define Membership Type and Category lookup dictionaries - Done
 
      Store the meanings of the iMIS codes in a central Python dictionary rather than scattering labels through the report code.
 
@@ -86,7 +86,7 @@
 
      The report can then combine them into “Full Member Fabricator.” Tests should cover known codes and clearly flag unknown ones.
 
-  15. Aggregate tonnage for the most recent completed calendar year
+  G. Aggregate tonnage for the most recent completed calendar year - Done
 
      The current code adds Bridge, Building, and S C Tonnage within each input row, but it does not group historical records by company and year.
 
@@ -101,7 +101,7 @@
 
      Before implementation, verify whether there are always four quarterly entries and what field distinguishes the reporting year and period.
 
-  17. Apply confirmed business rules to report labels
+  H. Apply confirmed business rules to report labels
 
      Establish which system controls each field. My suggested initial rules are:
 
@@ -126,7 +126,7 @@
 
   ### P1 — Finish and validate the statewide report
 
-  19. Update the PDF to match the approved sample layout and terminology
+  I. Update the PDF to match the approved sample layout and terminology
 
      Render the combined data with:
       - company name and address;
@@ -138,14 +138,14 @@
 
      Long company names, addresses, and multiple certifications should wrap without overlapping other content.
 
-  21. Add current U.S. senators and contact information
+  J. Add current U.S. senators and contact information
 
   For a statewide report, retrieve the two current senators by state. Senate.gov provides state pages, contact information, and an XML option, which
   is preferable to scraping visual HTML. Senate contact information
 
   Store the retrieval date and cache a snapshot so report generation remains reproducible if the site is temporarily unavailable.
 
-  23. Add automated data-quality and PDF regression tests
+  K. Add automated data-quality and PDF regression tests
 
   Test the important examples directly:
 
@@ -158,7 +158,7 @@
   - unknown membership/category codes are flagged.
   - PDF text and page layout remain usable.
 
-  25. Show report provenance and “as of” dates
+  L. Show report provenance and “as of” dates
 
   Add a small footer or metadata section stating:
 
@@ -171,7 +171,7 @@
 
   ### P2 — Congressional-district reports
 
-  27. Convert company addresses to congressional districts
+  M. Convert company addresses to congressional districts
 
   Use the Census Geocoder’s geography response to map a complete address to the current congressional district. It supports both individual and
   batch address processing. Census Geocoding Services API
@@ -186,14 +186,14 @@
 
   Unmatched or ambiguous addresses should go into a review file rather than being guessed.
 
-  29. Retrieve the current House member for each district
+  N. Retrieve the current House member for each district
 
   After obtaining state and district, look up the current representative and contact details. The Congress.gov API offers machine-readable member
   data and requires an API key. Official Congress.gov API repository
 
   Be careful to select the member’s current term, because historical member records can contain earlier districts.
 
-  31. Generate one congressional-district report at a time
+  O. Generate one congressional-district report at a time
 
   Reuse the cleaned company model and PDF components from the statewide report. Each district report should show:
 
@@ -207,7 +207,7 @@
 
   ### P3 — User-facing workflow and enhancements
 
-  33. Add a report-selection interface
+  P. Add a report-selection interface
 
   Let the user choose:
 
@@ -219,7 +219,7 @@
 
   Start with an improved command-line interface. A small web interface can follow after the underlying data is reliable.
 
-  35. Add preview and validation before PDF creation
+  Q. Add preview and validation before PDF creation
 
   Show the number of:
 
@@ -232,12 +232,12 @@
 
   Let the user correct the source data before producing the final PDF.
 
-  37. Add reproducible data snapshots and caching
+  R. Add reproducible data snapshots and caching
 
   Preserve dated, private snapshots of Salesforce results, iMIS imports, elected officials, and district lookups. This makes troubleshooting
   possible without querying every external service again.
 
-  39. Add optional CSV/Excel output
+  S. Add optional CSV/Excel output
 
   Producing a tabular companion file would help staff review totals, filters, matches, and exceptions before distributing the polished PDF.
 

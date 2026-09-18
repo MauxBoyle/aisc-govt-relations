@@ -47,20 +47,27 @@ Also review `unknown-imis-codes.csv`: it lists blank and unconfirmed iMIS Type
 and Category codes from every export row, including rows outside Illinois.
 Unknown or blank codes have no PDF label. Confirm each code’s meaning, then add
 it to the central mapping in `src/aisc_gr_statistics/imis_fields.py`.
-Without Salesforce access, certification values are shown as placeholders.
+The modernized, sample-inspired PDF is a bordered two-column card directory
+titled **AISC Certification and Membership Summary: Illinois**. It displays a
+company name, address, `N Employee(s)`, translated membership type/category,
+`YEAR Structural Steel Tonnage: VALUE Tons`, and `AISC Certified …` active
+certifications. Salesforce owns the displayed company name (with iMIS used when
+that name is blank), employee count, and certification data; iMIS owns the
+membership type/category and annual structural-steel tonnage. Employee counts
+are whole numbers with thousands separators.
 
-For an ID-matched company, Salesforce owns the displayed company name (with
-iMIS used only if Salesforce's name is blank), Client Type, employee count, and
-certification data. iMIS owns membership type/category, annual structural steel
-tonnage, and congressional district. Employee counts are displayed as whole
-numbers with thousands separators. A certification category is shown only when
-the Account status is exactly `Certified` and its child certification is
-`Active` and effective on the report date. Client Type, including `Erector`,
-never creates a certification label. Salesforce-only Illinois Accounts appear
-only when they are `Certified` and have at least one active child certification.
-Certified Accounts without active child certifications are retained when
-matched to iMIS, show the certification placeholder, and are listed in the
-reconciliation CSV and log for review.
+Optional PDF values follow one exact rule: blank, invalid, unrecognized, or
+unavailable values omit both their label and value. The PDF never uses blanks
+or placeholders for Client Type, certification status, congressional district,
+senators, or representatives. Name validation and source-data issues remain in
+the separate reconciliation outputs. A certification is displayed only when the
+Account status is exactly `Certified` and its child certification is `Active`
+and effective on the report date. Client Type, including `Erector`, never
+creates a certification label. Every Salesforce-only Illinois Account is
+included as a certification-only card: it shows identifying information,
+Salesforce employee count when available, and an active-certification line when
+available, but no iMIS membership or tonnage lines. A matched certified Account without an active child remains in
+the PDF and is reported in reconciliation as needing review.
 
 Tonnage submissions may be monthly or irregular. Each report selects the most
 recently completed calendar year (a 2026 run selects 2025) and totals unique

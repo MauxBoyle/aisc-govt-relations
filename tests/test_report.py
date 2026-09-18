@@ -1,7 +1,7 @@
 """Tests for Illinois membership report data and PDF generation."""
 
 import csv
-from datetime import date
+from datetime import UTC, date, datetime
 from io import StringIO
 from pathlib import Path
 
@@ -42,6 +42,7 @@ from aisc_gr_statistics.report import (
     write_tonnage_review_csv,
     write_undefined_imis_codes_csv,
 )
+from aisc_gr_statistics.senate import SenatorContact
 
 
 def test_certification_display_rules_cover_each_supplied_salesforce_name():
@@ -1182,3 +1183,38 @@ def test_certified_matched_account_without_active_children_stays_in_pdf_and_reco
     assert "matched,A,sf-1,Example,Example,certified account without active certifications" in csv_output.read_text(encoding="utf-8")
     assert "Certified accounts without active certifications: 1" in log_output.read_text(encoding="utf-8")
     assert "iMIS ID=A, Salesforce Account ID=sf-1" in log_output.read_text(encoding="utf-8")
+
+
+def test_pdf_places_senate_contacts_before_company_cards_without_network(tmp_path):
+    output = tmp_path / "report.pdf"
+    senators = (
+        SenatorContact(
+            "First Senator (D-IL)",
+            "IL",
+            "1 Senate Office Building Washington DC 20510",
+            "(202) 224-0001",
+            "https://first.senate.gov/contact",
+        ),
+        SenatorContact(
+            "Second Senator (R-IL)",
+            "IL",
+            "2 Senate Office Building Washington DC 20510",
+            "(202) 224-0002",
+            "https://second.senate.gov/contact",
+        ),
+    )
+
+    render_illinois_report(
+        [ReportCompany(name="Company After Contacts")],
+        output,
+        senators=senators,
+        senate_source_url="https://www.senate.gov/general/contact_information/senators_cfm.xml",
+        senate_retrieved_at=datetime(2026, 1, 2, tzinfo=UTC),
+    )
+
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    assert "Illinois U.S. Senate Contacts" in text
+    assert "First Senator (D-IL)" in text
+    assert "Second Senator (R-IL)" in text
+    assert "Retrieved: 2026-01-02" in text
+    assert text.index("Illinois U.S. Senate Contacts") < text.index("Company After Contacts")

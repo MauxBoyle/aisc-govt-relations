@@ -26,6 +26,7 @@ from .report import (
 )
 from .salesforce import SalesforceError, create_client
 from .salesforce_fields import REPORT_ACCOUNT_FIELDS
+from .senate import SenateDataError, load_snapshot, refresh_snapshot, senators_for_state
 
 
 def configure_logging():
@@ -52,6 +53,9 @@ def main(argv=()):
     arguments = parser.parse_args(argv)
     if arguments.command == "report":
         _run_report(arguments)
+        return
+    if arguments.command == "refresh-senators":
+        _run_refresh_senators()
         return
     logger.info("Hello from aisc_gr_statistics!")
 
@@ -132,6 +136,10 @@ def _build_parser():
         "--tonnage-review-csv", required=True, type=Path,
         help="Destination CSV for selected-year tonnage rows excluded from totals.",
     )
+    subcommands.add_parser(
+        "refresh-senators",
+        help="Download and validate the official Senate.gov contact snapshot.",
+    )
     return parser
 
 
@@ -145,7 +153,16 @@ def _run_report(arguments):
     accounts = _salesforce_accounts_if_configured()
     combined = combine_companies(companies, accounts)
     report_companies = build_report_companies(combined, as_of=report_date)
-    render_illinois_report(report_companies, arguments.output, tonnage_year)
+    snapshot = load_snapshot()
+    senators = senators_for_state(snapshot.senators, "IL")
+    render_illinois_report(
+        report_companies,
+        arguments.output,
+        tonnage_year,
+        senators,
+        snapshot.source_url,
+        snapshot.retrieved_at,
+    )
     write_conflicts_csv(combined_conflicts(combined), arguments.conflicts_csv)
     write_candidate_matches_csv(candidate_matches(combined), arguments.candidate_matches_csv)
     reconciliation_rows = build_reconciliation_rows(combined, as_of=report_date)
@@ -156,6 +173,20 @@ def _run_report(arguments):
     )
     write_tonnage_review_csv(tonnage_findings, arguments.tonnage_review_csv)
     logger.info("Created Illinois report: {}", arguments.output)
+
+
+def _run_refresh_senators():
+    """Refresh the checked-in Senate.gov reference data on maintainer request."""
+    try:
+        snapshot = refresh_snapshot()
+    except SenateDataError as error:
+        logger.error("Senate snapshot was not refreshed: {}", error)
+        raise SystemExit(1) from error
+    logger.info(
+        "Refreshed Senate contacts for {} senators from {}.",
+        len(snapshot.senators),
+        snapshot.source_url,
+    )
 
 
 def _salesforce_accounts_if_configured(environment=None):

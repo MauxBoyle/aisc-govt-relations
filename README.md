@@ -31,6 +31,22 @@ uv run aisc_gr_statistics report \
   --tonnage-review-csv data/processed/tonnage-review.csv
 ```
 
+Every report also includes Illinois's two U.S. senators before the company
+cards. This section reads a committed local Senate.gov XML snapshot, so report
+creation does not fetch data from the network and remains reproducible. The
+snapshot lives at `data/reference/senate/senators.xml`; its source URL,
+UTC retrieval time, and SHA-256 integrity checksum are in
+`data/reference/senate/senators.json`.
+
+Maintainers refresh that reference data intentionally, then review and commit
+the changed XML and JSON together:
+
+```bash
+uv run aisc_gr_statistics refresh-senators
+```
+
+The official source is the [U.S. Senate contact-information XML](https://www.senate.gov/general/contact_information/senators_cfm.xml).
+
 The source export and generated PDF/CSV files should stay in the ignored `data/raw/` and
 `data/processed/` folders. The report reads Salesforce only when both
 `SF_CLIENT_ID` and `SF_CLIENT_SECRET` are set. iMIS and Salesforce records are
@@ -68,11 +84,12 @@ without a source label. Address differences remain in the conflicts CSV with
 both source values for reconciliation. Tonnage is rounded to a whole number in
 the PDF.
 
-Optional PDF values follow one exact rule: blank, invalid, unrecognized, or
+Optional company-card values follow one exact rule: blank, invalid, unrecognized, or
 unavailable values omit both their label and value. The PDF never uses blanks
 or placeholders for Client Type, certification status, congressional district,
-senators, or representatives. Name validation and source-data issues remain in
-the separate reconciliation outputs. A certification is displayed only when the
+or representatives. Senator contacts come only from the validated local
+snapshot. Name validation and source-data issues remain in the separate
+reconciliation outputs. A certification is displayed only when the
 Account status is exactly `Certified` and its child certification is `Active`
 and effective on the report date. Client Type, including `Erector`, never
 creates a certification label. Only Salesforce-only Illinois Accounts whose

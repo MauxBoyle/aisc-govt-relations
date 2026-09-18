@@ -22,6 +22,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from .certification_groups import format_certification_paragraphs
 from .imis_fields import (
     UndefinedImisCodeFinding,
     membership_label,
@@ -727,14 +728,15 @@ def render_illinois_report(
                     body,
                 )
             )
-        if company.certification_categories:
-            details_cell.append(
-                Paragraph(
-                    "AISC Certified "
-                    + " and ".join(_escape(category) for category in company.certification_categories),
-                    body,
-                )
-            )
+        certification_paragraphs = format_certification_paragraphs(
+            company.certification_categories
+        )
+        if certification_paragraphs:
+            # Keep the concise Fabricator/Erector sentences together. An
+            # unknown Salesforce value follows in its own paragraph so it is
+            # plainly visible for a future mapping update.
+            for sentence in certification_paragraphs:
+                details_cell.append(Paragraph(_escape(sentence), body))
         table = Table(
             [[company_cell, details_cell]], colWidths=[3.35 * inch, 3.55 * inch], splitByRow=1
         )

@@ -8,6 +8,10 @@ from pathlib import Path
 import pytest
 from pypdf import PdfReader
 
+from aisc_gr_statistics.certification_groups import (
+    CERTIFICATION_GROUPS,
+    format_certification_sentences,
+)
 from aisc_gr_statistics.imis_fields import (
     CATEGORY_LABELS,
     MEMBERSHIP_TYPE_LABELS,
@@ -38,6 +42,70 @@ from aisc_gr_statistics.report import (
     write_tonnage_review_csv,
     write_undefined_imis_codes_csv,
 )
+
+
+def test_certification_display_rules_cover_each_supplied_salesforce_name():
+    assert {
+        name: (rule.group, rule.section, rule.display_order)
+        for name, rule in CERTIFICATION_GROUPS.items()
+    } == {
+        "Building Fabricator": ("Building Fabricator", "Fab1", 1),
+        "Bridge Fabricator - Advanced": ("Bridge Fabricator", "Fab1", 2),
+        "Bridge Fabricator - Intermediate": ("Bridge Fabricator", "Fab1", 2),
+        "Bridge Fabricator - Simple": ("Bridge Fabricator", "Fab1", 2),
+        "Hydraulic Fabricator - Advanced": ("Hydraulic Fabricator", "Fab1", 3),
+        "Hydraulic Fabricator - Standard": ("Hydraulic Fabricator", "Fab1", 3),
+        "Highway Component Manufacturer": ("Highway Component Manufacturer", "Fab1", 4),
+        "Fracture Control Endorsement - Bridge": ("Fracture Control Endorsement", "Fab2", 1),
+        "Fracture Control Endorsement - Hydraulic": ("Fracture Control Endorsement", "Fab2", 1),
+        "Complex Coatings - Enclosed": ("Complex Coatings", "Fab2", 2),
+        "Complex Coatings - Covered": ("Complex Coatings", "Fab2", 2),
+        "Complex Coatings - Exposed": ("Complex Coatings", "Fab2", 2),
+        "Erector": ("Erector", "Erec1", 1),
+        "Bridge Endorsement": ("Bridge Endorsement", "Erec2", 1),
+        "Metal Deck Endorsement": ("Metal Deck Endorsement", "Erec2", 2),
+        "Seismic Endorsement": ("Seismic Endorsement", "Erec2", 3),
+    }
+
+
+def test_formats_deduplicated_certification_groups_in_section_order():
+    assert format_certification_sentences(
+        (
+            "Seismic Endorsement",
+            "Bridge Fabricator - Simple",
+            "Complex Coatings - Exposed",
+            "Building Fabricator",
+            "Bridge Fabricator - Advanced",
+            "Erector",
+            "Metal Deck Endorsement",
+            "Fracture Control Endorsement - Bridge",
+        )
+    ) == (
+        "AISC Certified Building Fabricator and Bridge Fabricator with Fracture Control Endorsement and Complex Coatings.",
+        "AISC Certified Erector with Metal Deck Endorsement and Seismic Endorsement.",
+    )
+
+
+@pytest.mark.parametrize(
+    ("active_names", "expected"),
+    [
+        (("Building Fabricator",), ("AISC Certified Building Fabricator.",)),
+        (("Complex Coatings - Covered",), ("AISC Certified Complex Coatings.",)),
+        (("Erector",), ("AISC Certified Erector.",)),
+        (("Bridge Endorsement",), ("AISC Certified Bridge Endorsement.",)),
+    ],
+)
+def test_formats_sections_without_a_dangling_with(active_names, expected):
+    assert format_certification_sentences(active_names) == expected
+
+
+def test_unknown_certifications_remain_visible_once_after_mapped_sentences():
+    assert format_certification_sentences(
+        (" Building Fabricator ", "New Certification", "New Certification")
+    ) == (
+        "AISC Certified Building Fabricator.",
+        "AISC Certified New Certification.",
+    )
 
 
 def write_csv(tmp_path, contents):
@@ -717,6 +785,49 @@ def test_certified_salesforce_only_accounts_with_same_address_are_merged():
     ]
 
 
+def test_merged_salesforce_only_group_variants_display_once_in_pdf(tmp_path):
+    active = {
+        "Status__c": "Active",
+        "Start_Date__c": "2026-01-01",
+        "End_Date__c": "2026-12-31",
+    }
+    accounts = [
+        {
+            "Name": "Bridge Advanced Steel",
+            "BillingStreet": "10 Steel Way",
+            "BillingCity": "Chicago",
+            "BillingState": "IL",
+            "Cert_Certification_Status__c": "Certified",
+            "Certifications__r": {
+                "records": [{**active, "Name": "Bridge Fabricator - Advanced"}]
+            },
+        },
+        {
+            "Name": "Bridge Simple Steel",
+            "BillingStreet": "10 Steel Way",
+            "BillingCity": "Chicago",
+            "BillingState": "IL",
+            "Cert_Certification_Status__c": "Certified",
+            "Certifications__r": {
+                "records": [{**active, "Name": "Bridge Fabricator - Simple"}]
+            },
+        },
+    ]
+
+    rows = build_report_companies([], accounts, as_of=date(2026, 6, 1))
+    output = tmp_path / "merged-group-variants.pdf"
+    render_illinois_report(rows, output)
+
+    text = " ".join(
+        " ".join(page.extract_text() or "" for page in PdfReader(output).pages).split()
+    )
+    assert rows[0].certification_categories == (
+        "Bridge Fabricator - Advanced",
+        "Bridge Fabricator - Simple",
+    )
+    assert text.count("Bridge Fabricator") == 1
+
+
 def test_report_uses_only_active_nested_certifications_and_adds_salesforce_only_il_companies():
     """Keep child categories separate and omit invalid child certification rows."""
     companies = [Company(name="A. Lucas & Sons Steel", state="IL", imis_id="LUCAS")]
@@ -854,6 +965,35 @@ def test_rendered_pdf_lists_each_active_certification(tmp_path):
     assert "AISC Certified Building Fabricator" in text
     assert "Highway Component Manufacturer" in normalized_text
     assert "Excluded Certification" not in text
+
+
+def test_rendered_pdf_orders_groups_and_keeps_unknown_certification_once(tmp_path):
+    output = tmp_path / "grouped-certifications.pdf"
+    row = ReportCompany(
+        name="Grouped Steel",
+        certification_categories=(
+            "Seismic Endorsement",
+            "Bridge Fabricator - Intermediate",
+            "Building Fabricator",
+            "Bridge Fabricator - Advanced",
+            "Fracture Control Endorsement - Hydraulic",
+            "Erector",
+            "Unmapped Certification",
+            "Unmapped Certification",
+        ),
+    )
+
+    render_illinois_report([row], output)
+
+    text = " ".join(
+        " ".join(page.extract_text() or "" for page in PdfReader(output).pages).split()
+    )
+    assert (
+        "AISC Certified Building Fabricator and Bridge Fabricator with Fracture Control Endorsement."
+        in text
+    )
+    assert "AISC Certified Erector with Seismic Endorsement." in text
+    assert text.count("AISC Certified Unmapped Certification.") == 1
 
 
 def test_pdf_uses_employee_count_and_sample_terminology(tmp_path):

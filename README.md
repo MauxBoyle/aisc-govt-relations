@@ -154,6 +154,9 @@ Run tests with coverage:
 uv run pytest --cov
 ```
 
+GitHub Actions runs `uv run pytest` for every pull request and every push to
+`main`, so the same checks run before changes are merged.
+
 ## Documentation
 
 The [verified Salesforce mapping](docs/salesforce.md) documents the Account,

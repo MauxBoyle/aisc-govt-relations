@@ -624,13 +624,24 @@ def build_report_companies(
         else combine_companies(rows, salesforce_accounts)  # type: ignore[arg-type]
     )
     report_companies = []
+    salesforce_only_accounts = []
     for company in combined:
         imis, account = company.imis, company.salesforce
+        if company.classification is CompanyClassification.SALESFORCE_ONLY:
+            # Certification-only listings are public only for Accounts whose
+            # Account-level status is exactly Certified.  The reconciliation
+            # model intentionally continues to retain every source record.
+            if account and _is_certified_account(account):
+                salesforce_only_accounts.append(account)
+            continue
         categories = _active_certification_names(account, as_of) if _is_certified_account(account) else ()
         # A valid ID join gives Salesforce ownership of the displayed Account
         # name; iMIS remains the fallback for a blank Salesforce name.
         name = _account_value(account, CertificationAccountField.NAME) or (imis.name if imis else "")
-        address = SourcedValue(imis.address if imis else "", _salesforce_address(account) if account else "").display()
+        address = SourcedValue(
+            _imis_address(imis) if imis else "",
+            _salesforce_address(account) if account else "",
+        ).display()
         report_companies.append(
             ReportCompany(
                 name,
@@ -645,7 +656,13 @@ def build_report_companies(
                 categories,
             )
         )
-    return report_companies
+    report_companies.extend(
+        _merged_salesforce_only_report_companies(salesforce_only_accounts, as_of)
+    )
+    return sorted(
+        report_companies,
+        key=lambda company: (normalize_company_name(company.name), company.name.casefold()),
+    )
 
 
 def render_illinois_report(
@@ -693,10 +710,13 @@ def render_illinois_report(
             Paragraph(_escape(company.name), company_heading),
         ]
         if company.address:
-            company_cell.append(Paragraph(_escape(company.address), body))
+            # Paragraph treats HTML-like markup specially. Escape source text
+            # first, then intentionally turn our display line breaks into the
+            # safe markup ReportLab expects.
+            company_cell.append(Paragraph(_escape(company.address).replace("\n", "<br/>"), body))
         details_cell = []
         if company.employee_count:
-            details_cell.append(Paragraph(f"{_escape(company.employee_count)} Employee(s)", body))
+            details_cell.append(Paragraph(f"{_escape(company.employee_count)} Employees", body))
         if company.membership_type:
             details_cell.append(Paragraph(_escape(company.membership_type), body))
         if company.tonnage and tonnage_year is not None:
@@ -851,8 +871,14 @@ def _is_certified_account(account: Mapping[str, object] | None) -> bool:
 
 def _format_employee_count(value: object) -> str:
     """Format Salesforce's whole-person employee count, or return an empty value."""
+    count = _employee_count_decimal(value)
+    return f"{count:,.0f}" if count is not None else ""
+
+
+def _employee_count_decimal(value: object) -> Decimal | None:
+    """Return a valid whole-person employee count for calculations."""
     if isinstance(value, bool):
-        return ""
+        return None
     try:
         if isinstance(value, str):
             count = Decimal(value.replace(",", ""))
@@ -861,12 +887,84 @@ def _format_employee_count(value: object) -> str:
         elif isinstance(value, float):
             count = Decimal(str(value))
         else:
-            return ""
+            return None
     except (InvalidOperation, ValueError):
-        return ""
+        return None
     if not count.is_finite() or count != count.to_integral_value() or count < 0:
-        return ""
-    return f"{count:,.0f}"
+        return None
+    return count
+
+
+def _merged_salesforce_only_report_companies(
+    accounts: Iterable[Mapping[str, object]], as_of: date | str | None
+) -> list[ReportCompany]:
+    """Build public-only Salesforce rows, combining equal complete addresses."""
+    groups: dict[str, list[tuple[Mapping[str, object], str]]] = {}
+    rows = []
+    for account in accounts:
+        address = _salesforce_address(account)
+        address_key = _salesforce_full_address_key(account)
+        # A blank address is not a complete address, so it must not merge
+        # otherwise unrelated Accounts into one public listing.
+        if not address_key:
+            rows.append(_salesforce_only_report_company(account, address, as_of))
+            continue
+        groups.setdefault(address_key, []).append((account, address))
+
+    for grouped_accounts in groups.values():
+        first_account, address = grouped_accounts[0]
+        if len(grouped_accounts) == 1:
+            rows.append(_salesforce_only_report_company(first_account, address, as_of))
+            continue
+        names = " / ".join(
+            _account_value(account, CertificationAccountField.NAME)
+            for account, _ in grouped_accounts
+            if _account_value(account, CertificationAccountField.NAME)
+        )
+        categories = tuple(
+            dict.fromkeys(
+                category
+                for account, _ in grouped_accounts
+                for category in _active_certification_names(account, as_of)
+            )
+        )
+        employee_counts = [
+            count
+            for account, _ in grouped_accounts
+            if (count := _employee_count_decimal(
+                account.get(CertificationAccountField.EMPLOYEE_COUNT)
+            )) is not None
+        ]
+        rows.append(
+            ReportCompany(
+                name=names,
+                address=address,
+                employee_count=(
+                    f"{sum(employee_counts):,.0f}" if employee_counts else ""
+                ),
+                certification_categories=categories,
+            )
+        )
+    return rows
+
+
+def _salesforce_only_report_company(
+    account: Mapping[str, object], address: str, as_of: date | str | None
+) -> ReportCompany:
+    """Return one eligible Salesforce-only public row without iMIS fields."""
+    return ReportCompany(
+        name=_account_value(account, CertificationAccountField.NAME),
+        address=address,
+        employee_count=_format_employee_count(
+            account.get(CertificationAccountField.EMPLOYEE_COUNT)
+        ),
+        certification_categories=_active_certification_names(account, as_of),
+    )
+
+
+def _imis_address(company: Company) -> str:
+    """Format iMIS address fields using the same display layout as Salesforce."""
+    return _format_address(company.address, company.city, company.state)
 
 
 def _salesforce_address(account: Mapping[str, object] | None) -> str:
@@ -878,8 +976,46 @@ def _salesforce_address(account: Mapping[str, object] | None) -> str:
     state = _string_value(account.get(CertificationAccountField.BILLING_STATE))
     postal_code = _string_value(account.get(CertificationAccountField.BILLING_POSTAL_CODE))
     country = _string_value(account.get(CertificationAccountField.BILLING_COUNTRY))
+    return _format_address(street, city, state, postal_code, country)
+
+
+def _format_address(
+    street: str, city: str, state: str, postal_code: str = "", country: str = ""
+) -> str:
+    """Create a compact address with its city/locality on a separate line."""
+    street = _without_united_states(street)
+    country = _without_united_states(country)
+    if not street and not city:
+        return ""
     locality = " ".join(part for part in (state, postal_code) if part)
-    return ", ".join(part for part in (street, city, locality, country) if part)
+    city_line = ", ".join(part for part in (city, locality) if part)
+    if country:
+        city_line = ", ".join(part for part in (city_line, country) if part)
+    return "\n".join(part for part in (street, city_line) if part)
+
+
+def _without_united_states(value: str) -> str:
+    """Remove United States from a source address, ignoring capitalization."""
+    value = re.sub(r"\bUnited\s+States\b", "", value, flags=re.IGNORECASE)
+    value = re.sub(r"\s*,\s*,+", ", ", value)
+    return value.strip(" ,\n\t")
+
+
+def _normalize_full_address(address: str) -> str:
+    """Normalize a complete formatted address for Salesforce-only grouping."""
+    return normalize_company_name(address)
+
+
+def _salesforce_full_address_key(account: Mapping[str, object]) -> str:
+    """Return a grouping key only when street, city, and state are all present."""
+    components = (
+        _string_value(account.get(CertificationAccountField.BILLING_STREET)),
+        _string_value(account.get(CertificationAccountField.BILLING_CITY)),
+        _string_value(account.get(CertificationAccountField.BILLING_STATE)),
+    )
+    if not all(components):
+        return ""
+    return _normalize_full_address(_salesforce_address(account))
 
 
 def _string_value(value: object) -> str:

@@ -64,13 +64,18 @@ automatically joined. This prevents a duplicate export value from silently
 enriching the wrong company.
 The modernized sample-inspired PDF is titled **AISC Certification and
 Membership Summary: Illinois** and uses bordered two-column company cards. It
-can display the company name, address, `N Employee(s)`, translated membership
+can display the company name, address, `N Employees`, translated membership
 type/category, `YEAR Structural Steel Tonnage: VALUE Tons`, and one wrapping
 `AISC Certified …` line for all active certifications. Salesforce owns the
 displayed name for an ID match (falling back to iMIS only when that name is
 blank), employee count, and certification data. iMIS owns membership
 type/category and annual tonnage. Employee counts must be whole numbers and
 are displayed with thousands separators.
+
+Public company cards are sorted alphabetically while ignoring case and
+punctuation. Addresses omit `United States` in any capitalization and put the
+city/locality on a separate line. When an ID-matched record has different iMIS
+and Salesforce addresses, both remain visibly labeled rather than being merged.
 
 The missing-value rule is exact: blank, invalid, unrecognized, or unavailable
 optional values omit both their label and value. The PDF does not display
@@ -84,10 +89,14 @@ between its start and end dates. Client Type is descriptive only: an `Erector`
 Client Type never implies an `AISC Certified Erector` label. If more than one
 Salesforce Account shares a normalized name, the iMIS company is not enriched.
 
-The report adds every Salesforce-only Account whose `BillingState` is `IL` or
-`Illinois`. These certification-only cards show identifying information,
-Salesforce employee count when available, and an active-certification line when
-available, but omit iMIS membership and tonnage lines. A matched iMIS company remains in the PDF when its Salesforce
+The report adds only Salesforce-only Accounts whose `BillingState` is `IL` or
+`Illinois` and whose `Cert_Certification_Status__c` is exactly `Certified`.
+Eligible Salesforce-only Accounts with complete addresses that match after
+normalizing capitalization, punctuation, and excess whitespace combine into
+one card. The card uses slash-separated names, deduplicated active certification
+categories, summed valid whole-number employee counts, and the first formatted
+address. iMIS-only and ID-matched records are never address-merged. These
+certification-only cards omit iMIS membership and tonnage lines. A matched iMIS company remains in the PDF when its Salesforce
 Account is `Certified` but has no active child certifications; its missing
 certification line is omitted and the `certified account without active
 certifications` reconciliation issue remains.

@@ -11,7 +11,7 @@ from collections import Counter
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date, datetime
-from decimal import Decimal, InvalidOperation
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from enum import StrEnum
 from pathlib import Path
 
@@ -91,24 +91,6 @@ class CompanyClassification(StrEnum):
     BOTH = "both"
     IMIS_ONLY = "imis-only"
     SALESFORCE_ONLY = "salesforce-only"
-
-
-@dataclass(frozen=True)
-class SourcedValue:
-    """A value retained with the system that supplied it."""
-
-    imis: str = ""
-    salesforce: str = ""
-
-    def display(self, placeholder: str = "") -> str:
-        """Return one agreed value or clearly label differing source values."""
-        values = [("iMIS", self.imis), ("Salesforce", self.salesforce)]
-        present = [(source, value) for source, value in values if value]
-        if not present:
-            return placeholder
-        if len(present) == 1 or present[0][1] == present[1][1]:
-            return present[0][1]
-        return " | ".join(f"{source}: {value}" for source, value in present)
 
 
 @dataclass(frozen=True)
@@ -521,6 +503,7 @@ def combined_conflicts(companies: Iterable[CombinedCompany]) -> list[Conflict]:
             "name": (company.imis.name, _account_value(company.salesforce, CertificationAccountField.NAME)),
             "city": (company.imis.city, _account_value(company.salesforce, CertificationAccountField.BILLING_CITY)),
             "state": (company.imis.state, _account_value(company.salesforce, CertificationAccountField.BILLING_STATE)),
+            "address": (_imis_address(company.imis), _salesforce_address(company.salesforce)),
         }
         for field, (imis_value, salesforce_value) in comparisons.items():
             if imis_value and salesforce_value and not _same_value(field, imis_value, salesforce_value):
@@ -639,10 +622,11 @@ def build_report_companies(
         # A valid ID join gives Salesforce ownership of the displayed Account
         # name; iMIS remains the fallback for a blank Salesforce name.
         name = _account_value(account, CertificationAccountField.NAME) or (imis.name if imis else "")
-        address = SourcedValue(
-            _imis_address(imis) if imis else "",
-            _salesforce_address(account) if account else "",
-        ).display()
+        imis_address = _imis_address(imis) if imis else ""
+        salesforce_address = _salesforce_address(account) if account else ""
+        # Salesforce provides the public address for an ID match. The
+        # conflicts CSV separately preserves both values when they differ.
+        address = salesforce_address or imis_address
         report_companies.append(
             ReportCompany(
                 name,
@@ -724,7 +708,7 @@ def render_illinois_report(
             details_cell.append(
                 Paragraph(
                     f"{tonnage_year} Structural Steel Tonnage: "
-                    f"{_escape(company.tonnage)} Tons",
+                    f"{_escape(_rounded_tonnage_for_display(company.tonnage))} Tons",
                     body,
                 )
             )
@@ -831,6 +815,15 @@ def _format_tonnage(value: Decimal) -> str:
     if value == value.to_integral():
         return f"{value:,.0f}"
     return f"{value:,.2f}".rstrip("0").rstrip(".")
+
+
+def _rounded_tonnage_for_display(value: str) -> str:
+    """Round a numeric tonnage string to a whole number for the PDF."""
+    try:
+        tonnage = Decimal(value.replace(",", ""))
+    except InvalidOperation:
+        return value
+    return f"{tonnage.quantize(Decimal('1'), rounding=ROUND_HALF_UP):,}"
 
 
 def _active_certification_names(

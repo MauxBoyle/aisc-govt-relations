@@ -391,17 +391,81 @@ def test_combined_model_joins_by_id_preserves_sources_and_reports_conflicts(tmp_
     assert combined[0].imis == imis
     assert combined[0].salesforce == account
     assert {(item.field, item.imis_value, item.salesforce_value) for item in combined_conflicts(combined)} == {
-        ("name", "Acme Steel", "ACME Structural"), ("city", "Chicago", "Evanston")
+        ("name", "Acme Steel", "ACME Structural"),
+        ("city", "Chicago", "Evanston"),
+        ("address", "1 iMIS Way\nChicago, IL", "2 SF Way\nEvanston, IL"),
     }
     row = build_report_companies(combined)[0]
     assert row.name == "ACME Structural"
-    assert row.address == "iMIS: 1 iMIS Way\nChicago, IL | Salesforce: 2 SF Way\nEvanston, IL"
+    assert row.address == "2 SF Way\nEvanston, IL"
     output = tmp_path / "conflict.pdf"
     render_illinois_report([row], output, tonnage_year=2025)
     text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
     assert "ACME Structural" in text
     assert "iMIS: Acme Steel" not in text
+    assert "1 iMIS Way" not in text
     assert "2025 Structural Steel Tonnage" not in text
+
+
+def test_close_id_matched_addresses_prefer_salesforce_in_pdf_and_remain_conflicts(tmp_path):
+    imis = Company(
+        name="Acme Steel",
+        state="IL",
+        city="Chicago",
+        imis_id="42",
+        address="100 Main Street, Suite 200",
+    )
+    account = {
+        "Id": "001",
+        "IMISID__c": "42",
+        "Name": "Acme Steel",
+        "BillingStreet": "100 Main Street, Ste 200",
+        "BillingCity": "Chicago",
+        "BillingState": "IL",
+    }
+    combined = combine_companies([imis], [account])
+
+    row = build_report_companies(combined)[0]
+    assert row.address == "100 Main Street, Ste 200\nChicago, IL"
+    assert [
+        (conflict.imis_value, conflict.salesforce_value)
+        for conflict in combined_conflicts(combined)
+        if conflict.field == "address"
+    ] == [
+        (
+            "100 Main Street, Suite 200\nChicago, IL",
+            "100 Main Street, Ste 200\nChicago, IL",
+        )
+    ]
+
+    output = tmp_path / "close-address.pdf"
+    render_illinois_report([row], output)
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    assert "100 Main Street, Ste 200" in text
+    assert "Suite 200" not in text
+
+
+def test_close_addresses_without_an_id_match_remain_unjoined():
+    imis = Company(
+        name="Acme Steel",
+        state="IL",
+        city="Chicago",
+        imis_id="iMIS-42",
+        address="100 Main Street, Suite 200",
+    )
+    account = {
+        "IMISID__c": "Salesforce-42",
+        "Name": "Acme Steel",
+        "BillingStreet": "100 Main Street, Ste 200",
+        "BillingCity": "Chicago",
+        "BillingState": "IL",
+    }
+
+    rows = build_report_companies([imis], [account])
+
+    assert rows == [
+        ReportCompany(name="Acme Steel", address="100 Main Street, Suite 200\nChicago, IL")
+    ]
 
 
 def test_candidate_matches_require_name_city_and_state_and_never_change_join():
@@ -711,15 +775,14 @@ def test_report_addresses_omit_united_states_and_put_city_on_a_new_line(tmp_path
     row = build_report_companies([imis], [account])[0]
 
     assert row.address == (
-        "iMIS: 1 Main St\nChicago, IL | "
-        "Salesforce: 2 Salesforce Way\nEvanston, IL 60201"
+        "2 Salesforce Way\nEvanston, IL 60201"
     )
     output = tmp_path / "addresses.pdf"
     render_illinois_report([row], output)
     text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
     assert "United States" not in text
-    assert "iMIS: 1 Main St\nChicago, IL" in text
-    assert "Salesforce: 2 Salesforce Way\nEvanston, IL 60201" in text
+    assert "1 Main St" not in text
+    assert "2 Salesforce Way\nEvanston, IL 60201" in text
 
 
 def test_certified_salesforce_only_accounts_with_same_address_are_merged():
@@ -1014,6 +1077,19 @@ def test_pdf_uses_employee_count_and_sample_terminology(tmp_path):
     assert "12,500 Employees" in text
     assert "Full AISC Member" in text
     assert "2025 Structural Steel Tonnage: 50 Tons" in text
+
+
+def test_pdf_rounds_tonnage_to_a_whole_number(tmp_path):
+    output = tmp_path / "rounded-tonnage.pdf"
+
+    render_illinois_report(
+        [ReportCompany(name="Example Steel", tonnage="1,234.5")],
+        output,
+        tonnage_year=2025,
+    )
+
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    assert "2025 Structural Steel Tonnage: 1,235 Tons" in text
 
 
 def test_pdf_wraps_long_card_content_and_keeps_later_companies_readable(tmp_path):

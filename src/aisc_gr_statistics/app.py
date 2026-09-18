@@ -3,7 +3,7 @@
 import argparse
 import os
 import sys
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from loguru import logger
@@ -110,6 +110,12 @@ def _build_parser():
         "--imis-csv", required=True, type=Path, help="Path to an iMIS CSV export."
     )
     report.add_argument(
+        "--imis-export-date",
+        required=True,
+        type=_iso_date,
+        help="Date the iMIS CSV export was created, in YYYY-MM-DD format.",
+    )
+    report.add_argument(
         "--output", required=True, type=Path, help="Destination PDF path."
     )
     report.add_argument(
@@ -150,7 +156,7 @@ def _run_report(arguments):
     companies, tonnage_findings, tonnage_year = read_imis_companies_with_tonnage_review(
         arguments.imis_csv, report_date=report_date
     )
-    accounts = _salesforce_accounts_if_configured()
+    accounts, salesforce_retrieved_at = _salesforce_accounts_if_configured()
     combined = combine_companies(companies, accounts)
     report_companies = build_report_companies(combined, as_of=report_date)
     snapshot = load_snapshot()
@@ -162,6 +168,9 @@ def _run_report(arguments):
         senators,
         snapshot.source_url,
         snapshot.retrieved_at,
+        imis_export_filename=arguments.imis_csv.name,
+        imis_export_date=arguments.imis_export_date,
+        salesforce_retrieved_at=salesforce_retrieved_at,
     )
     write_conflicts_csv(combined_conflicts(combined), arguments.conflicts_csv)
     write_candidate_matches_csv(candidate_matches(combined), arguments.candidate_matches_csv)
@@ -190,7 +199,7 @@ def _run_refresh_senators():
 
 
 def _salesforce_accounts_if_configured(environment=None):
-    """Return Salesforce accounts only when both report credentials are configured."""
+    """Return Salesforce accounts and their UTC retrieval time when available."""
     environment = environment if environment is not None else os.environ
     if not all(
         environment.get(name, "").strip()
@@ -199,13 +208,26 @@ def _salesforce_accounts_if_configured(environment=None):
         logger.info(
             "Salesforce credentials are not configured; certification statuses are placeholders."
         )
-        return []
+        return [], None
     try:
         client = create_client(environment)
-        return client.query_records("Account", REPORT_ACCOUNT_FIELDS, order_by="Name")
+        accounts = client.query_records("Account", REPORT_ACCOUNT_FIELDS, order_by="Name")
+        return accounts, datetime.now(UTC)
     except SalesforceError as error:
         logger.warning(
             "Salesforce could not be read; certification statuses are placeholders: {}",
             error,
         )
-        return []
+        return [], None
+
+
+def _iso_date(value):
+    """Parse a CLI date while requiring the documented ISO calendar-date form."""
+    try:
+        if len(value) != 10 or value[4] != "-" or value[7] != "-":
+            raise ValueError
+        return date.fromisoformat(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(
+            "must use YYYY-MM-DD format"
+        ) from error

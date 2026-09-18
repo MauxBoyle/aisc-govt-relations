@@ -5,10 +5,10 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 
 MEMBERSHIP_TYPE_LABELS = {
-    "ACT": "Full Member",
-    "ACTB": "Full Member Branch",
-    "ASSOC": "Associate Member",
-    "ASSCB": "Associate Member Branch",
+    "ACT": "Full AISC Member",
+    "ACTB": "Full AISC Member Branch",
+    "ASSOC": "Associate AISC Member",
+    "ASSCB": "Associate AISC Member Branch",
 }
 """Translate iMIS Membership Type codes into report-friendly labels."""
 

@@ -17,10 +17,9 @@ from aisc_gr_statistics.imis_fields import (
     scan_undefined_imis_codes,
 )
 from aisc_gr_statistics.report import (
-    CERTIFICATION_CATEGORY_PLACEHOLDER,
-    PLACEHOLDER,
     Company,
     CompanyClassification,
+    ReportCompany,
     ReportDataError,
     build_reconciliation_rows,
     build_report_companies,
@@ -60,12 +59,12 @@ def write_csv(tmp_path, contents):
 
 def test_translates_confirmed_imis_membership_type_codes():
     assert MEMBERSHIP_TYPE_LABELS == {
-        "ACT": "Full Member",
-        "ACTB": "Full Member Branch",
-        "ASSOC": "Associate Member",
-        "ASSCB": "Associate Member Branch",
+        "ACT": "Full AISC Member",
+        "ACTB": "Full AISC Member Branch",
+        "ASSOC": "Associate AISC Member",
+        "ASSCB": "Associate AISC Member Branch",
     }
-    assert membership_type_label("act") == "Full Member"
+    assert membership_type_label("act") == "Full AISC Member"
     assert membership_type_label("Unrecognized") == ""
 
 
@@ -92,11 +91,11 @@ def test_translates_confirmed_imis_category_codes():
 
 
 def test_combines_membership_type_and_category_labels():
-    assert membership_label("ACT", "FAB") == "Full Member Fabricator"
-    assert membership_label("ACTB", "") == "Full Member Branch"
+    assert membership_label("ACT", "FAB") == "Full AISC Member Fabricator"
+    assert membership_label("ACTB", "") == "Full AISC Member Branch"
     assert membership_label("", "SOFT") == "Software"
     assert membership_label("unknown", "FAB") == "Fabricator"
-    assert membership_label("ACT", "unknown") == "Full Member"
+    assert membership_label("ACT", "unknown") == "Full AISC Member"
     assert membership_label("unknown", "also unknown") == ""
 
 
@@ -109,7 +108,7 @@ def test_reads_and_combines_membership_type_and_category(tmp_path):
 
     companies = read_imis_companies(path)
 
-    assert companies[0].membership_type == "Full Member Erector"
+    assert companies[0].membership_type == "Full AISC Member Erector"
 
 
 def test_reads_common_headers_filters_illinois_and_sorts(tmp_path):
@@ -334,7 +333,7 @@ def test_combined_model_joins_by_id_preserves_sources_and_reports_conflicts(tmp_
     text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
     assert "ACME Structural" in text
     assert "iMIS: Acme Steel" not in text
-    assert "tonnage (2025)" in text
+    assert "2025 Structural Steel Tonnage" not in text
 
 
 def test_candidate_matches_require_name_city_and_state_and_never_change_join():
@@ -597,18 +596,17 @@ def test_report_data_uses_only_shared_imis_id_not_a_similar_name():
 
     rows = build_report_companies(companies, accounts)
 
-    assert rows[0].certification_status == PLACEHOLDER
-    assert rows[0].address == PLACEHOLDER
-    assert rows[0].certification_categories == (CERTIFICATION_CATEGORY_PLACEHOLDER,)
-    assert rows[1].certification_status == PLACEHOLDER
-    assert rows[2].certification_status == PLACEHOLDER
+    assert rows[0].address == ""
+    assert rows[0].certification_categories == ()
+    assert rows[1].certification_categories == ()
+    assert rows[2].certification_categories == ()
     assert normalize_company_name("Example  Steel, Inc.") == "example steel inc"
 
 
-def test_report_data_without_salesforce_records_has_status_placeholder():
+def test_report_data_without_salesforce_records_omits_certification():
     rows = build_report_companies([Company(name="Example Steel", state="IL")])
 
-    assert rows[0].certification_status == PLACEHOLDER
+    assert rows[0].certification_categories == ()
 
 
 def test_report_uses_only_active_nested_certifications_and_adds_salesforce_only_il_companies():
@@ -646,28 +644,43 @@ def test_report_uses_only_active_nested_certifications_and_adds_salesforce_only_
     rows = build_report_companies(companies, accounts, as_of=date(2026, 6, 1))
 
     assert rows[0].certification_categories == (
-        "Salesforce: Building Fabricator",
-        "Salesforce: Highway Component Manufacturer",
+        "Building Fabricator", "Highway Component Manufacturer"
     )
     ah_steel = rows[1]
     assert ah_steel.name == "A&H Steel, LLC"
     assert ah_steel.address == "10 Steel Way, Chicago, Illinois 60601"
-    assert ah_steel.membership_type == PLACEHOLDER
-    assert ah_steel.tonnage == PLACEHOLDER
-    assert ah_steel.district == PLACEHOLDER
-    assert ah_steel.certification_categories == ("Salesforce: Erector",)
+    assert ah_steel.membership_type == ""
+    assert ah_steel.tonnage == ""
+    assert ah_steel.certification_categories == ("Erector",)
 
 
-def test_salesforce_only_rows_require_certified_status_and_active_children():
+def test_salesforce_only_rows_include_salesforce_fields_without_membership(tmp_path):
     accounts = [
-        {"Name": "No Certification", "BillingState": "IL", "Certifications__r": {"records": []}},
-        {"Name": "Inactive", "BillingState": "IL", "Cert_Certification_Status__c": "Certified", "Certifications__r": {"records": [{"Name": "Inactive", "Status__c": "Inactive", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"}]}},
+        {"Name": "No Certification", "BillingState": "IL", "NumberOfEmployees": 10, "Certifications__r": {"records": []}},
+        {"Name": "Inactive", "BillingState": "IL", "NumberOfEmployees": 25, "Cert_Certification_Status__c": "Certified", "Certifications__r": {"records": [{"Name": "Inactive", "Status__c": "Inactive", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"}]}},
         {"Name": "Certified Active", "BillingState": "IL", "Cert_Certification_Status__c": "Certified", "Certifications__r": {"records": [{"Name": "Fabricator", "Status__c": "Active", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"}]}},
         {"Name": "Indiana Steel", "BillingState": "IN", "Certifications__r": {"records": [{"Name": "Erector", "Status__c": "Active", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"}]}},
     ]
 
     rows = build_report_companies([], accounts, as_of=date(2026, 6, 1))
-    assert [row.name for row in rows] == ["Certified Active"]
+    assert [row.name for row in rows] == ["No Certification", "Inactive", "Certified Active"]
+    assert [row.employee_count for row in rows] == ["10", "25", ""]
+    assert all(row.membership_type == "" for row in rows)
+    assert all(row.tonnage == "" for row in rows)
+    assert rows[0].certification_categories == ()
+    assert rows[1].certification_categories == ()
+    assert rows[2].certification_categories == ("Fabricator",)
+
+    output = tmp_path / "salesforce-only.pdf"
+    render_illinois_report(rows, output, tonnage_year=2025)
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    assert "No Certification" in text
+    assert "Inactive" in text
+    assert "AISC Certified Fabricator" in text
+    assert "10 Employee(s)" in text
+    assert "25 Employee(s)" in text
+    assert "Full AISC Member" not in text
+    assert "Structural Steel Tonnage" not in text
 
 
 def test_ambiguous_normalized_salesforce_names_do_not_enrich_imis_company():
@@ -681,10 +694,10 @@ def test_ambiguous_normalized_salesforce_names_do_not_enrich_imis_company():
     )
 
     assert len(rows) == 1
-    assert rows[0].certification_status == PLACEHOLDER
+    assert rows[0].certification_categories == ()
 
 
-def test_rendered_pdf_contains_report_text_and_placeholders(tmp_path):
+def test_rendered_pdf_uses_sample_terminology_and_omits_unavailable_fields(tmp_path):
     output = tmp_path / "illinois.pdf"
     companies = read_imis_companies(Path("tests/fixtures/imis-membership-sample.csv"))
     rows = build_report_companies(
@@ -704,14 +717,14 @@ def test_rendered_pdf_contains_report_text_and_placeholders(tmp_path):
     reader = PdfReader(output)
     text = "\n".join(page.extract_text() or "" for page in reader.pages)
     assert output.read_bytes().startswith(b"%PDF")
-    assert "Illinois Certification & Membership Report" in text
-    assert "Illinois" in text
+    assert "AISC Certification and Membership Summary: Illinois" in text
+    assert "Certified and Member Companies" in text
     assert "Example Steel Company" in text
-    assert "Membership type: [PLACEHOLDER: unavailable]" in text
-    assert "Certification status: Salesforce: Certified" in text
-    assert CERTIFICATION_CATEGORY_PLACEHOLDER in text
-    assert "[PLACEHOLDER: U.S. Senators needed]" in text
-    assert "[PLACEHOLDER: U.S. Representatives needed]" in text
+    assert "PLACEHOLDER" not in text
+    assert "Client type:" not in text
+    assert "Certification status:" not in text
+    assert "Congressional district:" not in text
+    assert "U.S. Senators:" not in text
 
 
 def test_rendered_pdf_lists_each_active_certification(tmp_path):
@@ -729,14 +742,15 @@ def test_rendered_pdf_lists_each_active_certification(tmp_path):
     render_illinois_report(rows, output)
 
     text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    normalized_text = " ".join(text.split())
     assert "A&H Steel, LLC" in text
-    assert "Building Fabricator" in text
-    assert "Highway Component Manufacturer" in text
+    assert "AISC Certified Building Fabricator" in text
+    assert "Highway Component Manufacturer" in normalized_text
     assert "Excluded Certification" not in text
 
 
-def test_pdf_uses_salesforce_owned_client_type_employee_count_and_name(tmp_path):
-    imis = Company(name="iMIS Name", state="IL", imis_id="1", membership_type="Full Member", tonnage="50")
+def test_pdf_uses_employee_count_and_sample_terminology(tmp_path):
+    imis = Company(name="iMIS Name", state="IL", imis_id="1", membership_type="Full AISC Member", tonnage="50")
     account = {
         "Id": "sf-1", "IMISID__c": "1", "Name": "Salesforce Name",
         "BillingState": "IL", "Industry": "Fabricator", "NumberOfEmployees": "12,500",
@@ -744,15 +758,46 @@ def test_pdf_uses_salesforce_owned_client_type_employee_count_and_name(tmp_path)
     row = build_report_companies([imis], [account])[0]
 
     assert row.name == "Salesforce Name"
-    assert row.client_type == "Fabricator"
     assert row.employee_count == "12,500"
-    assert row.membership_type == "iMIS: Full Member"
-    assert row.tonnage == "iMIS: 50"
+    assert row.membership_type == "Full AISC Member"
+    assert row.tonnage == "50"
     output = tmp_path / "owned-fields.pdf"
-    render_illinois_report([row], output)
+    render_illinois_report([row], output, tonnage_year=2025)
     text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
-    assert "Client type: Fabricator" in text
-    assert "Employee count: 12,500" in text
+    assert "12,500 Employee(s)" in text
+    assert "Full AISC Member" in text
+    assert "2025 Structural Steel Tonnage: 50 Tons" in text
+
+
+def test_pdf_wraps_long_card_content_and_keeps_later_companies_readable(tmp_path):
+    output = tmp_path / "long-content.pdf"
+    long_name = "Illinois Structural Steel Fabrication and Construction Company " * 4
+    long_address = "12345 Very Long Industrial Parkway, Building Seven, Suite 400, Chicago, Illinois 60601 " * 3
+    long_certification = "Complex Steel Building Fabricator Certification with Extended Scope " * 3
+    rows = [
+        ReportCompany(
+            name=long_name.strip(),
+            address=long_address.strip(),
+            employee_count="12,500",
+            membership_type="Full AISC Member Fabricator",
+            tonnage="1,250",
+            certification_categories=(long_certification.strip(), "Highway Component Manufacturer"),
+        ),
+        *[
+            ReportCompany(name=f"Later Company {number}", address="Chicago, IL")
+            for number in range(20)
+        ],
+    ]
+
+    render_illinois_report(rows, output, tonnage_year=2025)
+
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    normalized_text = " ".join(text.split())
+    assert long_name.strip() in normalized_text
+    assert long_address.strip() in normalized_text
+    assert long_certification.strip() in normalized_text
+    assert "Later Company 19" in text
+    assert len(PdfReader(output).pages) > 1
 
 
 @pytest.mark.parametrize("employee_count", (12500, 12500.0))
@@ -768,13 +813,13 @@ def test_numeric_whole_salesforce_employee_counts_are_formatted(employee_count):
 @pytest.mark.parametrize(
     "employee_count", (None, "not a number", "3.5", 3.5, -1, True, float("inf"))
 )
-def test_invalid_salesforce_employee_counts_use_unavailable_placeholder(employee_count):
+def test_invalid_salesforce_employee_counts_are_omitted(employee_count):
     row = build_report_companies(
         [Company(name="Example", state="IL", imis_id="1")],
         [{"IMISID__c": "1", "Name": "Example", "BillingState": "IL", "NumberOfEmployees": employee_count}],
     )[0]
 
-    assert row.employee_count == PLACEHOLDER
+    assert row.employee_count == ""
 
 
 def test_blank_salesforce_name_falls_back_to_imis_but_name_conflict_is_retained():
@@ -793,8 +838,7 @@ def test_erector_client_type_never_infers_a_certification_category():
 
     row = build_report_companies([imis], [account], as_of=date(2026, 6, 1))[0]
 
-    assert row.client_type == "Erector"
-    assert row.certification_categories == (CERTIFICATION_CATEGORY_PLACEHOLDER,)
+    assert row.certification_categories == ()
 
 
 def test_certified_matched_account_without_active_children_stays_in_pdf_and_reconciliation(tmp_path):
@@ -806,7 +850,7 @@ def test_certified_matched_account_without_active_children_stays_in_pdf_and_reco
     reconciliation = build_reconciliation_rows(combined, as_of=date(2026, 6, 1))
 
     assert [row.name for row in rows] == ["Example"]
-    assert rows[0].certification_categories == (CERTIFICATION_CATEGORY_PLACEHOLDER,)
+    assert rows[0].certification_categories == ()
     assert reconciliation[0].issues == ("certified account without active certifications",)
     csv_output = tmp_path / "reconciliation.csv"
     log_output = tmp_path / "reconciliation.log"

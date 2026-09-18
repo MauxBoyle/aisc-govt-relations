@@ -35,13 +35,6 @@ from .salesforce_fields import (
     is_active_certification,
 )
 
-PLACEHOLDER = "[PLACEHOLDER: unavailable]"
-CERTIFICATION_CATEGORY_PLACEHOLDER = (
-    "[PLACEHOLDER: certification category field needed]"
-)
-SENATORS_PLACEHOLDER = "[PLACEHOLDER: U.S. Senators needed]"
-REPRESENTATIVES_PLACEHOLDER = "[PLACEHOLDER: U.S. Representatives needed]"
-
 
 class ReportDataError(ValueError):
     """Raise when an iMIS export cannot provide the required report data."""
@@ -76,17 +69,19 @@ class TonnageReviewFinding:
 
 @dataclass(frozen=True)
 class ReportCompany:
-    """A company with display-ready certification and membership values."""
+    """A company with display-ready values for the public PDF.
+
+    Optional values are empty rather than placeholders.  The renderer omits
+    their complete line, so incomplete source data never creates invented
+    public-facing content.
+    """
 
     name: str
-    address: str
-    client_type: str
-    employee_count: str
-    membership_type: str
-    tonnage: str
-    district: str
-    certification_status: str
-    certification_categories: tuple[str, ...]
+    address: str = ""
+    employee_count: str = ""
+    membership_type: str = ""
+    tonnage: str = ""
+    certification_categories: tuple[str, ...] = ()
 
 
 class CompanyClassification(StrEnum):
@@ -104,7 +99,7 @@ class SourcedValue:
     imis: str = ""
     salesforce: str = ""
 
-    def display(self, placeholder: str = PLACEHOLDER) -> str:
+    def display(self, placeholder: str = "") -> str:
         """Return one agreed value or clearly label differing source values."""
         values = [("iMIS", self.imis), ("Salesforce", self.salesforce)]
         present = [(source, value) for source, value in values if value]
@@ -617,8 +612,10 @@ def build_report_companies(
 ) -> list[ReportCompany]:
     """Turn the ID-based combined model into PDF rows with owned fields.
 
-    iMIS owns membership, tonnage, and district. Salesforce owns the Account
-    name, Client Type, employee count, and certification data when available.
+    iMIS owns membership and tonnage. Salesforce owns the Account name,
+    employee count, and certification data when available. Optional public
+    fields are represented by empty values; source-data gaps remain visible in
+    the separate reconciliation outputs instead of in the PDF.
     """
     rows = list(companies)
     combined = (
@@ -630,32 +627,22 @@ def build_report_companies(
     for company in combined:
         imis, account = company.imis, company.salesforce
         categories = _active_certification_names(account, as_of) if _is_certified_account(account) else ()
-        if (
-            company.classification is CompanyClassification.SALESFORCE_ONLY
-            and (not _is_certified_account(account) or not categories)
-        ):
-            continue
         # A valid ID join gives Salesforce ownership of the displayed Account
         # name; iMIS remains the fallback for a blank Salesforce name.
-        name = _account_value(account, CertificationAccountField.NAME) or (imis.name if imis else "") or PLACEHOLDER
+        name = _account_value(account, CertificationAccountField.NAME) or (imis.name if imis else "")
         address = SourcedValue(imis.address if imis else "", _salesforce_address(account) if account else "").display()
-        status = _account_value(account, CertificationAccountField.CERTIFICATION_STATUS)
         report_companies.append(
             ReportCompany(
                 name,
                 address,
-                _account_value(account, CertificationAccountField.CLIENT_TYPE) or PLACEHOLDER,
                 _format_employee_count(
                     account.get(CertificationAccountField.EMPLOYEE_COUNT)
                     if account
                     else None
                 ),
-                _label_source("iMIS", imis.membership_type) if imis and imis.membership_type else PLACEHOLDER,
-                _label_source("iMIS", imis.tonnage) if imis and imis.tonnage else PLACEHOLDER,
-                _label_source("iMIS", imis.district) if imis and imis.district else PLACEHOLDER,
-                _label_source("Salesforce", status) if status else PLACEHOLDER,
-                tuple(_label_source("Salesforce", category) for category in categories)
-                or (CERTIFICATION_CATEGORY_PLACEHOLDER,),
+                imis.membership_type if imis else "",
+                imis.tonnage if imis else "",
+                categories,
             )
         )
     return report_companies
@@ -674,76 +661,62 @@ def render_illinois_report(
         rightMargin=0.55 * inch,
         topMargin=0.55 * inch,
         bottomMargin=0.55 * inch,
-        title="Illinois Certification & Membership Report",
+        title="AISC Certification and Membership Summary: Illinois",
     )
     styles = getSampleStyleSheet()
     title = ParagraphStyle(
         "ReportTitle",
         parent=styles["Title"],
         alignment=TA_CENTER,
-        fontSize=17,
+        fontSize=16,
         leading=21,
     )
-    geography = ParagraphStyle(
-        "Geography",
-        parent=styles["Heading2"],
-        alignment=TA_CENTER,
-        fontSize=12,
-        leading=15,
-    )
     body = ParagraphStyle(
-        "ReportBody", parent=styles["BodyText"], fontSize=8.7, leading=11
+        "ReportBody", parent=styles["BodyText"], fontSize=9, leading=12, spaceAfter=2
     )
     company_heading = ParagraphStyle(
         "CompanyHeading",
         parent=body,
         fontName="Helvetica-Bold",
         leading=12,
-        spaceAfter=3,
+        spaceAfter=4,
     )
 
     story = [
-        Paragraph("Illinois Certification &amp; Membership Report", title),
-        Paragraph("Illinois", geography),
-        Spacer(1, 0.12 * inch),
-        Paragraph(f"<b>U.S. Senators:</b> {SENATORS_PLACEHOLDER}", body),
-        Paragraph(f"<b>U.S. Representatives:</b> {REPRESENTATIVES_PLACEHOLDER}", body),
-        Spacer(1, 0.12 * inch),
+        Paragraph("AISC Certification and Membership Summary: Illinois", title),
+        Spacer(1, 0.18 * inch),
+        Paragraph("<b>Certified and Member Companies</b>", body),
+        Spacer(1, 0.08 * inch),
     ]
     for company in companies:
         company_cell = [
-            Paragraph(f"<u>{_escape(company.name)}</u>", company_heading),
-            Paragraph(_escape(company.address), body),
+            Paragraph(_escape(company.name), company_heading),
         ]
-        details_cell = [
-            Paragraph(
-                f"<b>Client type:</b> {_escape(company.client_type)}", body
-            ),
-            Paragraph(
-                f"<b>Employee count:</b> {_escape(company.employee_count)}", body
-            ),
-            Paragraph(
-                f"<b>Membership type:</b> {_escape(company.membership_type)}", body
-            ),
-            Paragraph(
-                f"<b>Structural steel tonnage{f' ({tonnage_year})' if tonnage_year else ''}:</b> {_escape(company.tonnage)}",
-                body,
-            ),
-            Paragraph(
-                f"<b>Congressional district:</b> {_escape(company.district)}", body
-            ),
-            Paragraph(
-                f"<b>Certification status:</b> {_escape(company.certification_status)}",
-                body,
-            ),
-            Paragraph(
-                "<b>Certification category:</b><br/>"
-                + "<br/>".join(_escape(category) for category in company.certification_categories),
-                body,
-            ),
-        ]
+        if company.address:
+            company_cell.append(Paragraph(_escape(company.address), body))
+        details_cell = []
+        if company.employee_count:
+            details_cell.append(Paragraph(f"{_escape(company.employee_count)} Employee(s)", body))
+        if company.membership_type:
+            details_cell.append(Paragraph(_escape(company.membership_type), body))
+        if company.tonnage and tonnage_year is not None:
+            details_cell.append(
+                Paragraph(
+                    f"{tonnage_year} Structural Steel Tonnage: "
+                    f"{_escape(company.tonnage)} Tons",
+                    body,
+                )
+            )
+        if company.certification_categories:
+            details_cell.append(
+                Paragraph(
+                    "AISC Certified "
+                    + " and ".join(_escape(category) for category in company.certification_categories),
+                    body,
+                )
+            )
         table = Table(
-            [[company_cell, details_cell]], colWidths=[2.35 * inch, 4.55 * inch]
+            [[company_cell, details_cell]], colWidths=[3.35 * inch, 3.55 * inch], splitByRow=1
         )
         table.setStyle(
             TableStyle(
@@ -877,9 +850,9 @@ def _is_certified_account(account: Mapping[str, object] | None) -> bool:
 
 
 def _format_employee_count(value: object) -> str:
-    """Format Salesforce's whole-person employee count, or show unavailable."""
+    """Format Salesforce's whole-person employee count, or return an empty value."""
     if isinstance(value, bool):
-        return PLACEHOLDER
+        return ""
     try:
         if isinstance(value, str):
             count = Decimal(value.replace(",", ""))
@@ -888,11 +861,11 @@ def _format_employee_count(value: object) -> str:
         elif isinstance(value, float):
             count = Decimal(str(value))
         else:
-            return PLACEHOLDER
+            return ""
     except (InvalidOperation, ValueError):
-        return PLACEHOLDER
+        return ""
     if not count.is_finite() or count != count.to_integral_value() or count < 0:
-        return PLACEHOLDER
+        return ""
     return f"{count:,.0f}"
 
 
@@ -925,10 +898,6 @@ def _identifier_counts(identifiers: Iterable[object]) -> Counter[str]:
         for value in identifiers
         if (identifier := _normalize_imis_identifier(value))
     )
-
-
-def _label_source(source: str, value: str) -> str:
-    return f"{source}: {value}"
 
 
 def _account_value(

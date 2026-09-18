@@ -65,8 +65,12 @@ enriching the wrong company.
 The modernized sample-inspired PDF is titled **AISC Certification and
 Membership Summary: Illinois** and uses bordered two-column company cards. It
 can display the company name, address, `N Employees`, translated membership
-type/category, `YEAR Structural Steel Tonnage: VALUE Tons`, and one wrapping
-`AISC Certified …` line for all active certifications. Salesforce owns the
+type/category, `YEAR Structural Steel Tonnage: VALUE Tons`, and concise,
+wrapping `AISC Certified …` sentences for active certifications. Display rules
+in `src/aisc_gr_statistics/certification_groups.py` group and deduplicate the
+detailed Salesforce names, then order Fabricator and Erector groups. An active
+Salesforce name without a rule remains visible in its own final `AISC Certified
+…` sentence so it can be reviewed and added to that module. Salesforce owns the
 displayed name for an ID match (falling back to iMIS only when that name is
 blank), employee count, and certification data. iMIS owns membership
 type/category and annual tonnage. Employee counts must be whole numbers and
@@ -93,8 +97,9 @@ The report adds only Salesforce-only Accounts whose `BillingState` is `IL` or
 `Illinois` and whose `Cert_Certification_Status__c` is exactly `Certified`.
 Eligible Salesforce-only Accounts with complete addresses that match after
 normalizing capitalization, punctuation, and excess whitespace combine into
-one card. The card uses slash-separated names, deduplicated active certification
-categories, summed valid whole-number employee counts, and the first formatted
+one card. The card uses slash-separated names, active certification categories
+that are later grouped for display, summed valid whole-number employee counts,
+and the first formatted
 address. iMIS-only and ID-matched records are never address-merged. These
 certification-only cards omit iMIS membership and tonnage lines. A matched iMIS company remains in the PDF when its Salesforce
 Account is `Certified` but has no active child certifications; its missing

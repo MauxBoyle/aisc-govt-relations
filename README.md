@@ -50,8 +50,12 @@ it to the central mapping in `src/aisc_gr_statistics/imis_fields.py`.
 The modernized, sample-inspired PDF is a bordered two-column card directory
 titled **AISC Certification and Membership Summary: Illinois**. It displays a
 company name, address, `N Employees`, translated membership type/category,
-`YEAR Structural Steel Tonnage: VALUE Tons`, and `AISC Certified …` active
-certifications. Salesforce owns the displayed company name (with iMIS used when
+`YEAR Structural Steel Tonnage: VALUE Tons`, and concise `AISC Certified …`
+active-certification sentences. Detailed Salesforce certification names are
+grouped, deduplicated, and ordered for display using the maintained rules in
+`src/aisc_gr_statistics/certification_groups.py`; unfamiliar active names stay
+visible in their own `AISC Certified …` sentence so they can be reviewed and
+mapped later. Salesforce owns the displayed company name (with iMIS used when
 that name is blank), employee count, and certification data; iMIS owns the
 membership type/category and annual structural-steel tonnage. Employee counts
 are whole numbers with thousands separators.
@@ -72,8 +76,8 @@ creates a certification label. Only Salesforce-only Illinois Accounts whose
 Account status is exactly `Certified` are included as certification-only cards.
 Eligible Salesforce-only Accounts with complete addresses that match after
 case, punctuation, and whitespace normalization are combined into one card:
-their names are slash-separated, active certification categories are
-deduplicated, and valid employee counts are summed. The first formatted address
+their names are slash-separated, active certification categories are retained
+for display grouping, and valid employee counts are summed. The first formatted address
 is displayed. iMIS-only and ID-matched records are never address-merged. These
 cards omit iMIS membership and tonnage lines. A matched certified Account without an active child remains in
 the PDF and is reported in reconciliation as needing review.

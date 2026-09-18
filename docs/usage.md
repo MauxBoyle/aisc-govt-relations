@@ -54,6 +54,26 @@ conflicting same-key tonnage, and other invalid selected-year rows are excluded
 and written to the required `--tonnage-review-csv`. Company display fields come
 from the latest valid selected-year submission.
 
+### Senate contact reference data
+
+The report places Illinois's two current U.S. Senate contacts before company
+cards. It reads the committed files `data/reference/senate/senators.xml` and
+`data/reference/senate/senators.json` only; it does not make a network request
+while generating a PDF. The JSON records the official source, UTC retrieval
+time, and SHA-256 checksum of the XML, which lets the report detect a missing,
+changed, or malformed snapshot instead of silently using unverified data.
+
+To intentionally download a new snapshot from the official [U.S. Senate XML
+contact list](https://www.senate.gov/general/contact_information/senators_cfm.xml), run:
+
+```bash
+uv run aisc_gr_statistics refresh-senators
+```
+
+The command validates that every state has exactly two complete records before
+replacing either local file. Review and commit the XML and JSON together after
+a refresh. This makes a normal report run reproducible and usable offline.
+
 When both `SF_CLIENT_ID` and `SF_CLIENT_SECRET` are configured, the command
 reads Salesforce Account records with their child certifications. It joins only
 on a populated, exact-text matching `IMISID__c` value—similar company names do
@@ -85,9 +105,10 @@ without a source label. Every address difference still appears in
 to a whole number.
 
 The missing-value rule is exact: blank, invalid, unrecognized, or unavailable
-optional values omit both their label and value. The PDF does not display
-Client Type, certification status, congressional district, senator, or
-representative fields. Name validation and all source-data/reconciliation
+optional company-card values omit both their label and value. The PDF does not display
+Client Type, certification status, congressional district, or representative
+fields. Senator contacts are instead a dedicated validated reference-data
+section. Name validation and all source-data/reconciliation
 findings remain separate from the public PDF.
 
 A child certification is displayed only when the Account status is exactly

@@ -10,7 +10,7 @@ import re
 from collections import Counter
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from enum import StrEnum
 from pathlib import Path
@@ -35,6 +35,7 @@ from .salesforce_fields import (
     CertificationStatus,
     is_active_certification,
 )
+from .senate import SenatorContact
 
 
 class ReportDataError(ValueError):
@@ -651,7 +652,12 @@ def build_report_companies(
 
 
 def render_illinois_report(
-    companies: Iterable[ReportCompany], output: Path | str, tonnage_year: int | None = None
+    companies: Iterable[ReportCompany],
+    output: Path | str,
+    tonnage_year: int | None = None,
+    senators: Iterable[SenatorContact] = (),
+    senate_source_url: str = "",
+    senate_retrieved_at: datetime | None = None,
 ) -> None:
     """Create a printable, letter-size statewide Illinois PDF report."""
     output_path = Path(output)
@@ -683,13 +689,49 @@ def render_illinois_report(
         leading=12,
         spaceAfter=4,
     )
+    senator_heading = ParagraphStyle(
+        "SenatorHeading", parent=body, fontName="Helvetica-Bold", leading=12, spaceAfter=2
+    )
 
     story = [
         Paragraph("AISC Certification and Membership Summary: Illinois", title),
         Spacer(1, 0.18 * inch),
-        Paragraph("<b>Certified and Member Companies</b>", body),
-        Spacer(1, 0.08 * inch),
     ]
+    senator_contacts = tuple(senators)
+    if senator_contacts:
+        story.append(Paragraph("<b>Illinois U.S. Senate Contacts</b>", body))
+        if senate_retrieved_at:
+            retrieval_date = senate_retrieved_at.astimezone(UTC).date().isoformat()
+            story.append(Paragraph(f"Retrieved: {retrieval_date}", body))
+        for senator in senator_contacts:
+            senator_lines = [
+                Paragraph(_escape(senator.name), senator_heading),
+                Paragraph(_escape(senator.address).replace("\n", "<br/>"), body),
+                Paragraph(f"Phone: {_escape(senator.phone)}", body),
+                Paragraph(f"Contact form: {_escape(senator.contact_form_url)}", body),
+            ]
+            story.append(Table([[senator_lines]], colWidths=[6.9 * inch]))
+            story[-1].setStyle(
+                TableStyle(
+                    [
+                        ("BOX", (0, 0), (-1, -1), 0.35, colors.HexColor("#777777")),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 7),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+                        ("TOPPADDING", (0, 0), (-1, -1), 6),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                    ]
+                )
+            )
+            story.append(Spacer(1, 0.06 * inch))
+        if senate_source_url:
+            story.append(Paragraph(f"Source: {_escape(senate_source_url)}", body))
+        story.append(Spacer(1, 0.12 * inch))
+    story.extend(
+        [
+            Paragraph("<b>Certified and Member Companies</b>", body),
+            Spacer(1, 0.08 * inch),
+        ]
+    )
     for company in companies:
         company_cell = [
             Paragraph(_escape(company.name), company_heading),

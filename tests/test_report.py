@@ -327,7 +327,7 @@ def test_combined_model_joins_by_id_preserves_sources_and_reports_conflicts(tmp_
     }
     row = build_report_companies(combined)[0]
     assert row.name == "ACME Structural"
-    assert row.address == "iMIS: 1 iMIS Way | Salesforce: 2 SF Way, Evanston, IL"
+    assert row.address == "iMIS: 1 iMIS Way\nChicago, IL | Salesforce: 2 SF Way\nEvanston, IL"
     output = tmp_path / "conflict.pdf"
     render_illinois_report([row], output, tonnage_year=2025)
     text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
@@ -595,11 +595,12 @@ def test_report_data_uses_only_shared_imis_id_not_a_similar_name():
     ]
 
     rows = build_report_companies(companies, accounts)
+    imis_rows = {row.name: row for row in rows if row.name in {company.name for company in companies}}
 
-    assert rows[0].address == ""
-    assert rows[0].certification_categories == ()
-    assert rows[1].certification_categories == ()
-    assert rows[2].certification_categories == ()
+    assert imis_rows["Example  Steel, Inc."].address == ""
+    assert imis_rows["Example  Steel, Inc."].certification_categories == ()
+    assert imis_rows["No Match Steel"].certification_categories == ()
+    assert imis_rows["Ambiguous Steel"].certification_categories == ()
     assert normalize_company_name("Example  Steel, Inc.") == "example steel inc"
 
 
@@ -607,6 +608,113 @@ def test_report_data_without_salesforce_records_omits_certification():
     rows = build_report_companies([Company(name="Example Steel", state="IL")])
 
     assert rows[0].certification_categories == ()
+
+
+def test_public_report_rows_sort_by_name_ignoring_case_and_punctuation():
+    rows = build_report_companies(
+        [
+            Company(name="Zulu Steel", state="IL"),
+            Company(name="beta steel", state="IL"),
+            Company(name="A.B. Steel", state="IL"),
+        ]
+    )
+
+    assert [row.name for row in rows] == ["A.B. Steel", "beta steel", "Zulu Steel"]
+
+
+def test_report_addresses_omit_united_states_and_put_city_on_a_new_line(tmp_path):
+    imis = Company(
+        name="iMIS Address",
+        state="IL",
+        city="Chicago",
+        imis_id="1",
+        address="1 Main St, UNITED STATES",
+    )
+    account = {
+        "IMISID__c": "1",
+        "Name": "Salesforce Address",
+        "BillingStreet": "2 Salesforce Way",
+        "BillingCity": "Evanston",
+        "BillingState": "IL",
+        "BillingPostalCode": "60201",
+        "BillingCountry": "uNiTeD sTaTeS",
+    }
+
+    row = build_report_companies([imis], [account])[0]
+
+    assert row.address == (
+        "iMIS: 1 Main St\nChicago, IL | "
+        "Salesforce: 2 Salesforce Way\nEvanston, IL 60201"
+    )
+    output = tmp_path / "addresses.pdf"
+    render_illinois_report([row], output)
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    assert "United States" not in text
+    assert "iMIS: 1 Main St\nChicago, IL" in text
+    assert "Salesforce: 2 Salesforce Way\nEvanston, IL 60201" in text
+
+
+def test_certified_salesforce_only_accounts_with_same_address_are_merged():
+    active = {
+        "Status__c": "Active",
+        "Start_Date__c": "2026-01-01",
+        "End_Date__c": "2026-12-31",
+    }
+    accounts = [
+        {
+            "Name": "Alpha Steel",
+            "BillingStreet": "10 Steel Way",
+            "BillingCity": "Chicago",
+            "BillingState": "IL",
+            "BillingPostalCode": "60601",
+            "Cert_Certification_Status__c": "Certified",
+            "NumberOfEmployees": 10,
+            "Certifications__r": {"records": [{**active, "Name": "Fabricator"}]},
+        },
+        {
+            "Name": "Bravo Steel",
+            "BillingStreet": "10 STEEL WAY.",
+            "BillingCity": " chicago ",
+            "BillingState": "IL",
+            "BillingPostalCode": "60601",
+            "Cert_Certification_Status__c": "Certified",
+            "NumberOfEmployees": "25",
+            "Certifications__r": {
+                "records": [
+                    {**active, "Name": "Fabricator"},
+                    {**active, "Name": "Erector"},
+                ]
+            },
+        },
+        {
+            "Name": "Count Unknown Steel",
+            "BillingStreet": "10 Steel Way",
+            "BillingCity": "Chicago",
+            "BillingState": "IL",
+            "BillingPostalCode": "60601",
+            "Cert_Certification_Status__c": "Certified",
+            "NumberOfEmployees": "not a number",
+        },
+        {
+            "Name": "Not Certified",
+            "BillingStreet": "10 Steel Way",
+            "BillingCity": "Chicago",
+            "BillingState": "IL",
+            "Cert_Certification_Status__c": "Initials",
+            "NumberOfEmployees": 100,
+        },
+    ]
+
+    rows = build_report_companies([], accounts, as_of=date(2026, 6, 1))
+
+    assert rows == [
+        ReportCompany(
+            name="Alpha Steel / Bravo Steel / Count Unknown Steel",
+            address="10 Steel Way\nChicago, IL 60601",
+            employee_count="35",
+            certification_categories=("Fabricator", "Erector"),
+        )
+    ]
 
 
 def test_report_uses_only_active_nested_certifications_and_adds_salesforce_only_il_companies():
@@ -643,18 +751,19 @@ def test_report_uses_only_active_nested_certifications_and_adds_salesforce_only_
 
     rows = build_report_companies(companies, accounts, as_of=date(2026, 6, 1))
 
-    assert rows[0].certification_categories == (
+    lucas = next(row for row in rows if row.name == "A. Lucas & Sons Steel")
+    assert lucas.certification_categories == (
         "Building Fabricator", "Highway Component Manufacturer"
     )
-    ah_steel = rows[1]
+    ah_steel = next(row for row in rows if row.name == "A&H Steel, LLC")
     assert ah_steel.name == "A&H Steel, LLC"
-    assert ah_steel.address == "10 Steel Way, Chicago, Illinois 60601"
+    assert ah_steel.address == "10 Steel Way\nChicago, Illinois 60601"
     assert ah_steel.membership_type == ""
     assert ah_steel.tonnage == ""
     assert ah_steel.certification_categories == ("Erector",)
 
 
-def test_salesforce_only_rows_include_salesforce_fields_without_membership(tmp_path):
+def test_salesforce_only_rows_require_certified_account_status(tmp_path):
     accounts = [
         {"Name": "No Certification", "BillingState": "IL", "NumberOfEmployees": 10, "Certifications__r": {"records": []}},
         {"Name": "Inactive", "BillingState": "IL", "NumberOfEmployees": 25, "Cert_Certification_Status__c": "Certified", "Certifications__r": {"records": [{"Name": "Inactive", "Status__c": "Inactive", "Start_Date__c": "2026-01-01", "End_Date__c": "2026-12-31"}]}},
@@ -663,22 +772,20 @@ def test_salesforce_only_rows_include_salesforce_fields_without_membership(tmp_p
     ]
 
     rows = build_report_companies([], accounts, as_of=date(2026, 6, 1))
-    assert [row.name for row in rows] == ["No Certification", "Inactive", "Certified Active"]
-    assert [row.employee_count for row in rows] == ["10", "25", ""]
+    assert [row.name for row in rows] == ["Certified Active", "Inactive"]
+    assert [row.employee_count for row in rows] == ["", "25"]
     assert all(row.membership_type == "" for row in rows)
     assert all(row.tonnage == "" for row in rows)
-    assert rows[0].certification_categories == ()
+    assert rows[0].certification_categories == ("Fabricator",)
     assert rows[1].certification_categories == ()
-    assert rows[2].certification_categories == ("Fabricator",)
 
     output = tmp_path / "salesforce-only.pdf"
     render_illinois_report(rows, output, tonnage_year=2025)
     text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
-    assert "No Certification" in text
     assert "Inactive" in text
     assert "AISC Certified Fabricator" in text
-    assert "10 Employee(s)" in text
-    assert "25 Employee(s)" in text
+    assert "No Certification" not in text
+    assert "25 Employees" in text
     assert "Full AISC Member" not in text
     assert "Structural Steel Tonnage" not in text
 
@@ -764,7 +871,7 @@ def test_pdf_uses_employee_count_and_sample_terminology(tmp_path):
     output = tmp_path / "owned-fields.pdf"
     render_illinois_report([row], output, tonnage_year=2025)
     text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
-    assert "12,500 Employee(s)" in text
+    assert "12,500 Employees" in text
     assert "Full AISC Member" in text
     assert "2025 Structural Steel Tonnage: 50 Tons" in text
 

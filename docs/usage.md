@@ -78,8 +78,11 @@ are displayed with thousands separators.
 
 Public company cards are sorted alphabetically while ignoring case and
 punctuation. Addresses omit `United States` in any capitalization and put the
-city/locality on a separate line. When an ID-matched record has different iMIS
-and Salesforce addresses, both remain visibly labeled rather than being merged.
+city/locality on a separate line. For an exact shared-iMIS-ID match, the PDF
+displays the Salesforce address when available, otherwise the iMIS address,
+without a source label. Every address difference still appears in
+`--conflicts-csv` with both iMIS and Salesforce values. The PDF rounds tonnage
+to a whole number.
 
 The missing-value rule is exact: blank, invalid, unrecognized, or unavailable
 optional values omit both their label and value. The PDF does not display

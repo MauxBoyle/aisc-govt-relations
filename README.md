@@ -62,8 +62,11 @@ are whole numbers with thousands separators.
 
 Public company cards are ordered alphabetically without considering case or
 punctuation. Addresses omit `United States` regardless of capitalization and
-place the city/locality on its own line. Matched records retain their separate
-iMIS and Salesforce addresses when the two sources differ.
+place the city/locality on its own line. For an exact shared-iMIS-ID match, the
+PDF displays the Salesforce address when available, otherwise the iMIS address,
+without a source label. Address differences remain in the conflicts CSV with
+both source values for reconciliation. Tonnage is rounded to a whole number in
+the PDF.
 
 Optional PDF values follow one exact rule: blank, invalid, unrecognized, or
 unavailable values omit both their label and value. The PDF never uses blanks

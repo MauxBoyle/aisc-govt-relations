@@ -30,6 +30,7 @@ CSV explicitly:
 ```bash
 uv run aisc_gr_statistics report \
   --imis-csv data/raw/imis/membership-export.csv \
+  --imis-export-date 2026-09-18 \
   --output data/processed/illinois-certification-membership.pdf \
   --conflicts-csv data/processed/field-conflicts.csv \
   --candidate-matches-csv data/processed/candidate-matches.csv \
@@ -45,6 +46,14 @@ common forms of the company-name, state, city, shared-iMIS-ID, membership-type,
 tonnage, and congressional-district headers. Company name, state, city, and a
 recognizable shared iMIS ID column are required (individual ID and city values
 may be blank).
+
+`--imis-export-date` is required and must be the date iMIS created the CSV,
+written as `YYYY-MM-DD`. The final **Report provenance** block records that
+filename/date, the selected tonnage calendar year, the Senate snapshot's
+elected-official data retrieval date, and the Salesforce data retrieval date.
+All provenance dates use UTC. When Salesforce was not queried because
+credentials are absent, or its query failed, its field says `Not retrieved`;
+the PDF never includes credentials or raw error messages.
 Tonnage submissions may be monthly or irregular. The report selects the most
 recently completed calendar year (so a 2026 run selects 2025), then totals each
 unique `(iMIS ID, Tonnage Year, Submission Date)` entry's `Bridge Tonnage`,

@@ -103,7 +103,7 @@ current-year rows are not included.
 
 1. Place the unchanged export in `data/raw/imis/`.
 2. Run the statewide report with `uv run aisc_gr_statistics report --imis-csv
-   data/raw/imis/membership-export.csv --output
+   data/raw/imis/membership-export.csv --imis-export-date 2026-09-18 --output
    data/processed/illinois-certification-membership.pdf --conflicts-csv
    data/processed/field-conflicts.csv --candidate-matches-csv
    data/processed/candidate-matches.csv --reconciliation-csv

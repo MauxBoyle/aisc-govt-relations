@@ -22,6 +22,7 @@ CSV export:
 ```bash
 uv run aisc_gr_statistics report \
   --imis-csv data/raw/imis/membership-export.csv \
+  --imis-export-date 2026-09-18 \
   --output data/processed/illinois-certification-membership.pdf \
   --conflicts-csv data/processed/field-conflicts.csv \
   --candidate-matches-csv data/processed/candidate-matches.csv \
@@ -37,6 +38,13 @@ creation does not fetch data from the network and remains reproducible. The
 snapshot lives at `data/reference/senate/senators.xml`; its source URL,
 UTC retrieval time, and SHA-256 integrity checksum are in
 `data/reference/senate/senators.json`.
+
+Each PDF ends with a **Report provenance** block. It records the iMIS export
+filename and required `--imis-export-date`, the selected tonnage calendar year,
+the Senate snapshot's elected-official data retrieval date, and the Salesforce
+retrieval date. Dates use `YYYY-MM-DD`. If Salesforce credentials are missing
+or its query fails, the PDF says `Not retrieved` without including credentials
+or error details.
 
 Maintainers refresh that reference data intentionally, then review and commit
 the changed XML and JSON together:

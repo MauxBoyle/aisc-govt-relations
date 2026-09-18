@@ -658,6 +658,10 @@ def render_illinois_report(
     senators: Iterable[SenatorContact] = (),
     senate_source_url: str = "",
     senate_retrieved_at: datetime | None = None,
+    *,
+    imis_export_filename: str = "",
+    imis_export_date: date | None = None,
+    salesforce_retrieved_at: datetime | None = None,
 ) -> None:
     """Create a printable, letter-size statewide Illinois PDF report."""
     output_path = Path(output)
@@ -780,7 +784,50 @@ def render_illinois_report(
             )
         )
         story.extend([table, Spacer(1, 0.08 * inch)])
+    story.extend(_provenance_section(
+        body,
+        imis_export_filename=imis_export_filename,
+        imis_export_date=imis_export_date,
+        tonnage_year=tonnage_year,
+        senate_retrieved_at=senate_retrieved_at,
+        salesforce_retrieved_at=salesforce_retrieved_at,
+    ))
     document.build(story)
+
+
+def _provenance_section(
+    body: ParagraphStyle,
+    *,
+    imis_export_filename: str,
+    imis_export_date: date | None,
+    tonnage_year: int | None,
+    senate_retrieved_at: datetime | None,
+    salesforce_retrieved_at: datetime | None,
+) -> list[object]:
+    """Build the final PDF block that identifies the report's source data."""
+    imis_details = _escape(imis_export_filename) if imis_export_filename else "Not provided"
+    if imis_export_date:
+        imis_details += f" (exported {imis_export_date.isoformat()})"
+    elif not imis_export_filename:
+        imis_details = "Not provided"
+    else:
+        imis_details += " (export date not provided)"
+    tonnage_details = str(tonnage_year) if tonnage_year is not None else "Not available"
+    senate_details = _provenance_date(senate_retrieved_at)
+    salesforce_details = _provenance_date(salesforce_retrieved_at)
+    return [
+        Spacer(1, 0.12 * inch),
+        Paragraph("<b>Report provenance</b>", body),
+        Paragraph(f"iMIS export: {imis_details}", body),
+        Paragraph(f"Tonnage calendar year: {tonnage_details}", body),
+        Paragraph(f"Elected-official data retrieved: {senate_details}", body),
+        Paragraph(f"Salesforce data retrieved: {salesforce_details}", body),
+    ]
+
+
+def _provenance_date(retrieved_at: datetime | None) -> str:
+    """Display a source retrieval's UTC calendar date without exposing errors."""
+    return retrieved_at.astimezone(UTC).date().isoformat() if retrieved_at else "Not retrieved"
 
 
 def _recognized_fields(headers: list[str] | None) -> dict[str, str]:

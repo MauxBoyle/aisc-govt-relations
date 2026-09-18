@@ -1218,3 +1218,36 @@ def test_pdf_places_senate_contacts_before_company_cards_without_network(tmp_pat
     assert "Second Senator (R-IL)" in text
     assert "Retrieved: 2026-01-02" in text
     assert text.index("Illinois U.S. Senate Contacts") < text.index("Company After Contacts")
+
+
+def test_pdf_includes_final_source_data_provenance(tmp_path):
+    output = tmp_path / "report.pdf"
+
+    render_illinois_report(
+        [ReportCompany(name="Example Steel")],
+        output,
+        tonnage_year=2025,
+        imis_export_filename="membership-export.csv",
+        imis_export_date=date(2026, 9, 17),
+        senate_retrieved_at=datetime(2026, 9, 15, 23, tzinfo=UTC),
+        salesforce_retrieved_at=datetime(2026, 9, 18, 1, tzinfo=UTC),
+    )
+
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    assert "Report provenance" in text
+    assert "iMIS export: membership-export.csv (exported 2026-09-17)" in text
+    assert "Tonnage calendar year: 2025" in text
+    assert "Elected-official data retrieved: 2026-09-15" in text
+    assert "Salesforce data retrieved: 2026-09-18" in text
+
+
+@pytest.mark.parametrize("reason", ("missing credentials", "failed retrieval"))
+def test_pdf_marks_unavailable_salesforce_data_not_retrieved(tmp_path, reason):
+    output = tmp_path / f"{reason}.pdf"
+
+    render_illinois_report(
+        [ReportCompany(name="Example Steel")], output, salesforce_retrieved_at=None
+    )
+
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    assert "Salesforce data retrieved: Not retrieved" in text

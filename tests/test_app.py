@@ -1,10 +1,16 @@
 """Tests for the application entry point."""
 
+from datetime import UTC
+
+import pytest
+from pypdf import PdfReader
+
 from aisc_gr_statistics.app import (
     _salesforce_accounts_if_configured,
     load_local_environment,
     main,
 )
+from aisc_gr_statistics.salesforce import SalesforceError
 
 
 def test_main_logs_greeting(capfd):
@@ -45,6 +51,8 @@ def test_report_command_creates_a_pdf_without_salesforce_credentials(tmp_path):
             "report",
             "--imis-csv",
             "tests/fixtures/imis-membership-sample.csv",
+            "--imis-export-date",
+            "2026-09-18",
             "--output",
             str(output),
             "--conflicts-csv",
@@ -69,4 +77,59 @@ def test_report_command_creates_a_pdf_without_salesforce_credentials(tmp_path):
     assert "Matched records:" in reconciliation_log.read_text(encoding="utf-8")
     assert unknown_imis_codes.read_text(encoding="utf-8").startswith("iMIS field")
     assert tonnage_review.read_text(encoding="utf-8").startswith("iMIS ID")
-    assert _salesforce_accounts_if_configured({"SF_CLIENT_ID": "id"}) == []
+    assert _salesforce_accounts_if_configured({"SF_CLIENT_ID": "id"}) == ([], None)
+
+
+def test_report_requires_an_imis_export_date():
+    with pytest.raises(SystemExit):
+        main(["report", "--imis-csv", "members.csv"])
+
+
+def test_report_pdf_uses_the_supplied_imis_export_date(tmp_path):
+    output = tmp_path / "report.pdf"
+    destinations = {
+        "--conflicts-csv": tmp_path / "conflicts.csv",
+        "--candidate-matches-csv": tmp_path / "candidates.csv",
+        "--reconciliation-csv": tmp_path / "reconciliation.csv",
+        "--reconciliation-log": tmp_path / "reconciliation.log",
+        "--unknown-imis-codes-csv": tmp_path / "unknown.csv",
+        "--tonnage-review-csv": tmp_path / "tonnage.csv",
+    }
+    arguments = [
+        "report", "--imis-csv", "tests/fixtures/imis-membership-sample.csv",
+        "--imis-export-date", "2026-09-17", "--output", str(output),
+    ]
+    for name, path in destinations.items():
+        arguments.extend((name, str(path)))
+
+    main(arguments)
+
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    assert "iMIS export: imis-membership-sample.csv (exported 2026-09-17)" in text
+
+
+def test_salesforce_load_records_a_utc_retrieval_time_after_success(monkeypatch):
+    class Client:
+        def query_records(self, *args, **kwargs):
+            return [{"Id": "001"}]
+
+    monkeypatch.setattr("aisc_gr_statistics.app.create_client", lambda environment: Client())
+
+    accounts, retrieved_at = _salesforce_accounts_if_configured(
+        {"SF_CLIENT_ID": "id", "SF_CLIENT_SECRET": "secret"}
+    )
+
+    assert accounts == [{"Id": "001"}]
+    assert retrieved_at is not None
+    assert retrieved_at.tzinfo is UTC
+
+
+def test_failed_salesforce_load_has_no_retrieval_time(monkeypatch):
+    def fail_to_create_client(environment):
+        raise SalesforceError("authentication failed")
+
+    monkeypatch.setattr("aisc_gr_statistics.app.create_client", fail_to_create_client)
+
+    assert _salesforce_accounts_if_configured(
+        {"SF_CLIENT_ID": "id", "SF_CLIENT_SECRET": "secret"}
+    ) == ([], None)

@@ -38,7 +38,8 @@ def test_load_local_environment_reads_credentials_without_overriding_shell(tmp_p
 
 def test_report_command_creates_a_pdf_without_salesforce_credentials(tmp_path):
     """Keep the local CSV-only workflow usable without Salesforce access."""
-    output = tmp_path / "report.pdf"
+    external_output = tmp_path / "external-report.pdf"
+    internal_output = tmp_path / "internal-report.pdf"
     conflicts = tmp_path / "conflicts.csv"
     candidates = tmp_path / "candidates.csv"
     reconciliation_csv = tmp_path / "reconciliation.csv"
@@ -53,8 +54,10 @@ def test_report_command_creates_a_pdf_without_salesforce_credentials(tmp_path):
             "tests/fixtures/imis-membership-sample.csv",
             "--imis-export-date",
             "2026-09-18",
-            "--output",
-            str(output),
+            "--external-output",
+            str(external_output),
+            "--internal-output",
+            str(internal_output),
             "--conflicts-csv",
             str(conflicts),
             "--candidate-matches-csv",
@@ -70,7 +73,8 @@ def test_report_command_creates_a_pdf_without_salesforce_credentials(tmp_path):
         ]
     )
 
-    assert output.read_bytes().startswith(b"%PDF")
+    assert external_output.read_bytes().startswith(b"%PDF")
+    assert internal_output.read_bytes().startswith(b"%PDF")
     assert conflicts.read_text(encoding="utf-8").startswith("shared iMIS ID")
     assert candidates.read_text(encoding="utf-8").startswith("iMIS ID")
     assert reconciliation_csv.read_text(encoding="utf-8").startswith("classification")
@@ -86,7 +90,8 @@ def test_report_requires_an_imis_export_date():
 
 
 def test_report_pdf_uses_the_supplied_imis_export_date(tmp_path):
-    output = tmp_path / "report.pdf"
+    external_output = tmp_path / "external-report.pdf"
+    internal_output = tmp_path / "internal-report.pdf"
     destinations = {
         "--conflicts-csv": tmp_path / "conflicts.csv",
         "--candidate-matches-csv": tmp_path / "candidates.csv",
@@ -97,15 +102,20 @@ def test_report_pdf_uses_the_supplied_imis_export_date(tmp_path):
     }
     arguments = [
         "report", "--imis-csv", "tests/fixtures/imis-membership-sample.csv",
-        "--imis-export-date", "2026-09-17", "--output", str(output),
+        "--imis-export-date", "2026-09-17", "--external-output", str(external_output),
+        "--internal-output", str(internal_output),
     ]
     for name, path in destinations.items():
         arguments.extend((name, str(path)))
 
     main(arguments)
 
-    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(internal_output).pages)
     assert "iMIS export: imis-membership-sample.csv (exported 2026-09-17)" in text
+    external_text = "\n".join(
+        page.extract_text() or "" for page in PdfReader(external_output).pages
+    )
+    assert "Report provenance" not in external_text
 
 
 def test_salesforce_load_records_a_utc_retrieval_time_after_success(monkeypatch):

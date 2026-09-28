@@ -23,6 +23,7 @@ from aisc_gr_statistics.imis_fields import (
 from aisc_gr_statistics.report import (
     Company,
     CompanyClassification,
+    ReportAudience,
     ReportCompany,
     ReportDataError,
     build_reconciliation_rows,
@@ -465,7 +466,11 @@ def test_close_addresses_without_an_id_match_remain_unjoined():
     rows = build_report_companies([imis], [account])
 
     assert rows == [
-        ReportCompany(name="Acme Steel", address="100 Main Street, Suite 200\nChicago, IL")
+        ReportCompany(
+            name="Acme Steel",
+            address="100 Main Street, Suite 200\nChicago, IL",
+            location="Chicago, IL",
+        )
     ]
 
 
@@ -845,6 +850,7 @@ def test_certified_salesforce_only_accounts_with_same_address_are_merged():
             address="10 Steel Way\nChicago, IL 60601",
             employee_count="35",
             certification_categories=("Fabricator", "Erector"),
+            location="Chicago, IL",
         )
     ]
 
@@ -1078,6 +1084,78 @@ def test_pdf_uses_employee_count_and_sample_terminology(tmp_path):
     assert "12,500 Employees" in text
     assert "Full AISC Member" in text
     assert "2025 Structural Steel Tonnage: 50 Tons" in text
+
+
+def test_external_pdf_discloses_only_allowed_company_fields_and_aggregates_employees(
+    tmp_path,
+):
+    """External cards omit sensitive per-company operational details."""
+    output = tmp_path / "external.pdf"
+    rows = [
+        ReportCompany(
+            name="Chicago Fabrication",
+            address="100 Main Street\nChicago, IL 60601",
+            location="Chicago, IL",
+            employee_count="12",
+            membership_type="Full AISC Member Fabricator",
+            tonnage="500",
+            certification_categories=("Building Fabricator", "Erector"),
+        ),
+        ReportCompany(
+            name="Aurora Steel",
+            address="200 Steel Avenue\nAurora, IL 60505",
+            location="Aurora, IL",
+            employee_count="8",
+            membership_type="Associate AISC Member Erector",
+            tonnage="700",
+            certification_categories=("Erector",),
+        ),
+    ]
+
+    render_illinois_report(
+        rows,
+        output,
+        tonnage_year=2025,
+        audience=ReportAudience.EXTERNAL,
+        imis_export_filename="sensitive-members.csv",
+    )
+
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    assert "Chicago Fabrication" in text
+    assert "Chicago, IL" in text
+    assert "Full AISC Member Fabricator" in text
+    assert "AISC Certified Erector" in text
+    assert "Illinois Employee Total: 20" in text
+    for prohibited in (
+        "100 Main Street",
+        "200 Steel Avenue",
+        "60601",
+        "60505",
+        "12 Employees",
+        "8 Employees",
+        "Structural Steel Tonnage",
+        "500 Tons",
+        "700 Tons",
+        "Report provenance",
+        "sensitive-members.csv",
+    ):
+        assert prohibited not in text
+
+
+def test_external_pdf_suppresses_employee_total_with_fewer_than_two_valid_counts(tmp_path):
+    output = tmp_path / "external.pdf"
+
+    render_illinois_report(
+        [
+            ReportCompany(name="One", location="Chicago, IL", employee_count="12"),
+            ReportCompany(name="Two", location="Aurora, IL"),
+        ],
+        output,
+        audience=ReportAudience.EXTERNAL,
+    )
+
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    assert "Illinois Employee Total" not in text
 
 
 def test_pdf_rounds_tonnage_to_a_whole_number(tmp_path):

@@ -42,6 +42,46 @@ class ReportDataError(ValueError):
     """Raise when an iMIS export cannot provide the required report data."""
 
 
+class ReportAudience(StrEnum):
+    """The intended reader of a rendered report."""
+
+    EXTERNAL = "external"
+    INTERNAL = "internal"
+
+
+@dataclass(frozen=True)
+class ReportProfile:
+    """Disclosure rules applied by the PDF renderer for one audience."""
+
+    audience: ReportAudience
+    show_company_addresses: bool
+    show_company_employee_counts: bool
+    show_company_tonnage: bool
+    show_provenance: bool
+    show_senate_contacts: bool
+
+
+REPORT_PROFILES = {
+    ReportAudience.EXTERNAL: ReportProfile(
+        ReportAudience.EXTERNAL,
+        show_company_addresses=False,
+        show_company_employee_counts=False,
+        show_company_tonnage=False,
+        show_provenance=False,
+        show_senate_contacts=False,
+    ),
+    ReportAudience.INTERNAL: ReportProfile(
+        ReportAudience.INTERNAL,
+        show_company_addresses=True,
+        show_company_employee_counts=True,
+        show_company_tonnage=True,
+        show_provenance=True,
+        show_senate_contacts=True,
+    ),
+}
+"""The fixed disclosure profiles used for externally shared and internal PDFs."""
+
+
 @dataclass(frozen=True)
 class Company:
     """A cleaned membership company from an iMIS CSV export."""
@@ -71,7 +111,7 @@ class TonnageReviewFinding:
 
 @dataclass(frozen=True)
 class ReportCompany:
-    """A company with display-ready values for the public PDF.
+    """A company with display-ready values for either PDF audience.
 
     Optional values are empty rather than placeholders.  The renderer omits
     their complete line, so incomplete source data never creates invented
@@ -84,6 +124,7 @@ class ReportCompany:
     membership_type: str = ""
     tonnage: str = ""
     certification_categories: tuple[str, ...] = ()
+    location: str = ""
 
 
 class CompanyClassification(StrEnum):
@@ -625,6 +666,7 @@ def build_report_companies(
         name = _account_value(account, CertificationAccountField.NAME) or (imis.name if imis else "")
         imis_address = _imis_address(imis) if imis else ""
         salesforce_address = _salesforce_address(account) if account else ""
+        location = _salesforce_location(account) or _imis_location(imis)
         # Salesforce provides the public address for an ID match. The
         # conflicts CSV separately preserves both values when they differ.
         address = salesforce_address or imis_address
@@ -640,6 +682,7 @@ def build_report_companies(
                 imis.membership_type if imis else "",
                 imis.tonnage if imis else "",
                 categories,
+                location,
             )
         )
     report_companies.extend(
@@ -662,8 +705,10 @@ def render_illinois_report(
     imis_export_filename: str = "",
     imis_export_date: date | None = None,
     salesforce_retrieved_at: datetime | None = None,
+    audience: ReportAudience = ReportAudience.INTERNAL,
 ) -> None:
-    """Create a printable, letter-size statewide Illinois PDF report."""
+    """Create a printable PDF using the selected audience's disclosure profile."""
+    profile = REPORT_PROFILES[audience]
     output_path = Path(output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     document = SimpleDocTemplate(
@@ -702,7 +747,7 @@ def render_illinois_report(
         Spacer(1, 0.18 * inch),
     ]
     senator_contacts = tuple(senators)
-    if senator_contacts:
+    if profile.show_senate_contacts and senator_contacts:
         story.append(Paragraph("<b>Illinois U.S. Senate Contacts</b>", body))
         if senate_retrieved_at:
             retrieval_date = senate_retrieved_at.astimezone(UTC).date().isoformat()
@@ -736,21 +781,40 @@ def render_illinois_report(
             Spacer(1, 0.08 * inch),
         ]
     )
-    for company in companies:
+    company_rows = tuple(companies)
+    if profile.audience is ReportAudience.EXTERNAL:
+        employee_counts = [
+            count
+            for company in company_rows
+            if (count := _employee_count_decimal(company.employee_count)) is not None
+        ]
+        if len(employee_counts) >= 2:
+            story.extend(
+                [
+                    Paragraph(
+                        f"<b>Illinois Employee Total: {sum(employee_counts):,.0f}</b>",
+                        body,
+                    ),
+                    Spacer(1, 0.08 * inch),
+                ]
+            )
+    for company in company_rows:
         company_cell = [
             Paragraph(_escape(company.name), company_heading),
         ]
-        if company.address:
+        if profile.show_company_addresses and company.address:
             # Paragraph treats HTML-like markup specially. Escape source text
             # first, then intentionally turn our display line breaks into the
             # safe markup ReportLab expects.
             company_cell.append(Paragraph(_escape(company.address).replace("\n", "<br/>"), body))
+        elif company.location:
+            company_cell.append(Paragraph(_escape(company.location), body))
         details_cell = []
-        if company.employee_count:
+        if profile.show_company_employee_counts and company.employee_count:
             details_cell.append(Paragraph(f"{_escape(company.employee_count)} Employees", body))
         if company.membership_type:
             details_cell.append(Paragraph(_escape(company.membership_type), body))
-        if company.tonnage and tonnage_year is not None:
+        if profile.show_company_tonnage and company.tonnage and tonnage_year is not None:
             details_cell.append(
                 Paragraph(
                     f"{tonnage_year} Structural Steel Tonnage: "
@@ -784,14 +848,15 @@ def render_illinois_report(
             )
         )
         story.extend([table, Spacer(1, 0.08 * inch)])
-    story.extend(_provenance_section(
-        body,
-        imis_export_filename=imis_export_filename,
-        imis_export_date=imis_export_date,
-        tonnage_year=tonnage_year,
-        senate_retrieved_at=senate_retrieved_at,
-        salesforce_retrieved_at=salesforce_retrieved_at,
-    ))
+    if profile.show_provenance:
+        story.extend(_provenance_section(
+            body,
+            imis_export_filename=imis_export_filename,
+            imis_export_date=imis_export_date,
+            tonnage_year=tonnage_year,
+            senate_retrieved_at=senate_retrieved_at,
+            salesforce_retrieved_at=salesforce_retrieved_at,
+        ))
     document.build(story)
 
 
@@ -1027,6 +1092,7 @@ def _merged_salesforce_only_report_companies(
                     f"{sum(employee_counts):,.0f}" if employee_counts else ""
                 ),
                 certification_categories=categories,
+                location=_salesforce_location(first_account),
             )
         )
     return rows
@@ -1043,12 +1109,18 @@ def _salesforce_only_report_company(
             account.get(CertificationAccountField.EMPLOYEE_COUNT)
         ),
         certification_categories=_active_certification_names(account, as_of),
+        location=_salesforce_location(account),
     )
 
 
 def _imis_address(company: Company) -> str:
     """Format iMIS address fields using the same display layout as Salesforce."""
     return _format_address(company.address, company.city, company.state)
+
+
+def _imis_location(company: Company | None) -> str:
+    """Format the city/state location that is safe for an external report."""
+    return _format_location(company.city, company.state) if company else ""
 
 
 def _salesforce_address(account: Mapping[str, object] | None) -> str:
@@ -1061,6 +1133,21 @@ def _salesforce_address(account: Mapping[str, object] | None) -> str:
     postal_code = _string_value(account.get(CertificationAccountField.BILLING_POSTAL_CODE))
     country = _string_value(account.get(CertificationAccountField.BILLING_COUNTRY))
     return _format_address(street, city, state, postal_code, country)
+
+
+def _salesforce_location(account: Mapping[str, object] | None) -> str:
+    """Return only a Salesforce Account's city and state."""
+    if account is None:
+        return ""
+    return _format_location(
+        _string_value(account.get(CertificationAccountField.BILLING_CITY)),
+        _string_value(account.get(CertificationAccountField.BILLING_STATE)),
+    )
+
+
+def _format_location(city: str, state: str) -> str:
+    """Create a city/state label without exposing address or postal data."""
+    return ", ".join(part for part in (city, state) if part)
 
 
 def _format_address(

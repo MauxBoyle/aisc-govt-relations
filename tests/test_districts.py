@@ -3,13 +3,22 @@
 import csv
 from datetime import date
 
+import pytest
+
 from aisc_gr_statistics.districts import (
     CensusServiceError,
+    DistrictRow,
+    DistrictSnapshotError,
+    aggregate_districts,
     enrich_companies,
+    write_district_aggregates_csv,
     write_districts_csv,
     write_review_csv,
 )
-from aisc_gr_statistics.salesforce_fields import CertificationAccountField
+from aisc_gr_statistics.salesforce_fields import (
+    CertificationAccountField,
+    CertificationStatus,
+)
 
 
 def _imis_csv(tmp_path, address="100 iMIS Road", postal_code="60601"):
@@ -148,3 +157,100 @@ def test_csv_outputs_include_required_columns(tmp_path):
     assert {"source_address", "review_reason", "candidate_information"} <= set(
         next(csv.reader(review_path.open()))
     )
+
+
+def _aggregate_imis_csv(tmp_path):
+    path = tmp_path / "imis.csv"
+    path.write_text(
+        "company name,state,city,iMIS ID\n"
+        "One Steel,IL,Chicago,IMIS-1\n"
+        "Two Steel,IL,Chicago,IMIS-2\n"
+        "Three Steel,IL,Chicago,IMIS-3\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+def _account(imis_id, account_id, employees):
+    return {
+        CertificationAccountField.IMIS_ID: imis_id,
+        CertificationAccountField.ID: account_id,
+        CertificationAccountField.BILLING_STATE: "IL",
+        CertificationAccountField.CERTIFICATION_STATUS: CertificationStatus.CERTIFIED,
+        CertificationAccountField.EMPLOYEE_COUNT: employees,
+    }
+
+
+def _district_row(imis_id, account_id, geoid="1707"):
+    return DistrictRow(
+        "", "both", imis_id, account_id, "", "", "", "IL", "IL", "17", "",
+        "", geoid[-1], geoid, "", "", "", "", "", "matched", ""
+    )
+
+
+def test_aggregate_districts_counts_known_and_missing_employee_data(tmp_path):
+    snapshot = tmp_path / "districts.csv"
+    write_districts_csv(
+        [_district_row("IMIS-1", "001"), _district_row("IMIS-2", "002")], snapshot
+    )
+
+    rows = aggregate_districts(
+        _aggregate_imis_csv(tmp_path),
+        snapshot,
+        [
+            _account("IMIS-1", "001", "10"),
+            _account("IMIS-2", "002", 0),
+            _account("IMIS-3", "003", "not a number"),
+        ],
+    )
+
+    national, district = rows
+    assert (national.included_company_count, national.known_jobs) == (3, 10)
+    assert (national.companies_with_employee_data, national.companies_missing_employee_data) == (2, 1)
+    assert (district.included_company_count, district.known_jobs) == (2, 10)
+    assert district.congressional_district_geoid == "1707"
+
+
+def test_aggregate_districts_treats_invalid_employee_counts_as_missing(tmp_path):
+    snapshot = tmp_path / "districts.csv"
+    write_districts_csv([_district_row("IMIS-1", "001")], snapshot)
+    for value in ("", "3.5", -1, "not a number"):
+        rows = aggregate_districts(
+            _aggregate_imis_csv(tmp_path),
+            snapshot,
+            [_account("IMIS-1", "001", value)],
+        )
+        assert rows[0].companies_missing_employee_data == 3
+        assert rows[0].known_jobs == 0
+
+
+def test_aggregate_districts_rejects_duplicate_or_unknown_snapshot_rows(tmp_path):
+    snapshot = tmp_path / "districts.csv"
+    write_districts_csv(
+        [_district_row("IMIS-1", "001"), _district_row("IMIS-1", "001")], snapshot
+    )
+    accounts = [_account("IMIS-1", "001", 10)]
+    with pytest.raises(DistrictSnapshotError, match="duplicate"):
+        aggregate_districts(_aggregate_imis_csv(tmp_path), snapshot, accounts)
+
+    write_districts_csv([_district_row("UNKNOWN", "999")], snapshot)
+    with pytest.raises(DistrictSnapshotError, match="outside"):
+        aggregate_districts(_aggregate_imis_csv(tmp_path), snapshot, accounts)
+
+
+def test_district_aggregate_csv_has_stable_national_then_district_rows(tmp_path):
+    snapshot = tmp_path / "districts.csv"
+    output = tmp_path / "aggregates.csv"
+    write_districts_csv([_district_row("IMIS-1", "001")], snapshot)
+    rows = aggregate_districts(
+        _aggregate_imis_csv(tmp_path), snapshot, [_account("IMIS-1", "001", 10)]
+    )
+    write_district_aggregates_csv(rows, output)
+
+    written = list(csv.DictReader(output.open()))
+    assert list(written[0]) == [
+        "scope", "state", "state_fips", "congressional_district",
+        "congressional_district_geoid", "included_company_count", "known_jobs",
+        "companies_with_employee_data", "companies_missing_employee_data",
+    ]
+    assert [row["scope"] for row in written] == ["national", "district"]

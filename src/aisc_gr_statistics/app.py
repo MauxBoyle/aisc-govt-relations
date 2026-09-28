@@ -8,7 +8,14 @@ from pathlib import Path
 
 from loguru import logger
 
-from .districts import enrich_companies, write_districts_csv, write_review_csv
+from .districts import (
+    DistrictSnapshotError,
+    aggregate_districts,
+    enrich_companies,
+    write_district_aggregates_csv,
+    write_districts_csv,
+    write_review_csv,
+)
 from .report import (
     ReportAudience,
     build_reconciliation_rows,
@@ -61,6 +68,9 @@ def main(argv=()):
         return
     if arguments.command == "enrich-districts":
         _run_enrich_districts(arguments)
+        return
+    if arguments.command == "aggregate-districts":
+        _run_aggregate_districts(arguments)
         return
     logger.info("Hello from aisc_gr_statistics!")
 
@@ -191,6 +201,25 @@ def _build_parser():
         type=Path,
         help="Destination CSV for addresses or Census results requiring review.",
     )
+    aggregates = subcommands.add_parser(
+        "aggregate-districts",
+        help="Create offline national and congressional-district job aggregates.",
+    )
+    aggregates.add_argument(
+        "--imis-csv", required=True, type=Path, help="Path to an iMIS CSV export."
+    )
+    aggregates.add_argument(
+        "--districts-csv",
+        required=True,
+        type=Path,
+        help="Previously generated company-districts.csv snapshot.",
+    )
+    aggregates.add_argument(
+        "--aggregates-csv",
+        required=True,
+        type=Path,
+        help="Destination CSV for national and district aggregates.",
+    )
     return parser
 
 
@@ -268,6 +297,20 @@ def _run_enrich_districts(arguments):
     if service_failed:
         logger.error("One or more Census requests failed; review the partial outputs.")
         raise SystemExit(1)
+
+
+def _run_aggregate_districts(arguments):
+    """Create aggregates from saved district assignments without Census access."""
+    accounts, _ = _salesforce_accounts_if_configured()
+    try:
+        rows = aggregate_districts(
+            arguments.imis_csv, arguments.districts_csv, accounts
+        )
+    except DistrictSnapshotError as error:
+        logger.error("District aggregates were not created: {}", error)
+        raise SystemExit(1) from error
+    write_district_aggregates_csv(rows, arguments.aggregates_csv)
+    logger.info("Created district aggregate file: rows={}", len(rows))
 
 
 def _salesforce_accounts_if_configured(environment=None):

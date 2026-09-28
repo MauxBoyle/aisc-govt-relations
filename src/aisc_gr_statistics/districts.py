@@ -13,9 +13,13 @@ from .report import (
     CombinedCompany,
     CompanyClassification,
     combine_companies,
+    employee_count_decimal,
     read_imis_companies,
 )
-from .salesforce_fields import CertificationAccountField, CertificationStatus
+from .salesforce_fields import (
+    CertificationAccountField,
+    CertificationStatus,
+)
 
 CENSUS_GEOGRAPHIES_URL = (
     "https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress"
@@ -26,6 +30,10 @@ CENSUS_VINTAGE = "Current_Current"
 
 class CensusServiceError(RuntimeError):
     """The Census service could not be reached or returned an HTTP error."""
+
+
+class DistrictSnapshotError(ValueError):
+    """A saved district snapshot cannot safely be used for aggregation."""
 
 
 @dataclass(frozen=True)
@@ -93,6 +101,21 @@ class ReviewRow:
     postal_code: str
     review_reason: str
     candidate_information: str
+
+
+@dataclass(frozen=True)
+class DistrictAggregateRow:
+    """A national or safely assigned congressional-district job aggregate."""
+
+    scope: str
+    state: str
+    state_fips: str
+    congressional_district: str
+    congressional_district_geoid: str
+    included_company_count: int
+    known_jobs: int
+    companies_with_employee_data: int
+    companies_missing_employee_data: int
 
 
 class CensusGeocoder:
@@ -178,6 +201,136 @@ def write_districts_csv(rows: list[DistrictRow], path: Path | str) -> None:
 
 def write_review_csv(rows: list[ReviewRow], path: Path | str) -> None:
     _write_csv(rows, path, ReviewRow)
+
+
+def read_districts_csv(path: Path | str) -> list[DistrictRow]:
+    """Read a prior ``company-districts.csv`` snapshot with required columns."""
+    with Path(path).open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        names = [field.name for field in fields(DistrictRow)]
+        if reader.fieldnames is None or set(names) - set(reader.fieldnames):
+            raise DistrictSnapshotError("district snapshot is missing required columns")
+        rows = [
+            DistrictRow(
+                **{name: (row.get(name) or "").strip() for name in names}
+            )
+            for row in reader
+        ]
+    return rows
+
+
+def aggregate_districts(
+    imis_csv: Path | str,
+    districts_csv: Path | str,
+    salesforce_accounts=(),
+) -> list[DistrictAggregateRow]:
+    """Aggregate the current report population using a saved district snapshot.
+
+    Unassigned companies stay in the national result but deliberately do not
+    appear in a district result.  This function performs no Census lookup.
+    """
+    population = _report_population(
+        combine_companies(read_imis_companies(imis_csv), salesforce_accounts)
+    )
+    population_by_identity = _population_by_identity(population)
+    snapshot_by_identity = _snapshot_by_identity(read_districts_csv(districts_csv))
+    unknown = set(snapshot_by_identity) - set(population_by_identity)
+    if unknown:
+        raise DistrictSnapshotError(
+            "district snapshot contains a company outside the current report population"
+        )
+
+    national = _aggregate_row("national", "", "", "", "", population)
+    by_district: dict[tuple[str, str, str, str], list[CombinedCompany]] = {}
+    for identity, snapshot in snapshot_by_identity.items():
+        company = population_by_identity[identity]
+        district_key = (
+            snapshot.state,
+            snapshot.state_fips,
+            snapshot.congressional_district,
+            snapshot.congressional_district_geoid,
+        )
+        if not all(district_key):
+            raise DistrictSnapshotError("district snapshot contains incomplete district data")
+        by_district.setdefault(district_key, []).append(company)
+    districts = [
+        _aggregate_row("district", *key, companies)
+        for key, companies in sorted(by_district.items())
+    ]
+    return [national, *districts]
+
+
+def write_district_aggregates_csv(
+    rows: list[DistrictAggregateRow], path: Path | str
+) -> None:
+    """Write national and district aggregates with a stable, typed header."""
+    _write_csv(rows, path, DistrictAggregateRow)
+
+
+def _population_by_identity(
+    companies: list[CombinedCompany],
+) -> dict[tuple[str, str, str], CombinedCompany]:
+    indexed: dict[tuple[str, str, str], CombinedCompany] = {}
+    for company in companies:
+        identity = _aggregate_identity(
+            company.classification.value,
+            company.imis.imis_id if company.imis else "",
+            _account_value(company.salesforce, CertificationAccountField.ID),
+        )
+        if identity in indexed:
+            raise DistrictSnapshotError("current report population has duplicate identities")
+        indexed[identity] = company
+    return indexed
+
+
+def _snapshot_by_identity(
+    rows: list[DistrictRow],
+) -> dict[tuple[str, str, str], DistrictRow]:
+    indexed: dict[tuple[str, str, str], DistrictRow] = {}
+    for row in rows:
+        identity = _aggregate_identity(
+            row.company_classification, row.imis_id, row.salesforce_account_id
+        )
+        if identity in indexed:
+            raise DistrictSnapshotError("district snapshot has duplicate identities")
+        indexed[identity] = row
+    return indexed
+
+
+def _aggregate_identity(
+    classification: str, imis_id: str, account_id: str
+) -> tuple[str, str, str]:
+    return (classification.strip(), imis_id.strip(), account_id.strip())
+
+
+def _aggregate_row(
+    scope: str,
+    state: str,
+    state_fips: str,
+    district: str,
+    geoid: str,
+    companies: list[CombinedCompany],
+) -> DistrictAggregateRow:
+    counts = [
+        employee_count_decimal(
+            company.salesforce.get(CertificationAccountField.EMPLOYEE_COUNT)
+            if company.salesforce
+            else None
+        )
+        for company in companies
+    ]
+    known = [count for count in counts if count is not None]
+    return DistrictAggregateRow(
+        scope,
+        state,
+        state_fips,
+        district,
+        geoid,
+        len(companies),
+        int(sum(known)),
+        len(known),
+        len(companies) - len(known),
+    )
 
 
 def _write_csv(rows, path, row_type) -> None:

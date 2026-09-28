@@ -75,6 +75,27 @@ and service errors. A Census service error writes the available successful and
 review rows, then returns a nonzero exit status. Run enrichment again whenever
 districts should be refreshed; Census current values are recorded for audit.
 
+## District and national aggregates
+
+Build the CSV used by later district reports without performing another Census
+lookup:
+
+```bash
+uv run aisc_gr_statistics aggregate-districts \
+  --imis-csv data/raw/imis/membership-export.csv \
+  --districts-csv data/processed/company-districts.csv \
+  --aggregates-csv data/processed/district-aggregates.csv
+```
+
+The output contains a `national` row for every included company and `district`
+rows only for companies with a safe assignment in `company-districts.csv`.
+Companies without an assignment therefore remain national-only, and district
+totals may not equal the national total. `known_jobs` sums only valid
+whole-number employee counts. A downstream report must call this **Known jobs**
+and show the employee-data coverage columns, so readers do not mistake it for
+a total across every company. Generated aggregate CSVs remain ignored
+operational data in `data/processed/`.
+
 `--imis-export-date` is required and must be the date iMIS created the CSV,
 written as `YYYY-MM-DD`. The final **Report provenance** block records that
 filename/date, the selected tonnage calendar year, the Senate snapshot's

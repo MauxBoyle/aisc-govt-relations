@@ -29,7 +29,7 @@ CSV explicitly:
 
 ```bash
 uv run aisc_gr_statistics report \
-  --imis-csv data/raw/imis/membership-export.csv \
+  --imis-csv data/raw/imis/imis-tonnage-for-gr-statistics.csv \
   --imis-export-date 2026-09-18 \
   --output data/processed/illinois-certification-membership.pdf \
   --conflicts-csv data/processed/field-conflicts.csv \
@@ -53,10 +53,17 @@ Keep Census lookups separate from the offline PDF command:
 
 ```bash
 uv run aisc_gr_statistics enrich-districts \
-  --imis-csv data/raw/imis/membership-export.csv \
+  --imis-csv data/raw/imis/imis-tonnage-for-gr-statistics.csv \
   --districts-csv data/processed/company-districts.csv \
-  --review-csv data/processed/address-district-review.csv
+  --review-csv data/processed/address-district-review.csv \
+  --address-conversions-csv data/processed/address-conversions.csv
 ```
+
+The required address-conversions CSV includes one row for every company in the
+report population. It preserves the selected iMIS or Salesforce address and
+shows the derived, normalized fields submitted to Census, including a status
+and reason for incomplete addresses. It is generated under `data/processed/`
+and does not modify either source system's data.
 
 This command uses the public [U.S. Census Geocoding Services API](https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html), requesting
 `Public_AR_Current` and `Current_Current`. It includes the report population:
@@ -83,7 +90,7 @@ current Salesforce population and employee counts:
 
 ```bash
 uv run aisc_gr_statistics aggregate-districts \
-  --imis-csv data/raw/imis/membership-export.csv \
+  --imis-csv data/raw/imis/imis-tonnage-for-gr-statistics.csv \
   --districts-csv data/processed/company-districts.csv \
   --aggregates-csv data/processed/district-aggregates.csv
 ```

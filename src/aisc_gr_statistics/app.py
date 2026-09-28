@@ -12,6 +12,7 @@ from .districts import (
     DistrictSnapshotError,
     aggregate_districts,
     enrich_companies,
+    write_address_conversions_csv,
     write_district_aggregates_csv,
     write_districts_csv,
     write_review_csv,
@@ -201,6 +202,12 @@ def _build_parser():
         type=Path,
         help="Destination CSV for addresses or Census results requiring review.",
     )
+    districts.add_argument(
+        "--address-conversions-csv",
+        required=True,
+        type=Path,
+        help="Destination CSV showing source addresses and normalized Census fields.",
+    )
     aggregates = subcommands.add_parser(
         "aggregate-districts",
         help="Create national and congressional-district job aggregates.",
@@ -284,15 +291,19 @@ def _run_refresh_senators():
 
 
 def _run_enrich_districts(arguments):
-    """Create district and review CSVs, failing after output on Census outages."""
+    """Create district, review, and conversion CSVs before reporting outages."""
     accounts, _ = _salesforce_accounts_if_configured()
-    districts, reviews, service_failed = enrich_companies(arguments.imis_csv, accounts)
+    districts, reviews, conversions, service_failed = enrich_companies(
+        arguments.imis_csv, accounts
+    )
     write_districts_csv(districts, arguments.districts_csv)
     write_review_csv(reviews, arguments.review_csv)
+    write_address_conversions_csv(conversions, arguments.address_conversions_csv)
     logger.info(
-        "Created district enrichment files: matched={}, review={}",
+        "Created district enrichment files: matched={}, review={}, conversions={}",
         len(districts),
         len(reviews),
+        len(conversions),
     )
     if service_failed:
         logger.error("One or more Census requests failed; review the partial outputs.")

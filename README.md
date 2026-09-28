@@ -21,7 +21,7 @@ CSV export:
 
 ```bash
 uv run aisc_gr_statistics report \
-  --imis-csv data/raw/imis/membership-export.csv \
+  --imis-csv data/raw/imis/imis-tonnage-for-gr-statistics.csv \
   --imis-export-date 2026-09-18 \
   --external-output data/processed/illinois-certification-membership-external.pdf \
   --internal-output data/processed/illinois-certification-membership-internal.pdf \
@@ -51,10 +51,17 @@ with Census's current address benchmark and congressional-geography vintage:
 
 ```bash
 uv run aisc_gr_statistics enrich-districts \
-  --imis-csv data/raw/imis/membership-export.csv \
+  --imis-csv data/raw/imis/imis-tonnage-for-gr-statistics.csv \
   --districts-csv data/processed/company-districts.csv \
-  --review-csv data/processed/address-district-review.csv
+  --review-csv data/processed/address-district-review.csv \
+  --address-conversions-csv data/processed/address-conversions.csv
 ```
+
+The required conversion table records each report company's selected source
+address alongside the normalized street, city, state, and ZIP fields sent to
+Census, plus a status and reason when the address cannot be used. It is an
+auditable local output only: it never changes the original iMIS or Salesforce
+data.
 
 The command handles the report population: Illinois iMIS companies and
 report-eligible Salesforce-only certified companies when credentials are
@@ -75,7 +82,7 @@ from a saved district snapshot:
 
 ```bash
 uv run aisc_gr_statistics aggregate-districts \
-  --imis-csv data/raw/imis/membership-export.csv \
+  --imis-csv data/raw/imis/imis-tonnage-for-gr-statistics.csv \
   --districts-csv data/processed/company-districts.csv \
   --aggregates-csv data/processed/district-aggregates.csv
 ```

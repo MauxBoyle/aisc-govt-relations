@@ -6,11 +6,14 @@ from datetime import date
 import pytest
 
 from aisc_gr_statistics.districts import (
+    CensusGeocoder,
     CensusServiceError,
     DistrictRow,
     DistrictSnapshotError,
+    NormalizedAddress,
     aggregate_districts,
     enrich_companies,
+    write_address_conversions_csv,
     write_district_aggregates_csv,
     write_districts_csv,
     write_review_csv,
@@ -62,6 +65,33 @@ class Geocoder:
         return self.payload
 
 
+def test_census_geocoder_sends_normalized_parsed_address_fields():
+    class Response:
+        ok = True
+
+        def json(self):
+            return {"result": {"addressMatches": []}}
+
+    class Session:
+        def get(self, url, params, timeout):
+            self.url = url
+            self.params = params
+            self.timeout = timeout
+            return Response()
+
+    session = Session()
+    CensusGeocoder(session).lookup(
+        NormalizedAddress("100 MAIN AVE STE 4", "CHICAGO", "IL", "60601", "ready", "")
+    )
+
+    assert session.url.endswith("/geographies/address")
+    assert session.params["street"] == "100 MAIN AVE STE 4"
+    assert session.params["city"] == "CHICAGO"
+    assert session.params["state"] == "IL"
+    assert session.params["zip"] == "60601"
+    assert "address" not in session.params
+
+
 def test_salesforce_complete_address_takes_precedence_and_writes_metadata(tmp_path):
     account = {
         CertificationAccountField.ID: "001",
@@ -74,12 +104,13 @@ def test_salesforce_complete_address_takes_precedence_and_writes_metadata(tmp_pa
     }
     geocoder = Geocoder(_match())
 
-    districts, reviews, failed = enrich_companies(
+    districts, reviews, conversions, failed = enrich_companies(
         _imis_csv(tmp_path), [account], geocoder, date(2026, 9, 28)
     )
 
     assert not reviews and not failed
-    assert geocoder.addresses[0].source == "Salesforce Billing Address"
+    assert conversions[0].address_source == "Salesforce Billing Address"
+    assert conversions[0].original_street == "100 Billing Ave"
     assert districts[0].county_fips == "031"
     assert districts[0].congressional_district_geoid == "1707"
     assert districts[0].census_benchmark == "Public_AR_Current"
@@ -96,14 +127,16 @@ def test_incomplete_salesforce_address_falls_back_to_complete_imis_address(tmp_p
     }
     geocoder = Geocoder(_match())
 
-    districts, reviews, _ = enrich_companies(_imis_csv(tmp_path), [account], geocoder)
+    districts, reviews, conversions, _ = enrich_companies(
+        _imis_csv(tmp_path), [account], geocoder
+    )
 
     assert districts and not reviews
-    assert geocoder.addresses[0].source == "iMIS address"
+    assert conversions[0].address_source == "iMIS address"
 
 
 def test_review_rows_cover_incomplete_no_match_multiple_and_missing_geography(tmp_path):
-    _, reviews, _ = enrich_companies(
+    _, reviews, _, _ = enrich_companies(
         _imis_csv(tmp_path, postal_code=""), geocoder=Geocoder(_match())
     )
     assert reviews[0].review_reason == "incomplete address"
@@ -116,7 +149,7 @@ def test_review_rows_cover_incomplete_no_match_multiple_and_missing_geography(tm
             "incomplete Census geography",
         ),
     ):
-        _, reviews, failed = enrich_companies(
+        _, reviews, _, failed = enrich_companies(
             _imis_csv(tmp_path), geocoder=Geocoder(payload)
         )
         assert reviews[0].review_reason == reason
@@ -124,13 +157,13 @@ def test_review_rows_cover_incomplete_no_match_multiple_and_missing_geography(tm
 
 
 def test_malformed_payload_and_service_outage_are_reviewed(tmp_path):
-    _, reviews, failed = enrich_companies(
+    _, reviews, _, failed = enrich_companies(
         _imis_csv(tmp_path), geocoder=Geocoder({"wrong": "shape"})
     )
     assert reviews[0].review_reason == "malformed Census response"
     assert not failed
 
-    _, reviews, failed = enrich_companies(
+    _, reviews, _, failed = enrich_companies(
         _imis_csv(tmp_path), geocoder=Geocoder(CensusServiceError("down"))
     )
     assert reviews[0].review_reason == "Census service error"
@@ -138,13 +171,15 @@ def test_malformed_payload_and_service_outage_are_reviewed(tmp_path):
 
 
 def test_csv_outputs_include_required_columns(tmp_path):
-    districts, reviews, _ = enrich_companies(
+    districts, reviews, conversions, _ = enrich_companies(
         _imis_csv(tmp_path), geocoder=Geocoder(_match())
     )
     districts_path = tmp_path / "districts.csv"
     review_path = tmp_path / "review.csv"
     write_districts_csv(districts, districts_path)
     write_review_csv(reviews, review_path)
+    conversions_path = tmp_path / "conversions.csv"
+    write_address_conversions_csv(conversions, conversions_path)
 
     assert {
         "address_source",
@@ -157,6 +192,41 @@ def test_csv_outputs_include_required_columns(tmp_path):
     assert {"source_address", "review_reason", "candidate_information"} <= set(
         next(csv.reader(review_path.open()))
     )
+    assert {"original_street", "normalized_street", "normalization_status"} <= set(
+        next(csv.reader(conversions_path.open()))
+    )
+
+
+def test_normalized_lookup_uses_parsed_uppercase_fields_and_keeps_source_values(tmp_path):
+    original = "100 Main Avenue; Suite #4"
+    geocoder = Geocoder(_match())
+
+    districts, reviews, conversions, failed = enrich_companies(
+        _imis_csv(tmp_path, original, "60601-1234"), geocoder=geocoder
+    )
+
+    assert districts and not reviews and not failed
+    lookup = geocoder.addresses[0]
+    assert (lookup.street, lookup.city, lookup.state, lookup.postal_code) == (
+        "100 MAIN AVE STE 4", "CHICAGO", "IL", "60601"
+    )
+    assert districts[0].source_address == f"{original}, Chicago, IL, 60601-1234"
+    assert conversions[0].original_street == original
+    assert conversions[0].normalized_street == "100 MAIN AVE STE 4"
+    assert conversions[0].normalization_status == "ready"
+
+
+def test_suffix_is_only_abbreviated_at_suffix_position_and_incomplete_is_a_conversion(tmp_path):
+    geocoder = Geocoder(_match())
+    _, reviews, conversions, _ = enrich_companies(
+        _imis_csv(tmp_path, "100 Street Name Road", ""), geocoder=geocoder
+    )
+
+    assert not geocoder.addresses
+    assert conversions[0].normalized_street == "100 STREET NAME RD"
+    assert conversions[0].normalization_status == "incomplete"
+    assert conversions[0].normalization_reason == "incomplete or unusable address"
+    assert reviews[0].source_address == "100 Street Name Road, Chicago, IL"
 
 
 def _aggregate_imis_csv(tmp_path):

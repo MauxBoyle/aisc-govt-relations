@@ -203,7 +203,7 @@ def _build_parser():
     )
     aggregates = subcommands.add_parser(
         "aggregate-districts",
-        help="Create offline national and congressional-district job aggregates.",
+        help="Create national and congressional-district job aggregates.",
     )
     aggregates.add_argument(
         "--imis-csv", required=True, type=Path, help="Path to an iMIS CSV export."

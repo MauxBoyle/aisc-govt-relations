@@ -78,7 +78,8 @@ districts should be refreshed; Census current values are recorded for audit.
 ## District and national aggregates
 
 Build the CSV used by later district reports without performing another Census
-lookup:
+lookup. When Salesforce credentials are configured, the command reads the
+current Salesforce population and employee counts:
 
 ```bash
 uv run aisc_gr_statistics aggregate-districts \

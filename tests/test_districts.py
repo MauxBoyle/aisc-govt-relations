@@ -5,6 +5,7 @@ from datetime import date
 
 import pytest
 
+from aisc_gr_statistics.address_normalization import normalize_street
 from aisc_gr_statistics.districts import (
     CensusGeocoder,
     CensusServiceError,
@@ -67,6 +68,11 @@ class Geocoder:
         if isinstance(self.payload, Exception):
             raise self.payload
         return self.payload
+
+
+def test_street_suffixes_follow_usps_center_and_crescent_abbreviations():
+    assert normalize_street("100 Cent") == "100 CTR"
+    assert normalize_street("100 Crescent") == "100 CRES"
 
 
 def test_census_geocoder_sends_normalized_parsed_address_fields():

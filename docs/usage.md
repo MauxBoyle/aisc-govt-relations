@@ -82,6 +82,14 @@ and service errors. A Census service error writes the available successful and
 review rows, then returns a nonzero exit status. Run enrichment again whenever
 districts should be refreshed; Census current values are recorded for audit.
 
+The Census API's `Current_Current` vintage moves forward over time and can
+return session-qualified keys such as `120th Congressional Districts`, which
+corresponds to the [current 120th Congress geography](https://tigerweb.geo.census.gov/tigerwebmain/TIGERweb_main.html).
+If several numbered congressional layers are present, the command selects the
+highest session number. It uses the generic `Congressional Districts` key only
+when there is no numbered layer, and sends a malformed newest layer to review
+instead of falling back to older geography.
+
 ## District and national aggregates
 
 Build the CSV used by later district reports without performing another Census

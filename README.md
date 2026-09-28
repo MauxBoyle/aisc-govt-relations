@@ -77,6 +77,14 @@ both files after a Census outage but exits nonzero, so partial data is not
 mistaken for a finished run. Refresh districts by running the command again;
 each run records the current Census values it used.
 
+`Current_Current` is Census's moving current vintage, so its response can use a
+session-qualified layer such as `120th Congressional Districts`, matching the
+[current 120th Congress geography](https://tigerweb.geo.census.gov/tigerwebmain/TIGERweb_main.html).
+When Census returns more than one numbered congressional layer, enrichment uses
+the highest session number. The generic `Congressional Districts` layer is used
+only when no numbered layer is present; a malformed newest layer is sent to
+review rather than replaced with older geography.
+
 Create national and congressional-district aggregate data for later reports
 from a saved district snapshot:
 

@@ -34,7 +34,11 @@ def _imis_csv(tmp_path, address="100 iMIS Road", postal_code="60601"):
     return path
 
 
-def _match():
+def _match(district_layers=None):
+    if district_layers is None:
+        district_layers = {
+            "Congressional Districts": [{"BASENAME": "7", "GEOID": "1707"}]
+        }
     return {
         "result": {
             "addressMatches": [
@@ -45,7 +49,7 @@ def _match():
                         "Counties": [
                             {"NAME": "Cook County", "STATE": "17", "COUNTY": "031"}
                         ],
-                        "Congressional Districts": [{"BASENAME": "7", "GEOID": "1707"}],
+                        **district_layers,
                     },
                 }
             ]
@@ -133,6 +137,100 @@ def test_incomplete_salesforce_address_falls_back_to_complete_imis_address(tmp_p
 
     assert districts and not reviews
     assert conversions[0].address_source == "iMIS address"
+
+
+def test_session_qualified_congressional_district_layer_is_accepted(tmp_path):
+    payload = _match(
+        {"120th Congressional Districts": [{"BASENAME": "7", "GEOID": "1707"}]}
+    )
+
+    districts, reviews, _, failed = enrich_companies(
+        _imis_csv(tmp_path), geocoder=Geocoder(payload)
+    )
+
+    assert not reviews and not failed
+    assert districts[0].congressional_district == "7"
+    assert districts[0].congressional_district_geoid == "1707"
+
+
+def test_generic_congressional_district_layer_remains_supported(tmp_path):
+    districts, reviews, _, failed = enrich_companies(
+        _imis_csv(tmp_path), geocoder=Geocoder(_match())
+    )
+
+    assert not reviews and not failed
+    assert districts[0].congressional_district_geoid == "1707"
+
+
+def test_newest_numbered_congressional_district_layer_wins(tmp_path):
+    payload = _match(
+        {
+            "119th Congressional Districts": [{"BASENAME": "6", "GEOID": "1706"}],
+            "120th Congressional Districts": [{"BASENAME": "7", "GEOID": "1707"}],
+        }
+    )
+
+    districts, reviews, _, _ = enrich_companies(
+        _imis_csv(tmp_path), geocoder=Geocoder(payload)
+    )
+
+    assert not reviews
+    assert districts[0].congressional_district_geoid == "1707"
+
+
+def test_malformed_newest_district_layer_does_not_fall_back(tmp_path):
+    payload = _match(
+        {
+            "Congressional Districts": [{"BASENAME": "5", "GEOID": "1705"}],
+            "119th Congressional Districts": [{"BASENAME": "6", "GEOID": "1706"}],
+            "120th Congressional Districts": [{"BASENAME": "7"}],
+        }
+    )
+
+    districts, reviews, _, _ = enrich_companies(
+        _imis_csv(tmp_path), geocoder=Geocoder(payload)
+    )
+
+    assert not districts
+    assert reviews[0].review_reason == "incomplete Census geography"
+
+
+@pytest.mark.parametrize(
+    "district_layers",
+    [
+        {},
+        {"120th State Legislative Districts": [{"BASENAME": "7", "GEOID": "1707"}]},
+        {"Current 120th Congressional Districts": [{"BASENAME": "7", "GEOID": "1707"}]},
+    ],
+)
+def test_missing_or_unrelated_district_layers_are_reviewed(tmp_path, district_layers):
+    districts, reviews, _, _ = enrich_companies(
+        _imis_csv(tmp_path), geocoder=Geocoder(_match(district_layers))
+    )
+
+    assert not districts
+    assert reviews[0].review_reason == "incomplete Census geography"
+
+
+def test_successful_session_layer_is_written_only_to_districts_csv(tmp_path):
+    payload = _match(
+        {"120th Congressional Districts": [{"BASENAME": "7", "GEOID": "1707"}]}
+    )
+    districts, reviews, _, _ = enrich_companies(
+        _imis_csv(tmp_path), geocoder=Geocoder(payload)
+    )
+    districts_path = tmp_path / "districts.csv"
+    review_path = tmp_path / "review.csv"
+
+    write_districts_csv(districts, districts_path)
+    write_review_csv(reviews, review_path)
+
+    with districts_path.open(newline="", encoding="utf-8") as handle:
+        assert [row["company_name"] for row in csv.DictReader(handle)] == [
+            "Example Steel"
+        ]
+    with review_path.open(newline="", encoding="utf-8") as handle:
+        assert list(csv.DictReader(handle)) == []
 
 
 def test_review_rows_cover_incomplete_no_match_multiple_and_missing_geography(tmp_path):

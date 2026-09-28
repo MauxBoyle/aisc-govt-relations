@@ -474,7 +474,7 @@ def _district_from_payload(identity, source_address, payload, lookup_date):
     if not isinstance(geographies, dict) or not isinstance(coordinates, dict):
         return None, "incomplete Census geography", _candidate_summary(matches)
     county = _one_geography(geographies, "Counties")
-    district = _one_geography(geographies, "Congressional Districts")
+    district = _congressional_district(geographies)
     if county is None or district is None:
         return None, "incomplete Census geography", _candidate_summary(matches)
     state_fips = _text(county.get("STATE"))
@@ -519,6 +519,23 @@ def _one_geography(geographies, name):
         if isinstance(items, list) and len(items) == 1 and isinstance(items[0], dict)
         else None
     )
+
+
+def _congressional_district(geographies):
+    """Return one district from the newest available congressional session."""
+    numbered_layers = []
+    for name in geographies:
+        if not isinstance(name, str):
+            continue
+        match = re.fullmatch(r"(\d+)(?:st|nd|rd|th) Congressional Districts", name)
+        if match:
+            numbered_layers.append((int(match.group(1)), name))
+
+    if numbered_layers:
+        _, layer_name = max(numbered_layers, key=lambda layer: layer[0])
+    else:
+        layer_name = "Congressional Districts"
+    return _one_geography(geographies, layer_name)
 
 
 def _review(identity, address, reason, candidates="") -> ReviewRow:

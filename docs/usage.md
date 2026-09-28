@@ -47,6 +47,34 @@ tonnage, and congressional-district headers. Company name, state, city, and a
 recognizable shared iMIS ID column are required (individual ID and city values
 may be blank).
 
+## Congressional district enrichment
+
+Keep Census lookups separate from the offline PDF command:
+
+```bash
+uv run aisc_gr_statistics enrich-districts \
+  --imis-csv data/raw/imis/membership-export.csv \
+  --districts-csv data/processed/company-districts.csv \
+  --review-csv data/processed/address-district-review.csv
+```
+
+This command uses the public [U.S. Census Geocoding Services API](https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html), requesting
+`Public_AR_Current` and `Current_Current`. It includes the report population:
+iMIS companies plus report-eligible Salesforce-only certified companies when
+Salesforce credentials are available. A complete Salesforce Billing Address is
+preferred; otherwise a complete iMIS address is used. Completeness requires a
+street number, city, state, and ZIP code.
+
+`company-districts.csv` contains only safe assignments: exactly one Census
+candidate with both County and Congressional District geography. It includes the
+source and standardized addresses, county and state FIPS values, district GEOID,
+coordinates, Census benchmark/vintage, and lookup date. Review every row in
+`address-district-review.csv` before using the result; it explains incomplete
+addresses, no or multiple candidates, missing geography, malformed responses,
+and service errors. A Census service error writes the available successful and
+review rows, then returns a nonzero exit status. Run enrichment again whenever
+districts should be refreshed; Census current values are recorded for audit.
+
 `--imis-export-date` is required and must be the date iMIS created the CSV,
 written as `YYYY-MM-DD`. The final **Report provenance** block records that
 filename/date, the selected tonnage calendar year, the Senate snapshot's

@@ -9,6 +9,7 @@ from pathlib import Path
 from loguru import logger
 
 from .report import (
+    ReportAudience,
     build_reconciliation_rows,
     build_report_companies,
     candidate_matches,
@@ -116,7 +117,16 @@ def _build_parser():
         help="Date the iMIS CSV export was created, in YYYY-MM-DD format.",
     )
     report.add_argument(
-        "--output", required=True, type=Path, help="Destination PDF path."
+        "--external-output",
+        required=True,
+        type=Path,
+        help="Destination PDF path for the externally shareable report.",
+    )
+    report.add_argument(
+        "--internal-output",
+        required=True,
+        type=Path,
+        help="Destination PDF path for the detailed internal report.",
     )
     report.add_argument(
         "--conflicts-csv", required=True, type=Path,
@@ -163,7 +173,13 @@ def _run_report(arguments):
     senators = senators_for_state(snapshot.senators, "IL")
     render_illinois_report(
         report_companies,
-        arguments.output,
+        arguments.external_output,
+        tonnage_year,
+        audience=ReportAudience.EXTERNAL,
+    )
+    render_illinois_report(
+        report_companies,
+        arguments.internal_output,
         tonnage_year,
         senators,
         snapshot.source_url,
@@ -171,6 +187,7 @@ def _run_report(arguments):
         imis_export_filename=arguments.imis_csv.name,
         imis_export_date=arguments.imis_export_date,
         salesforce_retrieved_at=salesforce_retrieved_at,
+        audience=ReportAudience.INTERNAL,
     )
     write_conflicts_csv(combined_conflicts(combined), arguments.conflicts_csv)
     write_candidate_matches_csv(candidate_matches(combined), arguments.candidate_matches_csv)
@@ -181,7 +198,11 @@ def _run_report(arguments):
         unknown_imis_codes, arguments.unknown_imis_codes_csv
     )
     write_tonnage_review_csv(tonnage_findings, arguments.tonnage_review_csv)
-    logger.info("Created Illinois report: {}", arguments.output)
+    logger.info(
+        "Created Illinois reports: external={}, internal={}",
+        arguments.external_output,
+        arguments.internal_output,
+    )
 
 
 def _run_refresh_senators():

@@ -23,7 +23,8 @@ CSV export:
 uv run aisc_gr_statistics report \
   --imis-csv data/raw/imis/membership-export.csv \
   --imis-export-date 2026-09-18 \
-  --output data/processed/illinois-certification-membership.pdf \
+  --external-output data/processed/illinois-certification-membership-external.pdf \
+  --internal-output data/processed/illinois-certification-membership-internal.pdf \
   --conflicts-csv data/processed/field-conflicts.csv \
   --candidate-matches-csv data/processed/candidate-matches.csv \
   --reconciliation-csv data/processed/reconciliation.csv \
@@ -32,14 +33,23 @@ uv run aisc_gr_statistics report \
   --tonnage-review-csv data/processed/tonnage-review.csv
 ```
 
-Every report also includes Illinois's two U.S. senators before the company
-cards. This section reads a committed local Senate.gov XML snapshot, so report
-creation does not fetch data from the network and remains reproducible. The
-snapshot lives at `data/reference/senate/senators.xml`; its source URL,
-UTC retrieval time, and SHA-256 integrity checksum are in
+Each run creates two PDFs from the same prepared company data. The external
+PDF is safe to share: it includes company name, city and state, membership,
+and active certification statements (including Certified Erector). It never
+includes street addresses, postal codes, company-level employee counts,
+tonnage, or source/provenance details. When at least two listed companies have
+valid employee counts, it shows one Illinois-wide employee total; otherwise it
+does not show a total. The internal PDF is for staff review and retains the
+detailed addresses, individual employee counts, tonnage, provenance, and
+Illinois U.S. Senate contacts.
+
+The internal Senate-contact section reads a committed local Senate.gov XML
+snapshot, so report creation does not fetch data from the network and remains
+reproducible. The snapshot lives at `data/reference/senate/senators.xml`; its
+source URL, UTC retrieval time, and SHA-256 integrity checksum are in
 `data/reference/senate/senators.json`.
 
-Each PDF ends with a **Report provenance** block. It records the iMIS export
+The internal PDF ends with a **Report provenance** block. It records the iMIS export
 filename and required `--imis-export-date`, the selected tonnage calendar year,
 the Senate snapshot's elected-official data retrieval date, and the Salesforce
 retrieval date. Dates use `YYYY-MM-DD`. If Salesforce credentials are missing
@@ -71,8 +81,8 @@ Also review `unknown-imis-codes.csv`: it lists blank and unconfirmed iMIS Type
 and Category codes from every export row, including rows outside Illinois.
 Unknown or blank codes have no PDF label. Confirm each code’s meaning, then add
 it to the central mapping in `src/aisc_gr_statistics/imis_fields.py`.
-The modernized, sample-inspired PDF is a bordered two-column card directory
-titled **AISC Certification and Membership Summary: Illinois**. It displays a
+The internal PDF is a bordered two-column card directory titled **AISC
+Certification and Membership Summary: Illinois**. It displays a
 company name, address, `N Employees`, translated membership type/category,
 `YEAR Structural Steel Tonnage: VALUE Tons`, and concise `AISC Certified …`
 active-certification sentences. Detailed Salesforce certification names are

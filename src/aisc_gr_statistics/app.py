@@ -8,6 +8,7 @@ from pathlib import Path
 
 from loguru import logger
 
+from .districts import enrich_companies, write_districts_csv, write_review_csv
 from .report import (
     ReportAudience,
     build_reconciliation_rows,
@@ -57,6 +58,9 @@ def main(argv=()):
         return
     if arguments.command == "refresh-senators":
         _run_refresh_senators()
+        return
+    if arguments.command == "enrich-districts":
+        _run_enrich_districts(arguments)
         return
     logger.info("Hello from aisc_gr_statistics!")
 
@@ -129,32 +133,63 @@ def _build_parser():
         help="Destination PDF path for the detailed internal report.",
     )
     report.add_argument(
-        "--conflicts-csv", required=True, type=Path,
+        "--conflicts-csv",
+        required=True,
+        type=Path,
         help="Destination CSV for ID-joined value conflicts and duplicate-ID review.",
     )
     report.add_argument(
-        "--candidate-matches-csv", required=True, type=Path,
+        "--candidate-matches-csv",
+        required=True,
+        type=Path,
         help="Destination CSV for review-only name/location candidates.",
     )
     report.add_argument(
-        "--reconciliation-csv", required=True, type=Path,
+        "--reconciliation-csv",
+        required=True,
+        type=Path,
         help="Destination CSV for complete iMIS/Salesforce reconciliation review.",
     )
     report.add_argument(
-        "--reconciliation-log", required=True, type=Path,
+        "--reconciliation-log",
+        required=True,
+        type=Path,
         help="Destination readable log summarizing reconciliation findings.",
     )
     report.add_argument(
-        "--unknown-imis-codes-csv", required=True, type=Path,
+        "--unknown-imis-codes-csv",
+        required=True,
+        type=Path,
         help="Destination CSV for blank and unconfirmed iMIS Type/Category codes.",
     )
     report.add_argument(
-        "--tonnage-review-csv", required=True, type=Path,
+        "--tonnage-review-csv",
+        required=True,
+        type=Path,
         help="Destination CSV for selected-year tonnage rows excluded from totals.",
     )
     subcommands.add_parser(
         "refresh-senators",
         help="Download and validate the official Senate.gov contact snapshot.",
+    )
+    districts = subcommands.add_parser(
+        "enrich-districts",
+        help="Look up report companies' congressional districts using public Census data.",
+    )
+    districts.add_argument(
+        "--imis-csv", required=True, type=Path, help="Path to an iMIS CSV export."
+    )
+    districts.add_argument(
+        "--districts-csv",
+        required=True,
+        type=Path,
+        help="Destination CSV for successfully assigned congressional districts.",
+    )
+    districts.add_argument(
+        "--review-csv",
+        required=True,
+        type=Path,
+        help="Destination CSV for addresses or Census results requiring review.",
     )
     return parser
 
@@ -190,13 +225,13 @@ def _run_report(arguments):
         audience=ReportAudience.INTERNAL,
     )
     write_conflicts_csv(combined_conflicts(combined), arguments.conflicts_csv)
-    write_candidate_matches_csv(candidate_matches(combined), arguments.candidate_matches_csv)
+    write_candidate_matches_csv(
+        candidate_matches(combined), arguments.candidate_matches_csv
+    )
     reconciliation_rows = build_reconciliation_rows(combined, as_of=report_date)
     write_reconciliation_csv(reconciliation_rows, arguments.reconciliation_csv)
     write_reconciliation_log(reconciliation_rows, arguments.reconciliation_log)
-    write_undefined_imis_codes_csv(
-        unknown_imis_codes, arguments.unknown_imis_codes_csv
-    )
+    write_undefined_imis_codes_csv(unknown_imis_codes, arguments.unknown_imis_codes_csv)
     write_tonnage_review_csv(tonnage_findings, arguments.tonnage_review_csv)
     logger.info(
         "Created Illinois reports: external={}, internal={}",
@@ -219,6 +254,22 @@ def _run_refresh_senators():
     )
 
 
+def _run_enrich_districts(arguments):
+    """Create district and review CSVs, failing after output on Census outages."""
+    accounts, _ = _salesforce_accounts_if_configured()
+    districts, reviews, service_failed = enrich_companies(arguments.imis_csv, accounts)
+    write_districts_csv(districts, arguments.districts_csv)
+    write_review_csv(reviews, arguments.review_csv)
+    logger.info(
+        "Created district enrichment files: matched={}, review={}",
+        len(districts),
+        len(reviews),
+    )
+    if service_failed:
+        logger.error("One or more Census requests failed; review the partial outputs.")
+        raise SystemExit(1)
+
+
 def _salesforce_accounts_if_configured(environment=None):
     """Return Salesforce accounts and their UTC retrieval time when available."""
     environment = environment if environment is not None else os.environ
@@ -232,7 +283,9 @@ def _salesforce_accounts_if_configured(environment=None):
         return [], None
     try:
         client = create_client(environment)
-        accounts = client.query_records("Account", REPORT_ACCOUNT_FIELDS, order_by="Name")
+        accounts = client.query_records(
+            "Account", REPORT_ACCOUNT_FIELDS, order_by="Name"
+        )
         return accounts, datetime.now(UTC)
     except SalesforceError as error:
         logger.warning(
@@ -249,6 +302,4 @@ def _iso_date(value):
             raise ValueError
         return date.fromisoformat(value)
     except ValueError as error:
-        raise argparse.ArgumentTypeError(
-            "must use YYYY-MM-DD format"
-        ) from error
+        raise argparse.ArgumentTypeError("must use YYYY-MM-DD format") from error

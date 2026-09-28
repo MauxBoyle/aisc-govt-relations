@@ -43,6 +43,33 @@ does not show a total. The internal PDF is for staff review and retains the
 detailed addresses, individual employee counts, tonnage, provenance, and
 Illinois U.S. Senate contacts.
 
+## Congressional district enrichment
+
+District lookup is intentionally separate, so PDF creation remains offline. It
+uses the public [U.S. Census Geocoding Services API](https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html)
+with Census's current address benchmark and congressional-geography vintage:
+
+```bash
+uv run aisc_gr_statistics enrich-districts \
+  --imis-csv data/raw/imis/membership-export.csv \
+  --districts-csv data/processed/company-districts.csv \
+  --review-csv data/processed/address-district-review.csv
+```
+
+The command handles the report population: Illinois iMIS companies and
+report-eligible Salesforce-only certified companies when credentials are
+available. It prefers a complete Salesforce Billing Address, then a complete
+iMIS address. “Complete” means street number, city, state, and ZIP code.
+
+Only a single Census candidate with both county and congressional-district
+geography is accepted. `company-districts.csv` records the standardized address,
+FIPS/GEOID values, coordinates, benchmark, vintage, and lookup date. Review
+`address-district-review.csv` for incomplete addresses, no/multiple candidates,
+missing geography, malformed responses, or service errors. The command writes
+both files after a Census outage but exits nonzero, so partial data is not
+mistaken for a finished run. Refresh districts by running the command again;
+each run records the current Census values it used.
+
 The internal Senate-contact section reads a committed local Senate.gov XML
 snapshot, so report creation does not fetch data from the network and remains
 reproducible. The snapshot lives at `data/reference/senate/senators.xml`; its

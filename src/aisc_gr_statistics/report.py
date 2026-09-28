@@ -91,6 +91,7 @@ class Company:
     imis_id: str = ""
     city: str = ""
     address: str = ""
+    postal_code: str = ""
     membership_type: str = ""
     tonnage: str = ""
     district: str = ""
@@ -202,6 +203,13 @@ HEADER_ALIASES = {
     "state": ("state", "billing state", "state province"),
     "city": ("city", "billing city", "city name"),
     "address": ("address", "street address", "billing street", "full address"),
+    "postal_code": (
+        "zip",
+        "zip code",
+        "postal code",
+        "postal_code",
+        "billing postal code",
+    ),
     "membership_type": (
         "membership type",
         "company type",
@@ -260,12 +268,19 @@ def read_imis_companies_with_tonnage_review(
         reader = csv.DictReader(file_handle)
         fields = _recognized_fields(reader.fieldnames)
         missing = [
-            field for field in ("imis_id", "name", "city", "state") if field not in fields
+            field
+            for field in ("imis_id", "name", "city", "state")
+            if field not in fields
         ]
         if missing:
             raise ReportDataError(
                 "The iMIS CSV is missing required column(s): "
-                + ", ".join({"imis_id": "shared iMIS ID", "name": "company name"}.get(field, field) for field in missing)
+                + ", ".join(
+                    {"imis_id": "shared iMIS ID", "name": "company name"}.get(
+                        field, field
+                    )
+                    for field in missing
+                )
                 + ". Re-export iMIS including these columns."
             )
 
@@ -274,7 +289,10 @@ def read_imis_companies_with_tonnage_review(
             annual_fields = ("tonnage_year", "submission_date")
             missing_annual = [field for field in annual_fields if field not in fields]
             if missing_annual:
-                names = {"tonnage_year": "Tonnage Year", "submission_date": "Submission Date"}
+                names = {
+                    "tonnage_year": "Tonnage Year",
+                    "submission_date": "Submission Date",
+                }
                 raise ReportDataError(
                     "The dated iMIS CSV is missing required column(s): "
                     + ", ".join(names[field] for field in missing_annual)
@@ -304,6 +322,7 @@ def read_imis_companies_with_tonnage_review(
                     imis_id=_normalize_imis_identifier(_cell(row, fields["imis_id"])),
                     city=_cell(row, fields["city"]),
                     address=_optional_cell(row, fields, "address"),
+                    postal_code=_optional_cell(row, fields, "postal_code"),
                     membership_type=membership_label(
                         _optional_cell(row, fields, "membership_type"),
                         _optional_cell(row, fields, "category"),
@@ -338,7 +357,9 @@ def _aggregate_annual_imis_companies(
         imis_id = _normalize_imis_identifier(_cell(row, fields["imis_id"]))
         submission_date = _cell(row, fields["submission_date"])
         if not submission_date:
-            findings.append(_tonnage_finding(row, fields, imis_id, "missing submission date"))
+            findings.append(
+                _tonnage_finding(row, fields, imis_id, "missing submission date")
+            )
             continue
         try:
             timestamp = _parse_submission_date(submission_date)
@@ -348,7 +369,10 @@ def _aggregate_annual_imis_companies(
             continue
         selected.append((imis_id, submission_date, timestamp, tonnage, row, row_number))
 
-    grouped: dict[tuple[str, int, datetime], list[tuple[str, str, datetime, Decimal, Mapping[str | None, str | None], int]]] = {}
+    grouped: dict[
+        tuple[str, int, datetime],
+        list[tuple[str, str, datetime, Decimal, Mapping[str | None, str | None], int]],
+    ] = {}
     for item in selected:
         grouped.setdefault((item[0], selected_year, item[2]), []).append(item)
 
@@ -357,14 +381,28 @@ def _aggregate_annual_imis_companies(
         values = {submission[3] for submission in submissions}
         if len(values) > 1:
             for submission in submissions:
-                findings.append(_tonnage_finding(submission[4], fields, key[0], "conflicting tonnage for submission key"))
+                findings.append(
+                    _tonnage_finding(
+                        submission[4],
+                        fields,
+                        key[0],
+                        "conflicting tonnage for submission key",
+                    )
+                )
             continue
         accepted.append(submissions[0])
         for submission in submissions[1:]:
-            findings.append(_tonnage_finding(submission[4], fields, key[0], "exact duplicate submission key"))
+            findings.append(
+                _tonnage_finding(
+                    submission[4], fields, key[0], "exact duplicate submission key"
+                )
+            )
 
     companies = []
-    by_imis_id: dict[str, list[tuple[str, str, datetime, Decimal, Mapping[str | None, str | None], int]]] = {}
+    by_imis_id: dict[
+        str,
+        list[tuple[str, str, datetime, Decimal, Mapping[str | None, str | None], int]],
+    ] = {}
     for submission in accepted:
         by_imis_id.setdefault(submission[0], []).append(submission)
     for imis_id, submissions in by_imis_id.items():
@@ -384,12 +422,22 @@ def _aggregate_annual_imis_companies(
                 imis_id=imis_id,
                 city=_cell(row, fields["city"]),
                 address=_optional_cell(row, fields, "address"),
-                membership_type=membership_label(_optional_cell(row, fields, "membership_type"), _optional_cell(row, fields, "category")),
-                tonnage=_format_tonnage(sum((submission[3] for submission in submissions), Decimal())),
+                postal_code=_optional_cell(row, fields, "postal_code"),
+                membership_type=membership_label(
+                    _optional_cell(row, fields, "membership_type"),
+                    _optional_cell(row, fields, "category"),
+                ),
+                tonnage=_format_tonnage(
+                    sum((submission[3] for submission in submissions), Decimal())
+                ),
                 district=_optional_cell(row, fields, "district"),
             )
         )
-    return sorted(companies, key=lambda company: (company.name.casefold(), company.name)), findings, selected_year
+    return (
+        sorted(companies, key=lambda company: (company.name.casefold(), company.name)),
+        findings,
+        selected_year,
+    )
 
 
 def _parse_submission_date(value: str) -> datetime:
@@ -413,11 +461,19 @@ def _parse_submission_date(value: str) -> datetime:
 
 
 def _tonnage_finding(
-    row: Mapping[str | None, str | None], fields: Mapping[str, str], imis_id: str, reason: str
+    row: Mapping[str | None, str | None],
+    fields: Mapping[str, str],
+    imis_id: str,
+    reason: str,
 ) -> TonnageReviewFinding:
     return TonnageReviewFinding(
-        imis_id, _cell(row, fields["tonnage_year"]), _cell(row, fields["submission_date"]), reason,
-        _optional_cell(row, fields, "bridge_tonnage"), _optional_cell(row, fields, "building_tonnage"), _optional_cell(row, fields, "sc_tonnage"),
+        imis_id,
+        _cell(row, fields["tonnage_year"]),
+        _cell(row, fields["submission_date"]),
+        reason,
+        _optional_cell(row, fields, "bridge_tonnage"),
+        _optional_cell(row, fields, "building_tonnage"),
+        _optional_cell(row, fields, "sc_tonnage"),
     )
 
 
@@ -451,7 +507,7 @@ def find_undefined_imis_codes(path: Path | str) -> list[UndefinedImisCodeFinding
 def combine_companies(
     companies: Iterable[Company],
     salesforce_accounts: Iterable[Mapping[str, object]] = (),
-)-> list[CombinedCompany]:
+) -> list[CombinedCompany]:
     """Join only unique, populated, exact shared iMIS ID text values."""
     companies = list(companies)
     salesforce_accounts = [
@@ -484,7 +540,9 @@ def combine_companies(
         account = matches[0] if is_unique_match else None
         if account is not None:
             used_accounts.add(id(account))
-            combined.append(CombinedCompany(CompanyClassification.BOTH, company, account))
+            combined.append(
+                CombinedCompany(CompanyClassification.BOTH, company, account)
+            )
         else:
             combined.append(
                 CombinedCompany(
@@ -519,10 +577,7 @@ def combined_conflicts(companies: Iterable[CombinedCompany]) -> list[Conflict]:
     reported_duplicates: set[tuple[CompanyClassification, str]] = set()
     for company in companies:
         duplicate_key = (company.classification, company.shared_imis_id)
-        if (
-            company.duplicate_id_count > 1
-            and duplicate_key not in reported_duplicates
-        ):
+        if company.duplicate_id_count > 1 and duplicate_key not in reported_duplicates:
             reported_duplicates.add(duplicate_key)
             source = (
                 "iMIS"
@@ -542,14 +597,42 @@ def combined_conflicts(companies: Iterable[CombinedCompany]) -> list[Conflict]:
         if not company.imis or not company.salesforce:
             continue
         comparisons = {
-            "name": (company.imis.name, _account_value(company.salesforce, CertificationAccountField.NAME)),
-            "city": (company.imis.city, _account_value(company.salesforce, CertificationAccountField.BILLING_CITY)),
-            "state": (company.imis.state, _account_value(company.salesforce, CertificationAccountField.BILLING_STATE)),
-            "address": (_imis_address(company.imis), _salesforce_address(company.salesforce)),
+            "name": (
+                company.imis.name,
+                _account_value(company.salesforce, CertificationAccountField.NAME),
+            ),
+            "city": (
+                company.imis.city,
+                _account_value(
+                    company.salesforce, CertificationAccountField.BILLING_CITY
+                ),
+            ),
+            "state": (
+                company.imis.state,
+                _account_value(
+                    company.salesforce, CertificationAccountField.BILLING_STATE
+                ),
+            ),
+            "address": (
+                _imis_address(company.imis),
+                _salesforce_address(company.salesforce),
+            ),
         }
         for field, (imis_value, salesforce_value) in comparisons.items():
-            if imis_value and salesforce_value and not _same_value(field, imis_value, salesforce_value):
-                conflicts.append(Conflict(company.shared_imis_id, company.classification, field, imis_value, salesforce_value))
+            if (
+                imis_value
+                and salesforce_value
+                and not _same_value(field, imis_value, salesforce_value)
+            ):
+                conflicts.append(
+                    Conflict(
+                        company.shared_imis_id,
+                        company.classification,
+                        field,
+                        imis_value,
+                        salesforce_value,
+                    )
+                )
     return conflicts
 
 
@@ -568,9 +651,32 @@ def candidate_matches(companies: Iterable[CombinedCompany]) -> list[CandidateMat
             )
             if imis_id and salesforce_id and imis_id == salesforce_id:
                 continue
-            name, city, state = (_account_value(account, field) for field in (CertificationAccountField.NAME, CertificationAccountField.BILLING_CITY, CertificationAccountField.BILLING_STATE))
-            if all((imis.name, imis.city, imis.state, name, city, state)) and normalize_company_name(imis.name) == normalize_company_name(name) and normalize_company_name(imis.city) == normalize_company_name(city) and _same_value("state", imis.state, state):
-                candidates.append(CandidateMatch(imis_id, _account_value(account, CertificationAccountField.ID), imis.name, name, imis.city, city, imis.state, state))
+            name, city, state = (
+                _account_value(account, field)
+                for field in (
+                    CertificationAccountField.NAME,
+                    CertificationAccountField.BILLING_CITY,
+                    CertificationAccountField.BILLING_STATE,
+                )
+            )
+            if (
+                all((imis.name, imis.city, imis.state, name, city, state))
+                and normalize_company_name(imis.name) == normalize_company_name(name)
+                and normalize_company_name(imis.city) == normalize_company_name(city)
+                and _same_value("state", imis.state, state)
+            ):
+                candidates.append(
+                    CandidateMatch(
+                        imis_id,
+                        _account_value(account, CertificationAccountField.ID),
+                        imis.name,
+                        name,
+                        imis.city,
+                        city,
+                        imis.state,
+                        state,
+                    )
+                )
     return candidates
 
 
@@ -608,11 +714,19 @@ def build_reconciliation_rows(
             imis
             and account
             and imis.name
-            and (salesforce_name := _account_value(account, CertificationAccountField.NAME))
+            and (
+                salesforce_name := _account_value(
+                    account, CertificationAccountField.NAME
+                )
+            )
             and not _same_value("name", imis.name, salesforce_name)
         ):
             issues.append("name difference")
-        if account and _is_certified_account(account) and not _active_certification_names(account, as_of):
+        if (
+            account
+            and _is_certified_account(account)
+            and not _active_certification_names(account, as_of)
+        ):
             issues.append("certified account without active certifications")
         if company.classification is CompanyClassification.BOTH:
             classification = "matched"
@@ -622,7 +736,9 @@ def build_reconciliation_rows(
             ReconciliationRow(
                 classification=classification,
                 imis_id=shared_id,
-                salesforce_account_id=_account_value(account, CertificationAccountField.ID),
+                salesforce_account_id=_account_value(
+                    account, CertificationAccountField.ID
+                ),
                 imis_name=imis.name if imis else "",
                 salesforce_name=_account_value(account, CertificationAccountField.NAME),
                 issues=tuple(issues),
@@ -660,10 +776,16 @@ def build_report_companies(
             if account and _is_certified_account(account):
                 salesforce_only_accounts.append(account)
             continue
-        categories = _active_certification_names(account, as_of) if _is_certified_account(account) else ()
+        categories = (
+            _active_certification_names(account, as_of)
+            if _is_certified_account(account)
+            else ()
+        )
         # A valid ID join gives Salesforce ownership of the displayed Account
         # name; iMIS remains the fallback for a blank Salesforce name.
-        name = _account_value(account, CertificationAccountField.NAME) or (imis.name if imis else "")
+        name = _account_value(account, CertificationAccountField.NAME) or (
+            imis.name if imis else ""
+        )
         imis_address = _imis_address(imis) if imis else ""
         salesforce_address = _salesforce_address(account) if account else ""
         location = _salesforce_location(account) or _imis_location(imis)
@@ -690,7 +812,10 @@ def build_report_companies(
     )
     return sorted(
         report_companies,
-        key=lambda company: (normalize_company_name(company.name), company.name.casefold()),
+        key=lambda company: (
+            normalize_company_name(company.name),
+            company.name.casefold(),
+        ),
     )
 
 
@@ -739,7 +864,11 @@ def render_illinois_report(
         spaceAfter=4,
     )
     senator_heading = ParagraphStyle(
-        "SenatorHeading", parent=body, fontName="Helvetica-Bold", leading=12, spaceAfter=2
+        "SenatorHeading",
+        parent=body,
+        fontName="Helvetica-Bold",
+        leading=12,
+        spaceAfter=2,
     )
 
     story = [
@@ -806,15 +935,23 @@ def render_illinois_report(
             # Paragraph treats HTML-like markup specially. Escape source text
             # first, then intentionally turn our display line breaks into the
             # safe markup ReportLab expects.
-            company_cell.append(Paragraph(_escape(company.address).replace("\n", "<br/>"), body))
+            company_cell.append(
+                Paragraph(_escape(company.address).replace("\n", "<br/>"), body)
+            )
         elif company.location:
             company_cell.append(Paragraph(_escape(company.location), body))
         details_cell = []
         if profile.show_company_employee_counts and company.employee_count:
-            details_cell.append(Paragraph(f"{_escape(company.employee_count)} Employees", body))
+            details_cell.append(
+                Paragraph(f"{_escape(company.employee_count)} Employees", body)
+            )
         if company.membership_type:
             details_cell.append(Paragraph(_escape(company.membership_type), body))
-        if profile.show_company_tonnage and company.tonnage and tonnage_year is not None:
+        if (
+            profile.show_company_tonnage
+            and company.tonnage
+            and tonnage_year is not None
+        ):
             details_cell.append(
                 Paragraph(
                     f"{tonnage_year} Structural Steel Tonnage: "
@@ -832,7 +969,9 @@ def render_illinois_report(
             for sentence in certification_paragraphs:
                 details_cell.append(Paragraph(_escape(sentence), body))
         table = Table(
-            [[company_cell, details_cell]], colWidths=[3.35 * inch, 3.55 * inch], splitByRow=1
+            [[company_cell, details_cell]],
+            colWidths=[3.35 * inch, 3.55 * inch],
+            splitByRow=1,
         )
         table.setStyle(
             TableStyle(
@@ -849,14 +988,16 @@ def render_illinois_report(
         )
         story.extend([table, Spacer(1, 0.08 * inch)])
     if profile.show_provenance:
-        story.extend(_provenance_section(
-            body,
-            imis_export_filename=imis_export_filename,
-            imis_export_date=imis_export_date,
-            tonnage_year=tonnage_year,
-            senate_retrieved_at=senate_retrieved_at,
-            salesforce_retrieved_at=salesforce_retrieved_at,
-        ))
+        story.extend(
+            _provenance_section(
+                body,
+                imis_export_filename=imis_export_filename,
+                imis_export_date=imis_export_date,
+                tonnage_year=tonnage_year,
+                senate_retrieved_at=senate_retrieved_at,
+                salesforce_retrieved_at=salesforce_retrieved_at,
+            )
+        )
     document.build(story)
 
 
@@ -870,7 +1011,9 @@ def _provenance_section(
     salesforce_retrieved_at: datetime | None,
 ) -> list[object]:
     """Build the final PDF block that identifies the report's source data."""
-    imis_details = _escape(imis_export_filename) if imis_export_filename else "Not provided"
+    imis_details = (
+        _escape(imis_export_filename) if imis_export_filename else "Not provided"
+    )
     if imis_export_date:
         imis_details += f" (exported {imis_export_date.isoformat()})"
     elif not imis_export_filename:
@@ -892,7 +1035,11 @@ def _provenance_section(
 
 def _provenance_date(retrieved_at: datetime | None) -> str:
     """Display a source retrieval's UTC calendar date without exposing errors."""
-    return retrieved_at.astimezone(UTC).date().isoformat() if retrieved_at else "Not retrieved"
+    return (
+        retrieved_at.astimezone(UTC).date().isoformat()
+        if retrieved_at
+        else "Not retrieved"
+    )
 
 
 def _recognized_fields(headers: list[str] | None) -> dict[str, str]:
@@ -1013,9 +1160,11 @@ def _active_certification_names(
 
 def _is_certified_account(account: Mapping[str, object] | None) -> bool:
     """Return whether an Account is eligible to display child certifications."""
-    return bool(account) and _account_value(
-        account, CertificationAccountField.CERTIFICATION_STATUS
-    ) == CertificationStatus.CERTIFIED
+    return (
+        bool(account)
+        and _account_value(account, CertificationAccountField.CERTIFICATION_STATUS)
+        == CertificationStatus.CERTIFIED
+    )
 
 
 def _format_employee_count(value: object) -> str:
@@ -1080,9 +1229,12 @@ def _merged_salesforce_only_report_companies(
         employee_counts = [
             count
             for account, _ in grouped_accounts
-            if (count := _employee_count_decimal(
-                account.get(CertificationAccountField.EMPLOYEE_COUNT)
-            )) is not None
+            if (
+                count := _employee_count_decimal(
+                    account.get(CertificationAccountField.EMPLOYEE_COUNT)
+                )
+            )
+            is not None
         ]
         rows.append(
             ReportCompany(
@@ -1130,7 +1282,9 @@ def _salesforce_address(account: Mapping[str, object] | None) -> str:
     street = _string_value(account.get(CertificationAccountField.BILLING_STREET))
     city = _string_value(account.get(CertificationAccountField.BILLING_CITY))
     state = _string_value(account.get(CertificationAccountField.BILLING_STATE))
-    postal_code = _string_value(account.get(CertificationAccountField.BILLING_POSTAL_CODE))
+    postal_code = _string_value(
+        account.get(CertificationAccountField.BILLING_POSTAL_CODE)
+    )
     country = _string_value(account.get(CertificationAccountField.BILLING_COUNTRY))
     return _format_address(street, city, state, postal_code, country)
 
@@ -1214,7 +1368,9 @@ def _account_value(
 
 
 def _is_illinois(account: Mapping[str, object]) -> bool:
-    return _account_value(account, CertificationAccountField.BILLING_STATE).casefold() in {
+    return _account_value(
+        account, CertificationAccountField.BILLING_STATE
+    ).casefold() in {
         "il",
         "illinois",
     }
@@ -1234,9 +1390,21 @@ def write_conflicts_csv(conflicts: Iterable[Conflict], output: Path | str) -> No
     """Write the required conflict-review CSV, including its header when empty."""
     _write_csv(
         output,
-        ("shared iMIS ID", "company classification", "field", "iMIS value", "Salesforce value"),
         (
-            (item.shared_imis_id, item.company_classification, item.field, item.imis_value, item.salesforce_value)
+            "shared iMIS ID",
+            "company classification",
+            "field",
+            "iMIS value",
+            "Salesforce value",
+        ),
+        (
+            (
+                item.shared_imis_id,
+                item.company_classification,
+                item.field,
+                item.imis_value,
+                item.salesforce_value,
+            )
             for item in conflicts
         ),
     )
@@ -1263,13 +1431,22 @@ def write_tonnage_review_csv(
     _write_csv(
         output,
         (
-            "iMIS ID", "Tonnage Year", "Submission Date", "reason",
-            "Bridge Tonnage", "Building Tonnage", "S C Tonnage",
+            "iMIS ID",
+            "Tonnage Year",
+            "Submission Date",
+            "reason",
+            "Bridge Tonnage",
+            "Building Tonnage",
+            "S C Tonnage",
         ),
         (
             (
-                finding.imis_id, finding.tonnage_year, finding.submission_date,
-                finding.reason, finding.bridge_tonnage, finding.building_tonnage,
+                finding.imis_id,
+                finding.tonnage_year,
+                finding.submission_date,
+                finding.reason,
+                finding.bridge_tonnage,
+                finding.building_tonnage,
                 finding.sc_tonnage,
             )
             for finding in findings
@@ -1283,9 +1460,27 @@ def write_candidate_matches_csv(
     """Write the required candidate-match CSV, including its header when empty."""
     _write_csv(
         output,
-        ("iMIS ID", "Salesforce Account ID", "iMIS name", "Salesforce name", "iMIS city", "Salesforce city", "iMIS state", "Salesforce state"),
         (
-            (item.imis_id, item.salesforce_account_id, item.imis_name, item.salesforce_name, item.imis_city, item.salesforce_city, item.imis_state, item.salesforce_state)
+            "iMIS ID",
+            "Salesforce Account ID",
+            "iMIS name",
+            "Salesforce name",
+            "iMIS city",
+            "Salesforce city",
+            "iMIS state",
+            "Salesforce state",
+        ),
+        (
+            (
+                item.imis_id,
+                item.salesforce_account_id,
+                item.imis_name,
+                item.salesforce_name,
+                item.imis_city,
+                item.salesforce_city,
+                item.imis_state,
+                item.salesforce_state,
+            )
             for item in matches
         ),
     )
@@ -1333,7 +1528,8 @@ def write_reconciliation_log(
     missing_ids = [row for row in rows if "missing iMIS ID" in row.issues]
     name_differences = [row for row in rows if "name difference" in row.issues]
     missing_active_certifications = [
-        row for row in rows
+        row
+        for row in rows
         if "certified account without active certifications" in row.issues
     ]
     lines = [
@@ -1353,7 +1549,10 @@ def write_reconciliation_log(
         ("Missing iMIS IDs", "missing iMIS ID"),
         ("Duplicate iMIS IDs", "duplicate iMIS ID"),
         ("ID-matched name differences", "name difference"),
-        ("Certified accounts without active certifications", "certified account without active certifications"),
+        (
+            "Certified accounts without active certifications",
+            "certified account without active certifications",
+        ),
     )
     for heading, issue in categories:
         lines.append(heading + ":")
@@ -1383,7 +1582,9 @@ def write_reconciliation_log(
     output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def _write_csv(output: Path | str, headers: tuple[str, ...], rows: Iterable[tuple[object, ...]]) -> None:
+def _write_csv(
+    output: Path | str, headers: tuple[str, ...], rows: Iterable[tuple[object, ...]]
+) -> None:
     output_path = Path(output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", newline="", encoding="utf-8") as file_handle:

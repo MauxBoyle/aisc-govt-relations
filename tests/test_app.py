@@ -101,16 +101,24 @@ def test_report_pdf_uses_the_supplied_imis_export_date(tmp_path):
         "--tonnage-review-csv": tmp_path / "tonnage.csv",
     }
     arguments = [
-        "report", "--imis-csv", "tests/fixtures/imis-membership-sample.csv",
-        "--imis-export-date", "2026-09-17", "--external-output", str(external_output),
-        "--internal-output", str(internal_output),
+        "report",
+        "--imis-csv",
+        "tests/fixtures/imis-membership-sample.csv",
+        "--imis-export-date",
+        "2026-09-17",
+        "--external-output",
+        str(external_output),
+        "--internal-output",
+        str(internal_output),
     ]
     for name, path in destinations.items():
         arguments.extend((name, str(path)))
 
     main(arguments)
 
-    text = "\n".join(page.extract_text() or "" for page in PdfReader(internal_output).pages)
+    text = "\n".join(
+        page.extract_text() or "" for page in PdfReader(internal_output).pages
+    )
     assert "iMIS export: imis-membership-sample.csv (exported 2026-09-17)" in text
     external_text = "\n".join(
         page.extract_text() or "" for page in PdfReader(external_output).pages
@@ -123,7 +131,9 @@ def test_salesforce_load_records_a_utc_retrieval_time_after_success(monkeypatch)
         def query_records(self, *args, **kwargs):
             return [{"Id": "001"}]
 
-    monkeypatch.setattr("aisc_gr_statistics.app.create_client", lambda environment: Client())
+    monkeypatch.setattr(
+        "aisc_gr_statistics.app.create_client", lambda environment: Client()
+    )
 
     accounts, retrieved_at = _salesforce_accounts_if_configured(
         {"SF_CLIENT_ID": "id", "SF_CLIENT_SECRET": "secret"}
@@ -143,3 +153,59 @@ def test_failed_salesforce_load_has_no_retrieval_time(monkeypatch):
     assert _salesforce_accounts_if_configured(
         {"SF_CLIENT_ID": "id", "SF_CLIENT_SECRET": "secret"}
     ) == ([], None)
+
+
+def test_enrich_districts_writes_outputs_and_exits_nonzero_after_census_outage(
+    tmp_path, monkeypatch
+):
+    """Partial enrichment remains inspectable even when Census is unavailable."""
+    districts = tmp_path / "districts.csv"
+    review = tmp_path / "review.csv"
+
+    monkeypatch.setattr(
+        "aisc_gr_statistics.app.enrich_companies",
+        lambda *args: ([], [], True),
+    )
+    with pytest.raises(SystemExit, match="1"):
+        main(
+            [
+                "enrich-districts",
+                "--imis-csv",
+                "tests/fixtures/imis-membership-sample.csv",
+                "--districts-csv",
+                str(districts),
+                "--review-csv",
+                str(review),
+            ]
+        )
+
+    assert districts.read_text(encoding="utf-8").startswith("company_name")
+    assert review.read_text(encoding="utf-8").startswith("company_name")
+
+
+def test_report_command_never_constructs_a_census_geocoder(tmp_path, monkeypatch):
+    """Normal PDF creation stays offline with respect to Census."""
+    monkeypatch.setattr(
+        "aisc_gr_statistics.districts.CensusGeocoder",
+        lambda: (_ for _ in ()).throw(AssertionError("Census was used")),
+    )
+    destinations = {
+        "--external-output": tmp_path / "external.pdf",
+        "--internal-output": tmp_path / "internal.pdf",
+        "--conflicts-csv": tmp_path / "conflicts.csv",
+        "--candidate-matches-csv": tmp_path / "candidates.csv",
+        "--reconciliation-csv": tmp_path / "reconciliation.csv",
+        "--reconciliation-log": tmp_path / "reconciliation.log",
+        "--unknown-imis-codes-csv": tmp_path / "unknown.csv",
+        "--tonnage-review-csv": tmp_path / "tonnage.csv",
+    }
+    arguments = [
+        "report",
+        "--imis-csv",
+        "tests/fixtures/imis-membership-sample.csv",
+        "--imis-export-date",
+        "2026-09-18",
+    ]
+    for option, path in destinations.items():
+        arguments.extend((option, str(path)))
+    main(arguments)

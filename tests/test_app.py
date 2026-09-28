@@ -161,10 +161,11 @@ def test_enrich_districts_writes_outputs_and_exits_nonzero_after_census_outage(
     """Partial enrichment remains inspectable even when Census is unavailable."""
     districts = tmp_path / "districts.csv"
     review = tmp_path / "review.csv"
+    conversions = tmp_path / "address-conversions.csv"
 
     monkeypatch.setattr(
         "aisc_gr_statistics.app.enrich_companies",
-        lambda *args: ([], [], True),
+        lambda *args: ([], [], [], True),
     )
     with pytest.raises(SystemExit, match="1"):
         main(
@@ -176,11 +177,14 @@ def test_enrich_districts_writes_outputs_and_exits_nonzero_after_census_outage(
                 str(districts),
                 "--review-csv",
                 str(review),
+                "--address-conversions-csv",
+                str(conversions),
             ]
         )
 
     assert districts.read_text(encoding="utf-8").startswith("company_name")
     assert review.read_text(encoding="utf-8").startswith("company_name")
+    assert conversions.read_text(encoding="utf-8").startswith("company_name")
 
 
 def test_aggregate_districts_writes_a_csv(tmp_path, monkeypatch):

@@ -9,6 +9,7 @@ from pathlib import Path
 
 import requests
 
+from .address_normalization import normalize_street, normalize_text, normalize_zip
 from .report import (
     CombinedCompany,
     CompanyClassification,
@@ -22,7 +23,7 @@ from .salesforce_fields import (
 )
 
 CENSUS_GEOGRAPHIES_URL = (
-    "https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress"
+    "https://geocoding.geo.census.gov/geocoder/geographies/address"
 )
 CENSUS_BENCHMARK = "Public_AR_Current"
 CENSUS_VINTAGE = "Current_Current"
@@ -61,6 +62,49 @@ class Address:
             and self.state
             and _zip5(self.postal_code)
         )
+
+
+@dataclass(frozen=True)
+class NormalizedAddress:
+    """A derived address used only for a parsed Census lookup."""
+
+    street: str
+    city: str
+    state: str
+    postal_code: str
+    normalization_status: str
+    normalization_reason: str
+
+    @property
+    def complete(self) -> bool:
+        return bool(
+            self.street
+            and _has_street_number(self.street)
+            and self.city
+            and self.state
+            and self.postal_code
+        )
+
+
+@dataclass(frozen=True)
+class AddressConversionRow:
+    """Auditable record of the source address and its Census lookup form."""
+
+    company_name: str
+    company_classification: str
+    imis_id: str
+    salesforce_account_id: str
+    address_source: str
+    original_street: str
+    original_city: str
+    original_state: str
+    original_postal_code: str
+    normalized_street: str
+    normalized_city: str
+    normalized_state: str
+    normalized_postal_code: str
+    normalization_status: str
+    normalization_reason: str
 
 
 @dataclass(frozen=True)
@@ -124,12 +168,15 @@ class CensusGeocoder:
     def __init__(self, session=requests):
         self.session = session
 
-    def lookup(self, address: Address) -> Mapping[str, object]:
+    def lookup(self, address: NormalizedAddress) -> Mapping[str, object]:
         try:
             response = self.session.get(
                 CENSUS_GEOGRAPHIES_URL,
                 params={
-                    "address": address.source_address,
+                    "street": address.street,
+                    "city": address.city,
+                    "state": address.state,
+                    "zip": address.postal_code,
                     "benchmark": CENSUS_BENCHMARK,
                     "vintage": CENSUS_VINTAGE,
                     "format": "json",
@@ -154,8 +201,8 @@ def enrich_companies(
     salesforce_accounts=(),
     geocoder: CensusGeocoder | None = None,
     lookup_date: date | None = None,
-) -> tuple[list[DistrictRow], list[ReviewRow], bool]:
-    """Return successful district rows, review rows, and a service-failure flag.
+) -> tuple[list[DistrictRow], list[ReviewRow], list[AddressConversionRow], bool]:
+    """Return district, review, conversion rows, and a service-failure flag.
 
     A result is deliberately accepted only for exactly one Census candidate
     containing both County and Congressional District geography.
@@ -165,15 +212,18 @@ def enrich_companies(
     combined = combine_companies(read_imis_companies(imis_csv), salesforce_accounts)
     districts: list[DistrictRow] = []
     reviews: list[ReviewRow] = []
+    conversions: list[AddressConversionRow] = []
     service_failed = False
     for company in _report_population(combined):
         address = _preferred_address(company)
         identity = _identity(company)
-        if not address.complete:
+        normalized = _normalize_address(address)
+        conversions.append(_conversion(identity, address, normalized))
+        if not normalized.complete:
             reviews.append(_review(identity, address, "incomplete address"))
             continue
         try:
-            payload = geocoder.lookup(address)
+            payload = geocoder.lookup(normalized)
             row, reason, candidates = _district_from_payload(
                 identity, address, payload, lookup_date
             )
@@ -192,7 +242,7 @@ def enrich_companies(
             districts.append(row)
         else:
             reviews.append(_review(identity, address, reason, candidates))
-    return districts, reviews, service_failed
+    return districts, reviews, conversions, service_failed
 
 
 def write_districts_csv(rows: list[DistrictRow], path: Path | str) -> None:
@@ -201,6 +251,13 @@ def write_districts_csv(rows: list[DistrictRow], path: Path | str) -> None:
 
 def write_review_csv(rows: list[ReviewRow], path: Path | str) -> None:
     _write_csv(rows, path, ReviewRow)
+
+
+def write_address_conversions_csv(
+    rows: list[AddressConversionRow], path: Path | str
+) -> None:
+    """Write the selected source address and its derived Census lookup fields."""
+    _write_csv(rows, path, AddressConversionRow)
 
 
 def read_districts_csv(path: Path | str) -> list[DistrictRow]:
@@ -372,6 +429,9 @@ def _preferred_address(company: CombinedCompany) -> Address:
     if not postal_code:
         postal_code = _zip_from_text(street)
         street = _remove_zip(street)
+    street = _remove_embedded_city_state(
+        street, imis.city if imis else "", imis.state if imis else ""
+    )
     return Address(
         "iMIS address",
         street,
@@ -395,7 +455,7 @@ def _identity(company: CombinedCompany) -> tuple[str, str, str, str]:
     )
 
 
-def _district_from_payload(identity, address, payload, lookup_date):
+def _district_from_payload(identity, source_address, payload, lookup_date):
     result = payload.get("result")
     if not isinstance(result, dict) or not isinstance(
         result.get("addressMatches"), list
@@ -414,7 +474,7 @@ def _district_from_payload(identity, address, payload, lookup_date):
     if not isinstance(geographies, dict) or not isinstance(coordinates, dict):
         return None, "incomplete Census geography", _candidate_summary(matches)
     county = _one_geography(geographies, "Counties")
-    district = _one_geography(geographies, "Congressional Districts")
+    district = _congressional_district(geographies)
     if county is None or district is None:
         return None, "incomplete Census geography", _candidate_summary(matches)
     state_fips = _text(county.get("STATE"))
@@ -429,11 +489,11 @@ def _district_from_payload(identity, address, payload, lookup_date):
             classification,
             imis_id,
             account_id,
-            address.source,
-            address.source_address,
+            source_address.source,
+            source_address.source_address,
             _text(match.get("matchedAddress")),
-            address.city,
-            address.state,
+            source_address.city,
+            source_address.state,
             state_fips,
             _text(county.get("NAME")),
             county_fips,
@@ -461,6 +521,23 @@ def _one_geography(geographies, name):
     )
 
 
+def _congressional_district(geographies):
+    """Return one district from the newest available congressional session."""
+    numbered_layers = []
+    for name in geographies:
+        if not isinstance(name, str):
+            continue
+        match = re.fullmatch(r"(\d+)(?:st|nd|rd|th) Congressional Districts", name)
+        if match:
+            numbered_layers.append((int(match.group(1)), name))
+
+    if numbered_layers:
+        _, layer_name = max(numbered_layers, key=lambda layer: layer[0])
+    else:
+        layer_name = "Congressional Districts"
+    return _one_geography(geographies, layer_name)
+
+
 def _review(identity, address, reason, candidates="") -> ReviewRow:
     name, classification, imis_id, account_id = identity
     return ReviewRow(
@@ -475,6 +552,46 @@ def _review(identity, address, reason, candidates="") -> ReviewRow:
         address.postal_code,
         reason,
         candidates,
+    )
+
+
+def _normalize_address(address: Address) -> NormalizedAddress:
+    """Format an address deterministically without modifying its source values."""
+    street = normalize_street(address.street)
+    city = normalize_text(address.city)
+    state = normalize_text(address.state)
+    postal_code = normalize_zip(address.postal_code)
+    complete = bool(
+        street and _has_street_number(street) and city and state and postal_code
+    )
+    return NormalizedAddress(
+        street,
+        city,
+        state,
+        postal_code,
+        "ready" if complete else "incomplete",
+        "" if complete else "incomplete or unusable address",
+    )
+
+
+def _conversion(identity, address, normalized) -> AddressConversionRow:
+    name, classification, imis_id, account_id = identity
+    return AddressConversionRow(
+        name,
+        classification,
+        imis_id,
+        account_id,
+        address.source,
+        address.street,
+        address.city,
+        address.state,
+        address.postal_code,
+        normalized.street,
+        normalized.city,
+        normalized.state,
+        normalized.postal_code,
+        normalized.normalization_status,
+        normalized.normalization_reason,
     )
 
 
@@ -513,3 +630,11 @@ def _zip_from_text(value: str) -> str:
 
 def _remove_zip(value: str) -> str:
     return re.sub(r"[ ,]*\b\d{5}(?:-\d{4})?\b", "", value).strip(" ,")
+
+
+def _remove_embedded_city_state(value: str, city: str, state: str) -> str:
+    """Remove a repeated trailing ``city, state`` from an iMIS street field."""
+    if not city or not state:
+        return value.strip(" ,")
+    pattern = rf"(?:\s+|,\s*){re.escape(city)}\s*,\s*{re.escape(state)}\s*$"
+    return re.sub(pattern, "", value, flags=re.IGNORECASE).strip(" ,\r\n")

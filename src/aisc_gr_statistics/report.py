@@ -1169,11 +1169,11 @@ def _is_certified_account(account: Mapping[str, object] | None) -> bool:
 
 def _format_employee_count(value: object) -> str:
     """Format Salesforce's whole-person employee count, or return an empty value."""
-    count = _employee_count_decimal(value)
+    count = employee_count_decimal(value)
     return f"{count:,.0f}" if count is not None else ""
 
 
-def _employee_count_decimal(value: object) -> Decimal | None:
+def employee_count_decimal(value: object) -> Decimal | None:
     """Return a valid whole-person employee count for calculations."""
     if isinstance(value, bool):
         return None
@@ -1191,6 +1191,11 @@ def _employee_count_decimal(value: object) -> Decimal | None:
     if not count.is_finite() or count != count.to_integral_value() or count < 0:
         return None
     return count
+
+
+# Kept as an internal alias for callers inside this module while other report
+# preparation steps use the public parser above.
+_employee_count_decimal = employee_count_decimal
 
 
 def _merged_salesforce_only_report_companies(

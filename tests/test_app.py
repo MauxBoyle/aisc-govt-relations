@@ -183,6 +183,24 @@ def test_enrich_districts_writes_outputs_and_exits_nonzero_after_census_outage(
     assert review.read_text(encoding="utf-8").startswith("company_name")
 
 
+def test_aggregate_districts_writes_a_csv(tmp_path, monkeypatch):
+    from aisc_gr_statistics.districts import DistrictAggregateRow
+
+    output = tmp_path / "aggregates.csv"
+    monkeypatch.setattr(
+        "aisc_gr_statistics.app.aggregate_districts",
+        lambda *args: [DistrictAggregateRow("national", "", "", "", "", 1, 10, 1, 0)],
+    )
+    main(
+        [
+            "aggregate-districts", "--imis-csv", "members.csv", "--districts-csv",
+            "districts.csv", "--aggregates-csv", str(output),
+        ]
+    )
+
+    assert output.read_text(encoding="utf-8").startswith("scope,state,state_fips")
+
+
 def test_report_command_never_constructs_a_census_geocoder(tmp_path, monkeypatch):
     """Normal PDF creation stays offline with respect to Census."""
     monkeypatch.setattr(

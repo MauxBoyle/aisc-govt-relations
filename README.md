@@ -70,6 +70,26 @@ both files after a Census outage but exits nonzero, so partial data is not
 mistaken for a finished run. Refresh districts by running the command again;
 each run records the current Census values it used.
 
+Create national and congressional-district aggregate data for later reports
+from a saved district snapshot:
+
+```bash
+uv run aisc_gr_statistics aggregate-districts \
+  --imis-csv data/raw/imis/membership-export.csv \
+  --districts-csv data/processed/company-districts.csv \
+  --aggregates-csv data/processed/district-aggregates.csv
+```
+
+This step performs no Census lookup; when Salesforce credentials are configured,
+it reads the current Salesforce population and employee counts. Its CSV has one
+`national` row for every included company and `district` rows only for companies
+with a safe saved assignment, so district rows do not necessarily add up to the
+national row.
+`known_jobs` is the sum of valid whole-number employee counts, not an estimate
+of all jobs. Downstream reports must label it **Known jobs** and also show the
+employee-data coverage columns (`companies_with_employee_data` and
+`companies_missing_employee_data`).
+
 The internal Senate-contact section reads a committed local Senate.gov XML
 snapshot, so report creation does not fetch data from the network and remains
 reproducible. The snapshot lives at `data/reference/senate/senators.xml`; its

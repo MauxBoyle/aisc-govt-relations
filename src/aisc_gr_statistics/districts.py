@@ -629,11 +629,14 @@ def _zip5(value: str) -> str:
 
 
 def _zip_from_text(value: str) -> str:
-    return _zip5(value)
+    """Return a ZIP only when it appears at the end of an address field."""
+    match = re.search(r"\b(\d{5}(?:-\d{4})?)\s*$", value)
+    return match.group(1) if match else ""
 
 
 def _remove_zip(value: str) -> str:
-    return re.sub(r"[ ,]*\b\d{5}(?:-\d{4})?\b", "", value).strip(" ,")
+    """Remove only a trailing ZIP that was used as the address fallback."""
+    return re.sub(r"[\s,]+\b\d{5}(?:-\d{4})?\s*$", "", value).strip(" ,")
 
 
 def _remove_embedded_city_state(value: str, city: str, state: str) -> str:

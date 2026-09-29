@@ -16,6 +16,7 @@ from .report import (
     combine_companies,
     employee_count_decimal,
     read_imis_companies,
+    select_imis_companies_for_district_enrichment,
 )
 from .salesforce_fields import (
     CertificationAccountField,
@@ -209,7 +210,10 @@ def enrich_companies(
     """
     geocoder = geocoder or CensusGeocoder()
     lookup_date = lookup_date or datetime.now(UTC).date()
-    combined = combine_companies(read_imis_companies(imis_csv), salesforce_accounts)
+    imis_companies = select_imis_companies_for_district_enrichment(
+        read_imis_companies(imis_csv, preserve_source_order=True)
+    )
+    combined = combine_companies(imis_companies, salesforce_accounts)
     districts: list[DistrictRow] = []
     reviews: list[ReviewRow] = []
     conversions: list[AddressConversionRow] = []

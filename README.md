@@ -67,6 +67,9 @@ The command handles the report population: Illinois iMIS companies and
 report-eligible Salesforce-only certified companies when credentials are
 available. It prefers a complete Salesforce Billing Address, then a complete
 iMIS address. “Complete” means street number, city, state, and ZIP code.
+For district enrichment only, repeated non-blank iMIS IDs use the row with the
+latest parseable `Submission Date`; tied, missing, or invalid dates keep the
+first CSV row. Blank iMIS IDs are kept as separate rows.
 
 Only a single Census candidate with both county and congressional-district
 geography is accepted. `company-districts.csv` records the standardized address,

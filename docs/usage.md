@@ -71,6 +71,9 @@ iMIS companies plus report-eligible Salesforce-only certified companies when
 Salesforce credentials are available. A complete Salesforce Billing Address is
 preferred; otherwise a complete iMIS address is used. Completeness requires a
 street number, city, state, and ZIP code.
+For district enrichment only, repeated non-blank iMIS IDs use the row with the
+latest parseable `Submission Date`; tied, missing, or invalid dates keep the
+first CSV row. Blank iMIS IDs remain separate rows.
 
 `company-districts.csv` contains only safe assignments: exactly one Census
 candidate with both County and Congressional District geography. It includes the

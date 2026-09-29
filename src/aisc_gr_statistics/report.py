@@ -95,6 +95,7 @@ class Company:
     membership_type: str = ""
     tonnage: str = ""
     district: str = ""
+    submission_date: str = ""
 
 
 @dataclass(frozen=True)
@@ -242,15 +243,21 @@ def normalize_company_name(name: str) -> str:
 
 
 def read_imis_companies(
-    path: Path | str, report_date: date | None = None
+    path: Path | str,
+    report_date: date | None = None,
+    preserve_source_order: bool = False,
 ) -> list[Company]:
     """Read an iMIS CSV with shared ID/city columns and return Illinois rows."""
-    companies, _, _ = read_imis_companies_with_tonnage_review(path, report_date)
+    companies, _, _ = read_imis_companies_with_tonnage_review(
+        path, report_date, preserve_source_order
+    )
     return companies
 
 
 def read_imis_companies_with_tonnage_review(
-    path: Path | str, report_date: date | None = None
+    path: Path | str,
+    report_date: date | None = None,
+    preserve_source_order: bool = False,
 ) -> tuple[list[Company], list[TonnageReviewFinding], int | None]:
     """Read Illinois iMIS data, aggregating the prior calendar year when dated.
 
@@ -329,10 +336,13 @@ def read_imis_companies_with_tonnage_review(
                     ),
                     tonnage=_report_tonnage(row, fields, row_number),
                     district=_optional_cell(row, fields, "district"),
+                    submission_date=_optional_cell(row, fields, "submission_date"),
                 )
             )
     return (
-        sorted(companies, key=lambda company: (company.name.casefold(), company.name)),
+        companies
+        if preserve_source_order
+        else sorted(companies, key=lambda company: (company.name.casefold(), company.name)),
         [],
         None,
     )
@@ -458,6 +468,46 @@ def _parse_submission_date(value: str) -> datetime:
         else:
             raise ReportDataError(f"invalid submission date: {value!r}") from None
     return parsed.replace(tzinfo=None)
+
+
+def select_imis_companies_for_district_enrichment(
+    companies: list[Company],
+) -> list[Company]:
+    """Choose one iMIS row per ID for Census enrichment only.
+
+    The latest parseable submission date wins. Ties, absent dates, and invalid
+    dates keep the first source row; blank IDs deliberately remain independent.
+    """
+    selected: list[Company] = []
+    positions: dict[str, int] = {}
+    timestamps: dict[str, datetime | None] = {}
+
+    for company in companies:
+        imis_id = company.imis_id
+        if not imis_id:
+            selected.append(company)
+            continue
+
+        timestamp = _valid_submission_date(company.submission_date)
+        if imis_id not in positions:
+            positions[imis_id] = len(selected)
+            timestamps[imis_id] = timestamp
+            selected.append(company)
+        elif timestamp is not None and (
+            timestamps[imis_id] is None or timestamp > timestamps[imis_id]
+        ):
+            selected[positions[imis_id]] = company
+            timestamps[imis_id] = timestamp
+    return selected
+
+
+def _valid_submission_date(value: str) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return _parse_submission_date(value)
+    except ReportDataError:
+        return None
 
 
 def _tonnage_finding(

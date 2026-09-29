@@ -35,6 +35,26 @@ def _imis_csv(tmp_path, address="100 iMIS Road", postal_code="60601"):
     return path
 
 
+def _imis_csv_rows(tmp_path, rows):
+    path = tmp_path / "imis.csv"
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=(
+                "company name",
+                "state",
+                "city",
+                "iMIS ID",
+                "address",
+                "postal code",
+                "Submission Date",
+            ),
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+    return path
+
+
 def _match(district_layers=None):
     if district_layers is None:
         district_layers = {
@@ -68,6 +88,122 @@ class Geocoder:
         if isinstance(self.payload, Exception):
             raise self.payload
         return self.payload
+
+
+def test_enrichment_selects_latest_submission_once_per_imis_id(tmp_path):
+    imis_csv = _imis_csv_rows(
+        tmp_path,
+        [
+            {
+                "company name": "Earlier Steel",
+                "state": "IL",
+                "city": "Chicago",
+                "iMIS ID": "IMIS-1",
+                "address": "100 Earlier Road",
+                "postal code": "60601",
+                "Submission Date": "2025-01-01",
+            },
+            {
+                "company name": "Latest Steel",
+                "state": "IL",
+                "city": "Chicago",
+                "iMIS ID": " IMIS-1 ",
+                "address": "200 Latest Road",
+                "postal code": "60602",
+                "Submission Date": "2025-02-01",
+            },
+        ],
+    )
+    geocoder = Geocoder(_match())
+
+    districts, reviews, conversions, failed = enrich_companies(
+        imis_csv, geocoder=geocoder
+    )
+
+    assert not reviews and not failed
+    assert len(districts) == len(conversions) == len(geocoder.addresses) == 1
+    assert conversions[0].company_name == "Latest Steel"
+    assert conversions[0].original_street == "200 Latest Road"
+
+
+def test_enrichment_keeps_first_tied_or_unrankable_row_and_separate_blank_ids(tmp_path):
+    imis_csv = _imis_csv_rows(
+        tmp_path,
+        [
+            {
+                "company name": "First Tied Steel",
+                "state": "IL",
+                "city": "Chicago",
+                "iMIS ID": "TIED",
+                "address": "100 First Road",
+                "postal code": "60601",
+                "Submission Date": "2025-01-01",
+            },
+            {
+                "company name": "Second Tied Steel",
+                "state": "IL",
+                "city": "Chicago",
+                "iMIS ID": "TIED",
+                "address": "200 Second Road",
+                "postal code": "60601",
+                "Submission Date": "2025-01-01",
+            },
+            {
+                "company name": "First Unrankable Steel",
+                "state": "IL",
+                "city": "Chicago",
+                "iMIS ID": "UNRANKABLE",
+                "address": "300 First Road",
+                "postal code": "60601",
+                "Submission Date": "not a date",
+            },
+            {
+                "company name": "Second Unrankable Steel",
+                "state": "IL",
+                "city": "Chicago",
+                "iMIS ID": "UNRANKABLE",
+                "address": "400 Second Road",
+                "postal code": "60601",
+                "Submission Date": "",
+            },
+            {
+                "company name": "Blank ID One",
+                "state": "IL",
+                "city": "Chicago",
+                "iMIS ID": "",
+                "address": "500 Blank Road",
+                "postal code": "60601",
+                "Submission Date": "2025-03-01",
+            },
+            {
+                "company name": "Blank ID Two",
+                "state": "IL",
+                "city": "Chicago",
+                "iMIS ID": " ",
+                "address": "600 Blank Road",
+                "postal code": "60601",
+                "Submission Date": "2025-04-01",
+            },
+        ],
+    )
+    geocoder = Geocoder(_match())
+
+    _, reviews, conversions, failed = enrich_companies(imis_csv, geocoder=geocoder)
+
+    assert not reviews and not failed
+    assert len(conversions) == len(geocoder.addresses) == 4
+    assert [row.company_name for row in conversions] == [
+        "First Tied Steel",
+        "First Unrankable Steel",
+        "Blank ID One",
+        "Blank ID Two",
+    ]
+    assert [row.original_street for row in conversions] == [
+        "100 First Road",
+        "300 First Road",
+        "500 Blank Road",
+        "600 Blank Road",
+    ]
 
 
 def test_street_suffixes_follow_usps_center_and_crescent_abbreviations():

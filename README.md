@@ -43,6 +43,16 @@ does not show a total. The internal PDF is for staff review and retains the
 detailed addresses, individual employee counts, tonnage, provenance, and
 Illinois U.S. Senate contacts.
 
+### Report exclusions
+
+`config/report_exclusions.toml` is version-controlled business configuration
+for companies that must be omitted from report outputs. Add or remove quoted
+phrases in `excluded_name_substrings`; matching is case-insensitive and works
+as a substring. When either iMIS or Salesforce name matches a phrase, that
+record and any exact shared-iMIS-ID counterpart are omitted from the PDFs,
+conflicts, candidate matches, and reconciliation files. The original source
+data and source-wide iMIS code and tonnage review scans are unchanged.
+
 ## Congressional district enrichment
 
 District lookup is intentionally separate, so PDF creation remains offline. It

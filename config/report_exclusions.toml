@@ -1,0 +1,3 @@
+# Omit any company whose iMIS or Salesforce name contains one of these phrases.
+# Matching ignores case. An exact shared iMIS ID counterpart is omitted too.
+excluded_name_substrings = ["Test Company"]

@@ -29,9 +29,12 @@ from aisc_gr_statistics.report import (
     build_reconciliation_rows,
     build_report_companies,
     candidate_matches,
+    clean_display_company_name,
     combine_companies,
     combined_conflicts,
+    filter_report_exclusions,
     find_undefined_imis_codes,
+    load_report_exclusion_phrases,
     normalize_company_name,
     read_imis_companies,
     read_imis_companies_with_tonnage_review,
@@ -44,6 +47,89 @@ from aisc_gr_statistics.report import (
     write_undefined_imis_codes_csv,
 )
 from aisc_gr_statistics.senate import SenatorContact
+
+
+@pytest.mark.parametrize(
+    ("source_name", "display_name"),
+    [
+        ('"Example Steel"', "Example Steel"),
+        ("“Example Steel”", "Example Steel"),
+        ("'Example Steel'", "'Example Steel'"),
+        ('"Example Steel', '"Example Steel'),
+        ("“Example Steel", "“Example Steel"),
+        ('Example "Steel"', 'Example "Steel"'),
+    ],
+)
+def test_display_name_cleanup_removes_only_matching_outer_double_quotes(
+    source_name, display_name
+):
+    assert clean_display_company_name(source_name) == display_name
+
+
+def test_display_name_cleanup_does_not_change_reconciliation_source_values():
+    imis = Company(name='"iMIS Steel"', state="IL", imis_id="A", city="Chicago")
+    account = {
+        "Id": "001",
+        "Name": "“Salesforce Steel”",
+        "IMISID__c": "A",
+        "BillingState": "IL",
+    }
+
+    combined = combine_companies([imis], [account])
+
+    assert build_report_companies(combined)[0].name == "Salesforce Steel"
+    reconciliation = build_reconciliation_rows(combined)[0]
+    assert reconciliation.imis_name == '"iMIS Steel"'
+    assert reconciliation.salesforce_name == "“Salesforce Steel”"
+
+
+def test_report_exclusions_match_case_insensitively_and_remove_id_counterparts():
+    imis = [
+        Company(name="test company iMIS", state="IL", imis_id="A", city="Chicago"),
+        Company(name="Keep iMIS", state="IL", imis_id="B", city="Chicago"),
+        Company(name="Test Company without ID", state="IL", city="Chicago"),
+    ]
+    accounts = [
+        {"Id": "001", "Name": "Keep Salesforce", "IMISID__c": "A", "BillingState": "IL"},
+        {"Id": "002", "Name": "TEST COMPANY Salesforce", "IMISID__c": "C", "BillingState": "IL"},
+        {"Id": "003", "Name": "Keep counterpart", "IMISID__c": "C", "BillingState": "IL"},
+        {"Id": "004", "Name": "test company only", "BillingState": "IL"},
+        {"Id": "005", "Name": "Keep iMIS", "IMISID__c": "B", "BillingState": "IL"},
+    ]
+
+    filtered_imis, filtered_accounts = filter_report_exclusions(
+        imis, accounts, ["Test Company"]
+    )
+
+    assert [company.imis_id for company in filtered_imis] == ["B"]
+    assert [account["Id"] for account in filtered_accounts] == ["005"]
+    combined = combine_companies(filtered_imis, filtered_accounts)
+    assert [row.shared_imis_id for row in combined] == ["B"]
+    assert combined_conflicts(combined) == []
+    assert candidate_matches(combined) == []
+    assert [row.imis_id for row in build_reconciliation_rows(combined)] == ["B"]
+
+
+def test_load_report_exclusion_phrases_validates_toml(tmp_path):
+    valid = tmp_path / "valid.toml"
+    valid.write_text('excluded_name_substrings = [" Test Company "]\n', encoding="utf-8")
+    assert load_report_exclusion_phrases(valid) == ("Test Company",)
+
+    with pytest.raises(ReportDataError, match="Could not read report exclusions"):
+        load_report_exclusion_phrases(tmp_path / "missing.toml")
+
+    invalid_cases = {
+        "missing.toml": "other = []\n",
+        "not-a-list.toml": 'excluded_name_substrings = "Test Company"\n',
+        "blank.toml": 'excluded_name_substrings = [" "]\n',
+        "non-string.toml": "excluded_name_substrings = [1]\n",
+        "malformed.toml": "excluded_name_substrings = [\n",
+    }
+    for filename, contents in invalid_cases.items():
+        path = tmp_path / filename
+        path.write_text(contents, encoding="utf-8")
+        with pytest.raises(ReportDataError, match="Report exclusions configuration"):
+            load_report_exclusion_phrases(path)
 
 
 def test_certification_display_rules_cover_each_supplied_salesforce_name():

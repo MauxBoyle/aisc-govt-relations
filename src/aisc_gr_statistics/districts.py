@@ -636,7 +636,7 @@ def _zip_from_text(value: str) -> str:
 
 def _remove_zip(value: str) -> str:
     """Remove only a trailing ZIP that was used as the address fallback."""
-    return re.sub(r"[ ,]+\b\d{5}(?:-\d{4})?\s*$", "", value).strip(" ,")
+    return re.sub(r"[\s,]+\b\d{5}(?:-\d{4})?\s*$", "", value).strip(" ,")
 
 
 def _remove_embedded_city_state(value: str, city: str, state: str) -> str:

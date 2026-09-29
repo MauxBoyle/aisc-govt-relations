@@ -321,6 +321,43 @@ def test_enrichment_uses_only_trailing_imis_address_zip_when_postal_code_is_blan
     )
 
 
+def test_enrichment_uses_trailing_zip_from_multiline_imis_address_when_postal_code_is_blank(
+    tmp_path,
+):
+    imis_csv = _imis_csv_rows(
+        tmp_path,
+        [
+            {
+                "company name": "Example Steel",
+                "state": "IL",
+                "city": "Posen",
+                "iMIS ID": "IMIS-1",
+                "address": "14100 S. Western Ave\nPosen, IL\n60469",
+                "postal code": "",
+                "Submission Date": "2025-01-01",
+            }
+        ],
+    )
+    geocoder = Geocoder(_match())
+
+    districts, reviews, conversions, failed = enrich_companies(
+        imis_csv, geocoder=geocoder
+    )
+
+    assert districts and not reviews and not failed
+    assert geocoder.addresses[0] == NormalizedAddress(
+        "14100 S WESTERN AVE", "POSEN", "IL", "60469", "ready", ""
+    )
+    assert conversions[0].original_street == "14100 S. Western Ave"
+    assert conversions[0].original_city == "Posen"
+    assert conversions[0].original_state == "IL"
+    assert conversions[0].original_postal_code == "60469"
+    assert conversions[0].normalized_street == "14100 S WESTERN AVE"
+    assert conversions[0].normalized_city == "POSEN"
+    assert conversions[0].normalized_state == "IL"
+    assert conversions[0].normalized_postal_code == "60469"
+
+
 def test_enrichment_keeps_populated_imis_postal_code_when_address_has_trailing_zip(
     tmp_path,
 ):

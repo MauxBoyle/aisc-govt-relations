@@ -7,6 +7,7 @@ same preparation step.
 
 import csv
 import re
+import tomllib
 from collections import Counter
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
@@ -40,6 +41,12 @@ from .senate import SenatorContact
 
 class ReportDataError(ValueError):
     """Raise when an iMIS export cannot provide the required report data."""
+
+
+DEFAULT_REPORT_EXCLUSIONS_PATH = (
+    Path(__file__).resolve().parents[2] / "config" / "report_exclusions.toml"
+)
+"""The checked-in business rules used to omit companies from report outputs."""
 
 
 class ReportAudience(StrEnum):
@@ -240,6 +247,99 @@ HEADER_ALIASES = {
 def normalize_company_name(name: str) -> str:
     """Normalize punctuation and whitespace for a conservative exact-name match."""
     return " ".join(re.sub(r"[^a-z0-9]+", " ", name.lower()).split())
+
+
+def clean_display_company_name(name: str) -> str:
+    """Remove one matching pair of outer double quotes for PDF display only."""
+    if len(name) >= 2 and (name[0], name[-1]) in {('"', '"'), ("“", "”")}:
+        return name[1:-1]
+    return name
+
+
+def load_report_exclusion_phrases(
+    path: Path | str = DEFAULT_REPORT_EXCLUSIONS_PATH,
+) -> tuple[str, ...]:
+    """Load validated, case-insensitive name phrases from checked-in TOML."""
+    config_path = Path(path)
+    try:
+        config = tomllib.loads(config_path.read_text(encoding="utf-8"))
+    except OSError as error:
+        raise ReportDataError(
+            f"Could not read report exclusions configuration: {config_path}"
+        ) from error
+    except tomllib.TOMLDecodeError as error:
+        raise ReportDataError(
+            f"Report exclusions configuration is malformed: {config_path}"
+        ) from error
+
+    if "excluded_name_substrings" not in config:
+        raise ReportDataError(
+            "Report exclusions configuration must define excluded_name_substrings."
+        )
+    phrases = config["excluded_name_substrings"]
+    if not isinstance(phrases, list):
+        raise ReportDataError(
+            "Report exclusions configuration excluded_name_substrings must be a list."
+        )
+    if any(not isinstance(phrase, str) or not phrase.strip() for phrase in phrases):
+        raise ReportDataError(
+            "Report exclusions configuration phrases must be non-blank strings."
+        )
+    return tuple(phrase.strip() for phrase in phrases)
+
+
+def filter_report_exclusions(
+    companies: Iterable["Company"],
+    salesforce_accounts: Iterable[Mapping[str, object]],
+    excluded_name_substrings: Iterable[str],
+) -> tuple[list["Company"], list[Mapping[str, object]]]:
+    """Remove excluded records, including every exact-ID counterpart.
+
+    This works on report inputs only. It does not change source CSV data or
+    source-wide audit scans that deliberately inspect every export row.
+    """
+    companies = list(companies)
+    salesforce_accounts = list(salesforce_accounts)
+    phrases = tuple(phrase.casefold() for phrase in excluded_name_substrings)
+
+    def name_is_excluded(name: str) -> bool:
+        return any(phrase in name.casefold() for phrase in phrases)
+
+    excluded_ids = {
+        identifier
+        for identifier in (
+            _normalize_imis_identifier(company.imis_id)
+            for company in companies
+            if name_is_excluded(company.name)
+        )
+        if identifier
+    }
+    excluded_ids.update(
+        identifier
+        for identifier in (
+            _normalize_imis_identifier(account.get(CertificationAccountField.IMIS_ID))
+            for account in salesforce_accounts
+            if name_is_excluded(_account_value(account, CertificationAccountField.NAME))
+        )
+        if identifier
+    )
+    return (
+        [
+            company
+            for company in companies
+            if not name_is_excluded(company.name)
+            and _normalize_imis_identifier(company.imis_id) not in excluded_ids
+        ],
+        [
+            account
+            for account in salesforce_accounts
+            if not name_is_excluded(_account_value(account, CertificationAccountField.NAME))
+            and _normalize_imis_identifier(
+                account.get(CertificationAccountField.IMIS_ID)
+            )
+            not in excluded_ids
+        ],
+    )
 
 
 def read_imis_companies(
@@ -844,7 +944,7 @@ def build_report_companies(
         address = salesforce_address or imis_address
         report_companies.append(
             ReportCompany(
-                name,
+                clean_display_company_name(name),
                 address,
                 _format_employee_count(
                     account.get(CertificationAccountField.EMPLOYEE_COUNT)
@@ -1270,7 +1370,9 @@ def _merged_salesforce_only_report_companies(
             rows.append(_salesforce_only_report_company(first_account, address, as_of))
             continue
         names = " / ".join(
-            _account_value(account, CertificationAccountField.NAME)
+            clean_display_company_name(
+                _account_value(account, CertificationAccountField.NAME)
+            )
             for account, _ in grouped_accounts
             if _account_value(account, CertificationAccountField.NAME)
         )
@@ -1293,7 +1395,7 @@ def _merged_salesforce_only_report_companies(
         ]
         rows.append(
             ReportCompany(
-                name=names,
+                name=clean_display_company_name(names),
                 address=address,
                 employee_count=(
                     f"{sum(employee_counts):,.0f}" if employee_counts else ""
@@ -1310,7 +1412,9 @@ def _salesforce_only_report_company(
 ) -> ReportCompany:
     """Return one eligible Salesforce-only public row without iMIS fields."""
     return ReportCompany(
-        name=_account_value(account, CertificationAccountField.NAME),
+        name=clean_display_company_name(
+            _account_value(account, CertificationAccountField.NAME)
+        ),
         address=address,
         employee_count=_format_employee_count(
             account.get(CertificationAccountField.EMPLOYEE_COUNT)

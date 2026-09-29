@@ -24,7 +24,9 @@ from .report import (
     candidate_matches,
     combine_companies,
     combined_conflicts,
+    filter_report_exclusions,
     find_undefined_imis_codes,
+    load_report_exclusion_phrases,
     read_imis_companies_with_tonnage_review,
     render_illinois_report,
     write_candidate_matches_csv,
@@ -238,6 +240,10 @@ def _run_report(arguments):
         arguments.imis_csv, report_date=report_date
     )
     accounts, salesforce_retrieved_at = _salesforce_accounts_if_configured()
+    exclusion_phrases = load_report_exclusion_phrases()
+    companies, accounts = filter_report_exclusions(
+        companies, accounts, exclusion_phrases
+    )
     combined = combine_companies(companies, accounts)
     report_companies = build_report_companies(combined, as_of=report_date)
     snapshot = load_snapshot()

@@ -84,6 +84,49 @@ def test_report_command_creates_a_pdf_without_salesforce_credentials(tmp_path):
     assert _salesforce_accounts_if_configured({"SF_CLIENT_ID": "id"}) == ([], None)
 
 
+def test_report_exclusions_omit_combined_outputs_but_keep_source_wide_audits(tmp_path):
+    imis_csv = tmp_path / "members.csv"
+    imis_csv.write_text(
+        "iMIS ID,Full Name,State Province,City,Member Type,Category,Tonnage Year,Submission Date,Bridge Tonnage,Building Tonnage,S C Tonnage\n"
+        "A,Test Company,IL,Chicago,UNKNOWN,FAB,2025,2025-01-01,1,2,3\n"
+        "B,Keep Steel,IL,Aurora,ACT,FAB,2025,2025-01-01,4,5,6\n"
+        "C,Test Company Invalid,IL,Chicago,ACT,FAB,2025,2025-01-02,not-a-number,2,3\n",
+        encoding="utf-8",
+    )
+    destinations = {
+        "--external-output": tmp_path / "external.pdf",
+        "--internal-output": tmp_path / "internal.pdf",
+        "--conflicts-csv": tmp_path / "conflicts.csv",
+        "--candidate-matches-csv": tmp_path / "candidates.csv",
+        "--reconciliation-csv": tmp_path / "reconciliation.csv",
+        "--reconciliation-log": tmp_path / "reconciliation.log",
+        "--unknown-imis-codes-csv": tmp_path / "unknown.csv",
+        "--tonnage-review-csv": tmp_path / "tonnage.csv",
+    }
+    arguments = [
+        "report",
+        "--imis-csv",
+        str(imis_csv),
+        "--imis-export-date",
+        "2026-09-18",
+    ]
+    for option, path in destinations.items():
+        arguments.extend((option, str(path)))
+
+    main(arguments)
+
+    pdf_text = "\n".join(
+        page.extract_text() or "" for page in PdfReader(destinations["--internal-output"]).pages
+    )
+    assert "Keep Steel" in pdf_text
+    assert "Test Company" not in pdf_text
+    assert "Test Company" not in destinations["--conflicts-csv"].read_text(encoding="utf-8")
+    assert "Test Company" not in destinations["--candidate-matches-csv"].read_text(encoding="utf-8")
+    assert "Test Company" not in destinations["--reconciliation-csv"].read_text(encoding="utf-8")
+    assert "UNKNOWN" in destinations["--unknown-imis-codes-csv"].read_text(encoding="utf-8")
+    assert "C" in destinations["--tonnage-review-csv"].read_text(encoding="utf-8")
+
+
 def test_report_requires_an_imis_export_date():
     with pytest.raises(SystemExit):
         main(["report", "--imis-csv", "members.csv"])

@@ -47,6 +47,16 @@ tonnage, and congressional-district headers. Company name, state, city, and a
 recognizable shared iMIS ID column are required (individual ID and city values
 may be blank).
 
+### Report exclusions
+
+Edit the checked-in `config/report_exclusions.toml` list to add or remove
+quoted company-name phrases. Each phrase matches case-insensitively anywhere
+in an iMIS or Salesforce company name. A match omits the record and any exact
+shared-iMIS-ID counterpart from the PDFs and combined-account outputs
+(conflicts, candidate matches, and reconciliation files). This is display
+policy only: it does not change the raw source exports or the source-wide
+unknown-code and tonnage-review scans.
+
 ## Congressional district enrichment
 
 Keep Census lookups separate from the offline PDF command:

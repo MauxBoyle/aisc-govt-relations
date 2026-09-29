@@ -12,6 +12,7 @@ from aisc_gr_statistics.certification_groups import (
     CERTIFICATION_GROUPS,
     format_certification_sentences,
 )
+from aisc_gr_statistics.house import HouseContact
 from aisc_gr_statistics.imis_fields import (
     CATEGORY_LABELS,
     MEMBERSHIP_TYPE_LABELS,
@@ -1382,6 +1383,37 @@ def test_pdf_places_senate_contacts_before_company_cards_without_network(tmp_pat
     assert "Second Senator (R-IL)" in text
     assert "Retrieved: 2026-01-02" in text
     assert text.index("Illinois U.S. Senate Contacts") < text.index("Company After Contacts")
+
+
+@pytest.mark.parametrize("audience", (ReportAudience.EXTERNAL, ReportAudience.INTERNAL))
+def test_pdf_includes_every_illinois_house_district_and_sources(tmp_path, audience):
+    output = tmp_path / f"{audience}.pdf"
+    representatives = tuple(
+        HouseContact(
+            f"Representative {district}", "D", "IL", str(district),
+            "100 Longworth House Office Building\nWashington, DC 20515",
+            "(202) 225-0000", f"https://member{district}.house.gov/contact",
+            f"https://member{district}.house.gov",
+            "https://member1.house.gov/photo.jpg" if district == 1 else "",
+        )
+        for district in range(1, 18)
+    )
+
+    render_illinois_report(
+        [ReportCompany(name="Example Steel")], output, representatives=representatives,
+        house_clerk_source_url="https://clerk.house.gov/xml/lists/MemberData.xml",
+        house_directory_source_url="https://www.house.gov/representatives",
+        house_retrieved_at=datetime(2026, 9, 29, tzinfo=UTC), audience=audience,
+    )
+
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(output).pages)
+    assert "Illinois U.S. House Contacts" in text
+    assert all(f"Representative {district}" in text for district in range(1, 18))
+    assert "Official photo: https://member1.house.gov/photo.jpg" in text
+    assert "Official photo: https://member2.house.gov/photo.jpg" not in text
+    assert "Sources" in text
+    assert "https://clerk.house.gov/xml/lists/MemberData.xml" in text
+    assert "https://www.house.gov/representatives" in text
 
 
 def test_pdf_includes_final_source_data_provenance(tmp_path):

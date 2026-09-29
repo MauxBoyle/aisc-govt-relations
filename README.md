@@ -143,6 +143,35 @@ uv run aisc_gr_statistics refresh-senators
 
 The official source is the [U.S. Senate contact-information XML](https://www.senate.gov/general/contact_information/senators_cfm.xml).
 
+### U.S. House contact reference data
+
+Both PDF versions include all 17 current Illinois U.S. House districts. Report
+creation remains offline: it reads the committed snapshot in
+`data/reference/house/members.xml`, `data/reference/house/contacts.json`, and
+`data/reference/house/metadata.json`. The metadata records UTC retrieval time,
+the Clerk publication date when supplied, both government source URLs, and
+SHA-256 checksums for the saved data.
+
+The [House Clerk current-member XML](https://clerk.house.gov/xml/lists/MemberData.xml)
+is the authority for who holds each seat (or whether it is vacant). The
+[official House directory](https://www.house.gov/representatives) may only
+supplement those current Clerk seats with official member-site and contact-page
+links. It never fills a vacancy or substitutes a historical representative.
+Any non-government source needs a documented justification before it can be
+used.
+
+Maintainers intentionally refresh the snapshot, review the XML, contacts JSON,
+and metadata together, and commit all three files together:
+
+```bash
+uv run aisc_gr_statistics refresh-representatives
+```
+
+Cards show an official photo URL only when a government source supplies one.
+The report never downloads, embeds, or stores image files. This separate
+refresh step makes an earlier report reproducible without network access; the
+final PDF Sources section identifies the House sources and snapshot date.
+
 The source export and generated PDF/CSV files should stay in the ignored `data/raw/` and
 `data/processed/` folders. The report reads Salesforce only when both
 `SF_CLIENT_ID` and `SF_CLIENT_SECRET` are set. iMIS and Salesforce records are

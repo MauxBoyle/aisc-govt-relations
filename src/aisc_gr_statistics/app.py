@@ -17,6 +17,16 @@ from .districts import (
     write_districts_csv,
     write_review_csv,
 )
+from .house import (
+    HouseDataError,
+    members_for_state,
+)
+from .house import (
+    load_snapshot as load_house_snapshot,
+)
+from .house import (
+    refresh_snapshot as refresh_house_snapshot,
+)
 from .report import (
     ReportAudience,
     build_reconciliation_rows,
@@ -68,6 +78,9 @@ def main(argv=()):
         return
     if arguments.command == "refresh-senators":
         _run_refresh_senators()
+        return
+    if arguments.command == "refresh-representatives":
+        _run_refresh_representatives()
         return
     if arguments.command == "enrich-districts":
         _run_enrich_districts(arguments)
@@ -185,6 +198,10 @@ def _build_parser():
         "refresh-senators",
         help="Download and validate the official Senate.gov contact snapshot.",
     )
+    subcommands.add_parser(
+        "refresh-representatives",
+        help="Download and validate the official House current-member snapshot.",
+    )
     districts = subcommands.add_parser(
         "enrich-districts",
         help="Look up report companies' congressional districts using public Census data.",
@@ -248,10 +265,16 @@ def _run_report(arguments):
     report_companies = build_report_companies(combined, as_of=report_date)
     snapshot = load_snapshot()
     senators = senators_for_state(snapshot.senators, "IL")
+    house_snapshot = load_house_snapshot()
+    representatives = members_for_state(house_snapshot.members, "IL")
     render_illinois_report(
         report_companies,
         arguments.external_output,
         tonnage_year,
+        representatives=representatives,
+        house_clerk_source_url=house_snapshot.clerk_source_url,
+        house_directory_source_url=house_snapshot.directory_source_url,
+        house_retrieved_at=house_snapshot.retrieved_at,
         audience=ReportAudience.EXTERNAL,
     )
     render_illinois_report(
@@ -261,6 +284,10 @@ def _run_report(arguments):
         senators,
         snapshot.source_url,
         snapshot.retrieved_at,
+        representatives=representatives,
+        house_clerk_source_url=house_snapshot.clerk_source_url,
+        house_directory_source_url=house_snapshot.directory_source_url,
+        house_retrieved_at=house_snapshot.retrieved_at,
         imis_export_filename=arguments.imis_csv.name,
         imis_export_date=arguments.imis_export_date,
         salesforce_retrieved_at=salesforce_retrieved_at,
@@ -293,6 +320,20 @@ def _run_refresh_senators():
         "Refreshed Senate contacts for {} senators from {}.",
         len(snapshot.senators),
         snapshot.source_url,
+    )
+
+
+def _run_refresh_representatives():
+    """Refresh checked-in House data only on an explicit maintainer command."""
+    try:
+        snapshot = refresh_house_snapshot()
+    except HouseDataError as error:
+        logger.error("House snapshot was not refreshed: {}", error)
+        raise SystemExit(1) from error
+    logger.info(
+        "Refreshed House contacts for {} current seats from {}.",
+        len(snapshot.members),
+        snapshot.clerk_source_url,
     )
 
 

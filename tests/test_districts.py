@@ -281,6 +281,70 @@ def test_incomplete_salesforce_address_falls_back_to_complete_imis_address(tmp_p
     assert conversions[0].address_source == "iMIS address"
 
 
+@pytest.mark.parametrize(
+    ("address", "expected_zip"),
+    [
+        ("14100 S. Western Ave Posen, IL 60469", "60469"),
+        ("14100 S. Western Ave Posen, IL 60469-1234", "60469"),
+    ],
+)
+def test_enrichment_uses_only_trailing_imis_address_zip_when_postal_code_is_blank(
+    tmp_path, address, expected_zip
+):
+    imis_csv = _imis_csv_rows(
+        tmp_path,
+        [
+            {
+                "company name": "Example Steel",
+                "state": "IL",
+                "city": "Posen",
+                "iMIS ID": "IMIS-1",
+                "address": address,
+                "postal code": "",
+                "Submission Date": "2025-01-01",
+            }
+        ],
+    )
+    geocoder = Geocoder(_match())
+
+    districts, reviews, conversions, failed = enrich_companies(
+        imis_csv, geocoder=geocoder
+    )
+
+    assert districts and not reviews and not failed
+    assert geocoder.addresses[0] == NormalizedAddress(
+        "14100 S WESTERN AVE", "POSEN", "IL", expected_zip, "ready", ""
+    )
+    assert conversions[0].original_street == "14100 S. Western Ave"
+    assert conversions[0].original_postal_code == (
+        "60469-1234" if "-" in address else "60469"
+    )
+
+
+def test_enrichment_keeps_populated_imis_postal_code_when_address_has_trailing_zip(
+    tmp_path,
+):
+    imis_csv = _imis_csv_rows(
+        tmp_path,
+        [
+            {
+                "company name": "Example Steel",
+                "state": "IL",
+                "city": "Posen",
+                "iMIS ID": "IMIS-1",
+                "address": "14100 S. Western Ave Posen, IL 60469",
+                "postal code": "60601",
+                "Submission Date": "2025-01-01",
+            }
+        ],
+    )
+    geocoder = Geocoder(_match())
+
+    enrich_companies(imis_csv, geocoder=geocoder)
+
+    assert geocoder.addresses[0].postal_code == "60601"
+
+
 def test_session_qualified_congressional_district_layer_is_accepted(tmp_path):
     payload = _match(
         {"120th Congressional Districts": [{"BASENAME": "7", "GEOID": "1707"}]}

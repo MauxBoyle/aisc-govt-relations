@@ -24,6 +24,7 @@ from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from .certification_groups import format_certification_paragraphs
+from .house import HouseContact
 from .imis_fields import (
     UndefinedImisCodeFinding,
     membership_label,
@@ -66,6 +67,7 @@ class ReportProfile:
     show_company_tonnage: bool
     show_provenance: bool
     show_senate_contacts: bool
+    show_house_contacts: bool
 
 
 REPORT_PROFILES = {
@@ -76,6 +78,7 @@ REPORT_PROFILES = {
         show_company_tonnage=False,
         show_provenance=False,
         show_senate_contacts=False,
+        show_house_contacts=True,
     ),
     ReportAudience.INTERNAL: ReportProfile(
         ReportAudience.INTERNAL,
@@ -84,6 +87,7 @@ REPORT_PROFILES = {
         show_company_tonnage=True,
         show_provenance=True,
         show_senate_contacts=True,
+        show_house_contacts=True,
     ),
 }
 """The fixed disclosure profiles used for externally shared and internal PDFs."""
@@ -976,6 +980,10 @@ def render_illinois_report(
     senators: Iterable[SenatorContact] = (),
     senate_source_url: str = "",
     senate_retrieved_at: datetime | None = None,
+    representatives: Iterable[HouseContact] = (),
+    house_clerk_source_url: str = "",
+    house_directory_source_url: str = "",
+    house_retrieved_at: datetime | None = None,
     *,
     imis_export_filename: str = "",
     imis_export_date: date | None = None,
@@ -1053,6 +1061,73 @@ def render_illinois_report(
             story.append(Spacer(1, 0.06 * inch))
         if senate_source_url:
             story.append(Paragraph(f"Source: {_escape(senate_source_url)}", body))
+        story.append(Spacer(1, 0.12 * inch))
+    representatives = tuple(representatives)
+    if profile.show_house_contacts and representatives:
+        story.append(Paragraph("<b>Illinois U.S. House Contacts</b>", body))
+        if house_retrieved_at:
+            story.append(
+                Paragraph(
+                    f"Retrieved: {house_retrieved_at.astimezone(UTC).date().isoformat()}",
+                    body,
+                )
+            )
+        for representative in sorted(
+            representatives,
+            key=lambda member: 0 if member.district == "AL" else int(member.district),
+        ):
+            lines = [
+                Paragraph(
+                    _escape(
+                        representative.name if not representative.vacant else "Vacant"
+                    ),
+                    senator_heading,
+                ),
+                Paragraph(
+                    f"{_escape(representative.state)}-{_escape(representative.district)} · {_escape(representative.party)}",
+                    body,
+                ),
+            ]
+            if representative.address:
+                lines.append(
+                    Paragraph(
+                        _escape(representative.address).replace("\n", "<br/>"), body
+                    )
+                )
+            if representative.phone:
+                lines.append(Paragraph(f"Phone: {_escape(representative.phone)}", body))
+            if representative.contact_form_url:
+                lines.append(
+                    Paragraph(
+                        f"Contact form: {_escape(representative.contact_form_url)}",
+                        body,
+                    )
+                )
+            if representative.website_url:
+                lines.append(
+                    Paragraph(
+                        f"Official website: {_escape(representative.website_url)}", body
+                    )
+                )
+            if representative.photo_url:
+                lines.append(
+                    Paragraph(
+                        f"Official photo: {_escape(representative.photo_url)}", body
+                    )
+                )
+            story.append(Table([[lines]], colWidths=[6.9 * inch]))
+            story[-1].setStyle(
+                TableStyle(
+                    [
+                        ("BOX", (0, 0), (-1, -1), 0.35, colors.HexColor("#777777")),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 7),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+                        ("TOPPADDING", (0, 0), (-1, -1), 6),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                    ]
+                )
+            )
+            story.append(Spacer(1, 0.06 * inch))
         story.append(Spacer(1, 0.12 * inch))
     story.extend(
         [
@@ -1145,9 +1220,20 @@ def render_illinois_report(
                 imis_export_date=imis_export_date,
                 tonnage_year=tonnage_year,
                 senate_retrieved_at=senate_retrieved_at,
+                house_retrieved_at=house_retrieved_at,
                 salesforce_retrieved_at=salesforce_retrieved_at,
             )
         )
+    story.extend(
+        _sources_section(
+            body,
+            senate_source_url,
+            senate_retrieved_at,
+            house_clerk_source_url,
+            house_directory_source_url,
+            house_retrieved_at,
+        )
+    )
     document.build(story)
 
 
@@ -1158,6 +1244,7 @@ def _provenance_section(
     imis_export_date: date | None,
     tonnage_year: int | None,
     senate_retrieved_at: datetime | None,
+    house_retrieved_at: datetime | None,
     salesforce_retrieved_at: datetime | None,
 ) -> list[object]:
     """Build the final PDF block that identifies the report's source data."""
@@ -1178,9 +1265,40 @@ def _provenance_section(
         Paragraph("<b>Report provenance</b>", body),
         Paragraph(f"iMIS export: {imis_details}", body),
         Paragraph(f"Tonnage calendar year: {tonnage_details}", body),
-        Paragraph(f"Elected-official data retrieved: {senate_details}", body),
+        Paragraph(
+            f"Elected-official data retrieved: {senate_details}; House: {_provenance_date(house_retrieved_at)}",
+            body,
+        ),
         Paragraph(f"Salesforce data retrieved: {salesforce_details}", body),
     ]
+
+
+def _sources_section(
+    body, senate_url, senate_retrieved_at, clerk_url, directory_url, house_retrieved_at
+):
+    """Build the compact source list shown at the end of either PDF."""
+    entries = []
+    if senate_url:
+        entries.append(
+            f"Senate contact XML: {_escape(senate_url)} (retrieved {_provenance_date(senate_retrieved_at)})"
+        )
+    if clerk_url:
+        entries.append(
+            f"House Clerk current-member XML: {_escape(clerk_url)} (retrieved {_provenance_date(house_retrieved_at)})"
+        )
+    if directory_url:
+        entries.append(
+            f"House directory: {_escape(directory_url)} (retrieved {_provenance_date(house_retrieved_at)})"
+        )
+    return (
+        [
+            Spacer(1, 0.12 * inch),
+            Paragraph("<b>Sources</b>", body),
+            *[Paragraph(entry, body) for entry in entries],
+        ]
+        if entries
+        else []
+    )
 
 
 def _provenance_date(retrieved_at: datetime | None) -> str:

@@ -628,15 +628,22 @@ def _zip5(value: str) -> str:
     return match.group(0) if match else ""
 
 
+_TRAILING_IMIS_ZIP = re.compile(
+    r"\b(?P<zip>\d{5}(?:-\d{4})?)(?:\s+(?:UNITED\s+STATES|U\.?S\.?(?:A\.?)?))?\s*$",
+    flags=re.IGNORECASE,
+)
+
+
 def _zip_from_text(value: str) -> str:
-    """Return a ZIP only when it appears at the end of an address field."""
-    match = re.search(r"\b(\d{5}(?:-\d{4})?)\s*$", value)
-    return match.group(1) if match else ""
+    """Return a trailing ZIP, optionally followed by a final U.S. country label."""
+    match = _TRAILING_IMIS_ZIP.search(value)
+    return match.group("zip") if match else ""
 
 
 def _remove_zip(value: str) -> str:
-    """Remove only a trailing ZIP that was used as the address fallback."""
-    return re.sub(r"[\s,]+\b\d{5}(?:-\d{4})?\s*$", "", value).strip(" ,")
+    """Remove the same trailing ZIP and optional U.S. country label we extract."""
+    match = _TRAILING_IMIS_ZIP.search(value)
+    return value[: match.start()].rstrip(" ,\r\n") if match else value.strip(" ,")
 
 
 def _remove_embedded_city_state(value: str, city: str, state: str) -> str:

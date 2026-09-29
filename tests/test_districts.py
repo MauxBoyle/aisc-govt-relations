@@ -358,6 +358,67 @@ def test_enrichment_uses_trailing_zip_from_multiline_imis_address_when_postal_co
     assert conversions[0].normalized_postal_code == "60469"
 
 
+@pytest.mark.parametrize(
+    "country", ["UNITED STATES", "US", "U.S.", "U.S.A.", "u.s.a."]
+)
+def test_enrichment_uses_zip_before_final_us_country_line_when_postal_code_is_blank(
+    tmp_path, country
+):
+    imis_csv = _imis_csv_rows(
+        tmp_path,
+        [
+            {
+                "company name": "Michelmann Steel",
+                "state": "IL",
+                "city": "Quincy",
+                "iMIS ID": "IMIS-1",
+                "address": (
+                    "137 N. SECOND ST.\nP.O. BOX 609\nQUINCY, IL\n"
+                    f"62306-1234\n{country}"
+                ),
+                "postal code": "",
+                "Submission Date": "2025-01-01",
+            }
+        ],
+    )
+    geocoder = Geocoder(_match())
+
+    districts, reviews, conversions, failed = enrich_companies(
+        imis_csv, geocoder=geocoder
+    )
+
+    assert districts and not reviews and not failed
+    assert geocoder.addresses[0] == NormalizedAddress(
+        "137 N SECOND ST P O BOX 609", "QUINCY", "IL", "62306", "ready", ""
+    )
+    assert conversions[0].original_street == "137 N. SECOND ST.\nP.O. BOX 609"
+    assert conversions[0].original_postal_code == "62306-1234"
+
+
+def test_enrichment_does_not_use_zip_with_unrelated_trailing_text(tmp_path):
+    imis_csv = _imis_csv_rows(
+        tmp_path,
+        [
+            {
+                "company name": "Example Steel",
+                "state": "IL",
+                "city": "Quincy",
+                "iMIS ID": "IMIS-1",
+                "address": "137 N. Second St. Quincy, IL 62306 CANADA",
+                "postal code": "",
+                "Submission Date": "2025-01-01",
+            }
+        ],
+    )
+    geocoder = Geocoder(_match())
+
+    districts, reviews, _, failed = enrich_companies(imis_csv, geocoder=geocoder)
+
+    assert not districts and len(reviews) == 1 and not failed
+    assert reviews[0].review_reason == "incomplete address"
+    assert not geocoder.addresses
+
+
 def test_enrichment_keeps_populated_imis_postal_code_when_address_has_trailing_zip(
     tmp_path,
 ):

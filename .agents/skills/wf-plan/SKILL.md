@@ -56,7 +56,7 @@ Point out any doubts about the implementation. **Only continue if you are confid
 
 ### 4. Create the Plan
 
-The plan must follow this structure:
+The plan MUST follow this structure:
 
 1. **Create a working branch** with a descriptive slug
 2. **Write tests first** (TDD)
@@ -66,6 +66,8 @@ The plan must follow this structure:
 6. **Before committing**, ensure that:
    - Documentation is updated
    - README is updated
+
+Put all of these steps in the plan as non-negotiable items such that the agent taking over the plan will follow them.
 
 ### 5. Present Options
 

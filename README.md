@@ -326,8 +326,9 @@ Run tests with coverage:
 uv run pytest --cov
 ```
 
-GitHub Actions runs `uv run pytest` for every pull request and every push to
-`main`, so the same checks run before changes are merged.
+GitHub Actions independently runs the full test suite (`uv run pytest`) and
+lint suite (`uv run ruff check .`) for every pull request and every push to
+`main`, so both checks run before changes are merged.
 
 ## Documentation
 

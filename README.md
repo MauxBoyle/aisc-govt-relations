@@ -55,6 +55,53 @@ data and source-wide iMIS code and tonnage review scans are unchanged.
 
 ## Congressional district enrichment
 
+### External district and Senate PDFs
+
+Create the saved district and aggregate snapshots first, then create a
+one-page external PDF without making any network calls:
+
+```bash
+uv run aisc_gr_statistics district-report \
+  --district 7 --senate \
+  --districts-csv data/processed/company-districts.csv \
+  --aggregates-csv data/processed/district-aggregates.csv \
+  --output-dir data/processed
+```
+
+Use `--district` more than once, or use `--all-districts`.  Output filenames
+are stable (`illinois-congressional-district-07-external.pdf` and
+`illinois-senate-delegation-external.pdf`).  The report only contains a member
+identity, company name/city/county, company counts, Known jobs totals and
+employee-data coverage, a compact district map, and source dates. It never
+receives addresses, individual employee counts, tonnage, classifications, or
+certification data.
+
+Each CSV has a checksum sidecar written beside it. The report rejects a missing
+or changed sidecar, missing aggregate row, incompatible Census map, or a list
+that cannot fit in readable type; in those cases it writes no PDF. A Senate
+report additionally requires every included Illinois company to have confirmed
+district geography. Resolve `address-district-review.csv` and rerun enrichment
+when that check fails.
+
+The checked-in Census KML/map metadata is used offline, so PDF creation stays
+reproducible when a network connection is unavailable. Maintainers can refresh
+the official Census 2025 Illinois 119th-Congress KML archive, then review and
+commit both files:
+
+```bash
+uv run aisc_gr_statistics refresh-district-boundaries
+```
+
+The refresh command downloads the official [Census Cartographic Boundary
+File](https://www.census.gov/geographies/mapping-files/2025/geo/carto-boundary-file.html),
+extracts its Illinois KML, verifies all 17 district GEOIDs and its geometry,
+and records the source URL, retrieval time, Congress, and KML checksum. A bad
+download, ZIP, XML document, or district set leaves the existing KML and
+metadata unchanged. Both files are staged before replacement; if either
+replacement fails, the command restores the prior KML and metadata as a pair.
+`--source-url` and `--congressional-session` are optional overrides for a
+reviewed future Census release.
+
 District lookup is intentionally separate, so PDF creation remains offline. It
 uses the public [U.S. Census Geocoding Services API](https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html)
 with Census's current address benchmark and congressional-geography vintage:

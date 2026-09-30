@@ -696,6 +696,28 @@ def test_aggregate_districts_treats_invalid_employee_counts_as_missing(tmp_path)
         assert rows[0].known_jobs == 0
 
 
+def test_aggregate_districts_matches_salesforce_only_snapshot_by_salesforce_imis_id(
+    tmp_path,
+):
+    snapshot = tmp_path / "districts.csv"
+    write_districts_csv(
+        [
+            DistrictRow(
+                "", "salesforce-only", "SALESFORCE-ONLY", "003", "", "", "", "IL",
+                "17", "17", "", "", "7", "1707", "", "", "", "", "",
+                "matched", "",
+            )
+        ],
+        snapshot,
+    )
+
+    rows = aggregate_districts(
+        _aggregate_imis_csv(tmp_path), snapshot, [_account("SALESFORCE-ONLY", "003", 10)]
+    )
+
+    assert rows[1].included_company_count == 1
+
+
 def test_aggregate_districts_rejects_duplicate_or_unknown_snapshot_rows(tmp_path):
     snapshot = tmp_path / "districts.csv"
     write_districts_csv(

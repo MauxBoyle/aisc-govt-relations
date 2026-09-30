@@ -1,6 +1,8 @@
 """Safely enrich report companies with public Census congressional districts."""
 
 import csv
+import hashlib
+import json
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass, fields
@@ -15,6 +17,8 @@ from .report import (
     CompanyClassification,
     combine_companies,
     employee_count_decimal,
+    filter_report_exclusions,
+    load_report_exclusion_phrases,
     read_imis_companies,
     select_imis_companies_for_district_enrichment,
 )
@@ -213,6 +217,9 @@ def enrich_companies(
     imis_companies = select_imis_companies_for_district_enrichment(
         read_imis_companies(imis_csv, preserve_source_order=True)
     )
+    imis_companies, salesforce_accounts = filter_report_exclusions(
+        imis_companies, salesforce_accounts, load_report_exclusion_phrases()
+    )
     combined = combine_companies(imis_companies, salesforce_accounts)
     districts: list[DistrictRow] = []
     reviews: list[ReviewRow] = []
@@ -251,6 +258,7 @@ def enrich_companies(
 
 def write_districts_csv(rows: list[DistrictRow], path: Path | str) -> None:
     _write_csv(rows, path, DistrictRow)
+    _write_snapshot_metadata(path, "districts", len(rows))
 
 
 def write_review_csv(rows: list[ReviewRow], path: Path | str) -> None:
@@ -290,15 +298,24 @@ def aggregate_districts(
     Unassigned companies stay in the national result but deliberately do not
     appear in a district result.  This function performs no Census lookup.
     """
-    population = _report_population(
-        combine_companies(read_imis_companies(imis_csv), salesforce_accounts)
+    # Match enrichment's repeat-ID rule exactly.  A district snapshot contains
+    # the latest usable iMIS submission for a repeated nonblank ID, so using
+    # every export row here would create duplicate identities and incompatible
+    # totals.
+    imis_companies = select_imis_companies_for_district_enrichment(
+        read_imis_companies(imis_csv, preserve_source_order=True)
     )
+    imis_companies, salesforce_accounts = filter_report_exclusions(
+        imis_companies, salesforce_accounts, load_report_exclusion_phrases()
+    )
+    population = _report_population(combine_companies(imis_companies, salesforce_accounts))
     population_by_identity = _population_by_identity(population)
     snapshot_by_identity = _snapshot_by_identity(read_districts_csv(districts_csv))
     unknown = set(snapshot_by_identity) - set(population_by_identity)
     if unknown:
         raise DistrictSnapshotError(
-            "district snapshot contains a company outside the current report population"
+            "district snapshot contains a company outside the current report population; "
+            "rerun enrichment and aggregation with the same available Salesforce data"
         )
 
     national = _aggregate_row("national", "", "", "", "", population)
@@ -318,7 +335,23 @@ def aggregate_districts(
         _aggregate_row("district", *key, companies)
         for key, companies in sorted(by_district.items())
     ]
-    return [national, *districts]
+    # A statewide aggregate is safe only when every included Illinois company
+    # has a confirmed Census assignment.  This prevents a Senate PDF from
+    # quietly omitting companies whose addresses still need review.
+    illinois_population = [
+        company for company in population
+        if (_preferred_address(company).state or "").strip().upper() in {"IL", "ILLINOIS"}
+    ]
+    illinois_assigned = [
+        company for identity, company in population_by_identity.items()
+        if identity in snapshot_by_identity and snapshot_by_identity[identity].state == "IL"
+    ]
+    state_rows = (
+        [_aggregate_row("state", "IL", "17", "", "", illinois_assigned)]
+        if illinois_population and len(illinois_population) == len(illinois_assigned)
+        else []
+    )
+    return [national, *state_rows, *districts]
 
 
 def write_district_aggregates_csv(
@@ -326,6 +359,25 @@ def write_district_aggregates_csv(
 ) -> None:
     """Write national and district aggregates with a stable, typed header."""
     _write_csv(rows, path, DistrictAggregateRow)
+    _write_snapshot_metadata(path, "aggregates", len(rows))
+
+
+def validate_snapshot_metadata(path: Path | str, expected_kind: str) -> dict[str, object]:
+    """Validate the sidecar created with a saved enrichment output."""
+    path = Path(path)
+    metadata_path = path.with_suffix(path.suffix + ".metadata.json")
+    if not metadata_path.is_file():
+        raise DistrictSnapshotError(
+            f"{expected_kind} snapshot metadata is missing; rerun the matching "
+            "enrichment or aggregate command to create a verified snapshot"
+        )
+    try:
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise DistrictSnapshotError(f"{expected_kind} snapshot metadata is unreadable") from error
+    if metadata.get("kind") != expected_kind or metadata.get("sha256") != hashlib.sha256(path.read_bytes()).hexdigest():
+        raise DistrictSnapshotError(f"{expected_kind} snapshot checksum does not match its CSV")
+    return metadata
 
 
 def _population_by_identity(
@@ -335,7 +387,9 @@ def _population_by_identity(
     for company in companies:
         identity = _aggregate_identity(
             company.classification.value,
-            company.imis.imis_id if company.imis else "",
+            company.imis.imis_id
+            if company.imis
+            else _account_value(company.salesforce, CertificationAccountField.IMIS_ID),
             _account_value(company.salesforce, CertificationAccountField.ID),
         )
         if identity in indexed:
@@ -402,6 +456,19 @@ def _write_csv(rows, path, row_type) -> None:
         writer = csv.DictWriter(handle, fieldnames=names)
         writer.writeheader()
         writer.writerows({name: getattr(row, name) for name in names} for row in rows)
+
+
+def _write_snapshot_metadata(path: Path | str, kind: str, row_count: int) -> None:
+    destination = Path(path)
+    metadata = {
+        "kind": kind,
+        "row_count": row_count,
+        "retrieved_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        "sha256": hashlib.sha256(destination.read_bytes()).hexdigest(),
+    }
+    destination.with_suffix(destination.suffix + ".metadata.json").write_text(
+        json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
+    )
 
 
 def _report_population(companies: list[CombinedCompany]) -> list[CombinedCompany]:

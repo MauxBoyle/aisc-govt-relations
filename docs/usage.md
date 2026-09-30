@@ -59,6 +59,48 @@ unknown-code and tonnage-review scans.
 
 ## Congressional district enrichment
 
+### Census boundary reference data
+
+External district PDFs use the committed Illinois Census KML and metadata, so
+rendering reports is offline and reproducible. To deliberately refresh the
+official 2025 Illinois 119th-Congress boundary snapshot, run:
+
+```bash
+uv run aisc_gr_statistics refresh-district-boundaries
+```
+
+The command downloads Census's [Cartographic Boundary
+File](https://www.census.gov/geographies/mapping-files/2025/geo/carto-boundary-file.html),
+extracts and validates the KML ZIP, and records its source URL, UTC retrieval
+time, Congress, and SHA-256 checksum. It validates all 17 Illinois districts
+and their polygon geometry before atomically replacing each reference file;
+download, ZIP, XML, checksum, or validation failures preserve the prior
+snapshot. Both files are staged first, and a failure while replacing either
+one rolls the pair back to its prior contents. Review and commit the KML and
+JSON together. Maintainers may supply `--source-url` and
+`--congressional-session` only when reviewing a future official Census
+release.
+
+## External congressional reports
+
+After `enrich-districts` and `aggregate-districts`, create offline external
+one-page PDFs from their saved CSV snapshots:
+
+```bash
+uv run aisc_gr_statistics district-report \
+  --district 7 --district 8 --senate \
+  --districts-csv data/processed/company-districts.csv \
+  --aggregates-csv data/processed/district-aggregates.csv
+```
+
+`--all-districts` creates the House batch. The command validates CSV checksum
+sidecars, House and Senate snapshots, and the committed Census boundary KML
+before writing a PDF. It will stop before output when a company list cannot
+fit in readable type; the Senate version also stops until every Illinois
+company has confirmed geography. External reports intentionally disclose only
+company name, city, county, aggregate Known jobs/coverage, public official
+identity, map, and source dates.
+
 Keep Census lookups separate from the offline PDF command:
 
 ```bash

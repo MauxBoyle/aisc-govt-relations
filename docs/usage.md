@@ -108,7 +108,7 @@ interactive behavior.
 ## External congressional reports
 
 After `enrich-districts` and `aggregate-districts`, create offline external
-one-page PDFs from their saved CSV snapshots:
+one- or two-page PDFs from their saved CSV snapshots:
 
 ```bash
 uv run aisc_gr_statistics district-report \
@@ -119,9 +119,16 @@ uv run aisc_gr_statistics district-report \
 
 `--all-districts` creates the House batch. The command validates CSV checksum
 sidecars, House and Senate snapshots, and the committed Census boundary KML
-before writing a PDF. It will stop before output when a company list cannot
-fit in readable type; the Senate version also stops until every Illinois
-company has confirmed geography. External reports intentionally disclose only
+before writing a PDF. Company-list text is never smaller than 8 points. Long
+names wrap at measured word boundaries, and each company stays together in a
+single column. The usual report is one page; a full list may use one compact
+continuation page with its own heading and source footer.
+
+The command stops before producing a new PDF if a word is too wide for a
+column or if the complete list cannot fit safely within two pages. It does not
+shrink below 8 points, truncate details, or add a third page. The Senate
+version also stops until every Illinois company has confirmed geography.
+External reports intentionally disclose only
 company name, city, county, aggregate Known jobs/coverage, public official
 identity, map, and source dates.
 

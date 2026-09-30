@@ -8,6 +8,7 @@ from pypdf import PdfReader
 from reportlab.pdfbase.pdfmetrics import stringWidth
 
 from aisc_gr_statistics import app as app_module
+from aisc_gr_statistics import external_district_report as report_module
 from aisc_gr_statistics.districts import (
     DistrictAggregateRow,
     DistrictRow,
@@ -18,10 +19,15 @@ from aisc_gr_statistics.districts import (
 from aisc_gr_statistics.external_district_report import (
     COMPANY_LIST_FONT_SIZE,
     COMPANY_LIST_WIDTH,
+    MAP_HEIGHT,
+    MAP_WIDTH,
+    MAP_X,
+    MAP_Y,
     MAX_REPORT_PAGES,
     DistrictReportError,
     ExternalCompany,
     _plan_company_layout,
+    _draw_map,
     _render,
     render_house_report,
     render_senate_report,
@@ -86,8 +92,9 @@ def test_house_and_senate_use_the_correct_company_populations(tmp_path):
         districts, aggregates, tmp_path / "senate.pdf", _senators()
     )
 
-    _, house_text = _text(house)
-    _, senate_text = _text(senate)
+    house_reader, house_text = _text(house)
+    senate_reader, senate_text = _text(senate)
+    assert len(house_reader.pages) == len(senate_reader.pages) == 1
     assert "Prairie Structural Steel" in house_text
     assert "Lakefront Steel Works" in house_text
     assert "Fox River Fabricators" not in house_text
@@ -96,6 +103,73 @@ def test_house_and_senate_use_the_correct_company_populations(tmp_path):
     ))
     assert "District/state Known jobs: 25 (1 of 2 companies" in house_text
     assert "District/state Known jobs: 37 (2 of 3 companies" in senate_text
+
+
+def test_render_draws_one_lower_page_map_before_company_text(monkeypatch, tmp_path):
+    events = []
+
+    def record_map(canvas, shapes, highlighted, x, y, width, height, marker_points):
+        events.append(("map", x, y, width, height))
+
+    def record_company_page(canvas, placements, page, footer):
+        events.append(("companies", page))
+
+    monkeypatch.setattr(report_module, "_draw_map", record_map)
+    monkeypatch.setattr(report_module, "_draw_company_page", record_company_page)
+    companies = []
+    while not companies or max(item.page for item in _plan_company_layout(companies)) == 1:
+        companies.append(ExternalCompany(f"Company {len(companies):03d}", "Chicago", "Cook County"))
+    count = len(companies)
+    aggregate = DistrictAggregateRow("state", "IL", "17", "", "", count, 0, 0, count)
+
+    _render(
+        tmp_path / "layered.pdf", "Title", "Identity", companies, aggregate, aggregate,
+        {"1707": [[(-88.0, 41.0), (-87.0, 41.0), (-87.0, 42.0), (-88.0, 41.0)]]},
+        "", {"retrieved_at": "2026-09-30T00:00:00Z"}, "",
+    )
+
+    assert events == [
+        ("map", MAP_X, MAP_Y, MAP_WIDTH, MAP_HEIGHT),
+        ("companies", 1),
+        ("companies", 2),
+    ]
+    assert MAP_X == 36
+    assert MAP_WIDTH == 612 - 72
+    assert MAP_Y >= 36
+    assert MAP_Y + MAP_HEIGHT <= 792 * 2 / 3
+
+
+def test_draw_map_isolates_state_and_applies_alpha_to_shapes_and_markers():
+    class RecordingCanvas:
+        def __init__(self):
+            self.calls = []
+
+        def __getattr__(self, name):
+            def record(*args, **kwargs):
+                self.calls.append((name, args, kwargs))
+                return self
+            return record
+
+    canvas = RecordingCanvas()
+    _draw_map(
+        canvas,
+        {"1707": [[(-88.0, 41.0), (-87.0, 41.0), (-87.0, 42.0), (-88.0, 41.0)]]},
+        "1707",
+        MAP_X,
+        MAP_Y,
+        MAP_WIDTH,
+        MAP_HEIGHT,
+        [(-87.5, 41.5), (-87.5, 41.5)],
+    )
+
+    names = [name for name, _, _ in canvas.calls]
+    assert names[0] == "saveState"
+    assert names[-1] == "restoreState"
+    assert ("setFillAlpha", (0.75,), {}) in canvas.calls
+    assert ("setStrokeAlpha", (0.75,), {}) in canvas.calls
+    assert "drawPath" in names
+    assert "circle" in names
+    assert "drawCentredString" in names
 
 
 def test_external_allowlist_keeps_internal_snapshot_fields_out_of_pdf(tmp_path):

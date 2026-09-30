@@ -37,6 +37,14 @@ COMPANY_LIST_CONTINUATION_TOP = letter[1] - 68
 COMPANY_LIST_FOOTER_TOP = 38
 MAX_REPORT_PAGES = 2
 
+# The map uses the printable width and the lower two-thirds of a letter page.
+# It is deliberately a background for first-page report text, not a separate
+# panel competing with the company list.
+MAP_X = 36
+MAP_Y = 36
+MAP_WIDTH = letter[0] - (2 * MAP_X)
+MAP_HEIGHT = (letter[1] * 2 / 3) - MAP_Y
+
 
 @dataclass(frozen=True)
 class ExternalCompany:
@@ -187,6 +195,16 @@ def _render(output, title, identity, rows, local, national, shapes, highlighted,
     canvas = Canvas(str(temporary), pagesize=letter)
     width, height = letter
     canvas.setTitle(title)
+    _draw_map(
+        canvas,
+        shapes,
+        highlighted,
+        MAP_X,
+        MAP_Y,
+        MAP_WIDTH,
+        MAP_HEIGHT,
+        [company.point for company in companies if company.point],
+    )
     canvas.setFont("Helvetica-Bold", 15)
     canvas.drawString(36, height - 42, title)
     canvas.setFont("Helvetica-Bold", 12)
@@ -199,7 +217,6 @@ def _render(output, title, identity, rows, local, national, shapes, highlighted,
     canvas.setFont("Helvetica", 8)
     canvas.drawString(36, height - 102, _jobs("District/state", local))
     canvas.drawString(36, height - 114, _jobs("National", national))
-    _draw_map(canvas, shapes, highlighted, 380, height - 230, 180, 105, [c.point for c in companies if c.point])
     canvas.setFont("Helvetica-Bold", 9)
     canvas.drawString(36, height - 140, "Companies")
     source_date = str(metadata["retrieved_at"])[:10]
@@ -238,27 +255,47 @@ def _company(row):
 
 def _draw_map(canvas, shapes, highlighted, x, y, width, height, marker_points=()):
     """Draw a printable local House map or an Illinois-wide Senate map."""
-    extent = _map_extent(shapes, highlighted, marker_points, width / height)
-    def project(point):
-        return _project_point(point, extent, x, y, width, height)
-    for geoid, rings in shapes.items():
-        # Senate intentionally retains the statewide view. House maps only draw
-        # boundaries near the selected district/marker extent.
-        if highlighted and not _intersects(_ring_bounds(rings), extent):
-            continue
-        selected = geoid == highlighted
-        canvas.setFillColor(colors.HexColor("#c43d36") if selected else colors.white)
-        canvas.setStrokeColor(colors.HexColor("#9b2d28") if selected else colors.HexColor("#aaaaaa"))
-        if hasattr(canvas, "setLineWidth"):
-            canvas.setLineWidth(1.2 if selected else 0.25)
-        for ring in rings:
-            path = canvas.beginPath()
-            for index, (longitude, latitude) in enumerate(ring):
-                px, py = project((longitude, latitude))
-                (path.moveTo if index == 0 else path.lineTo)(px, py)
-            path.close()
-            canvas.drawPath(path, fill=1, stroke=1)
-    _draw_markers(canvas, [project(point) for point in marker_points])
+    saved_state = hasattr(canvas, "saveState") and hasattr(canvas, "restoreState")
+    if saved_state:
+        canvas.saveState()
+    try:
+        # Alpha is part of the saved state, so it applies equally to polygon
+        # fills/outlines, markers, and marker-count labels without affecting
+        # report text drawn later.
+        if hasattr(canvas, "setFillAlpha"):
+            canvas.setFillAlpha(0.75)
+        if hasattr(canvas, "setStrokeAlpha"):
+            canvas.setStrokeAlpha(0.75)
+        if hasattr(canvas, "clipPath"):
+            clip = canvas.beginPath()
+            clip.rect(x, y, width, height)
+            canvas.clipPath(clip, stroke=0, fill=0)
+        extent = _map_extent(shapes, highlighted, marker_points, width / height)
+
+        def project(point):
+            return _project_point(point, extent, x, y, width, height)
+
+        for geoid, rings in shapes.items():
+            # Senate intentionally retains the statewide view. House maps only draw
+            # boundaries near the selected district/marker extent.
+            if highlighted and not _intersects(_ring_bounds(rings), extent):
+                continue
+            selected = geoid == highlighted
+            canvas.setFillColor(colors.HexColor("#c43d36") if selected else colors.white)
+            canvas.setStrokeColor(colors.HexColor("#9b2d28") if selected else colors.HexColor("#aaaaaa"))
+            if hasattr(canvas, "setLineWidth"):
+                canvas.setLineWidth(1.2 if selected else 0.25)
+            for ring in rings:
+                path = canvas.beginPath()
+                for index, (longitude, latitude) in enumerate(ring):
+                    px, py = project((longitude, latitude))
+                    (path.moveTo if index == 0 else path.lineTo)(px, py)
+                path.close()
+                canvas.drawPath(path, fill=1, stroke=1)
+        _draw_markers(canvas, [project(point) for point in marker_points])
+    finally:
+        if saved_state:
+            canvas.restoreState()
 
 
 def _map_extent(shapes, highlighted, marker_points, aspect_ratio):

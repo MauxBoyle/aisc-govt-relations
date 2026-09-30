@@ -280,8 +280,8 @@ def _build_parser():
     district_report.add_argument("--output-dir", type=Path, default=Path("data/processed"))
     district_report.add_argument("--as-of", default="", help="Optional YYYY-MM-DD saved district-data date.")
     boundaries = subcommands.add_parser("refresh-district-boundaries", help="Refresh the reviewed Census KML boundary snapshot.")
-    boundaries.add_argument("--source-url", required=True, help="Official Census KML URL selected by the maintainer.")
-    boundaries.add_argument("--congressional-session", required=True, type=int)
+    boundaries.add_argument("--source-url", help="Optional official Census KML ZIP URL override.")
+    boundaries.add_argument("--congressional-session", type=int, help="Optional Congress number override.")
     return parser
 
 
@@ -438,7 +438,15 @@ def _run_district_report(arguments):
 def _run_refresh_district_boundaries(arguments):
     from .census_boundaries import BoundarySnapshotError, refresh_boundary_snapshot
     try:
-        refresh_boundary_snapshot(source_url=arguments.source_url, congressional_session=arguments.congressional_session)
+        options = {
+            name: value
+            for name, value in {
+                "source_url": arguments.source_url,
+                "congressional_session": arguments.congressional_session,
+            }.items()
+            if value is not None
+        }
+        refresh_boundary_snapshot(**options)
     except BoundarySnapshotError as error:
         logger.error("Census boundary snapshot was not refreshed: {}", error)
         raise SystemExit(1) from error

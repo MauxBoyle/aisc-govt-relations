@@ -59,6 +59,26 @@ unknown-code and tonnage-review scans.
 
 ## Congressional district enrichment
 
+### Census boundary reference data
+
+External district PDFs use the committed Illinois Census KML and metadata, so
+rendering reports is offline and reproducible. To deliberately refresh the
+official 2025 Illinois 119th-Congress boundary snapshot, run:
+
+```bash
+uv run aisc_gr_statistics refresh-district-boundaries
+```
+
+The command downloads Census's [Cartographic Boundary
+File](https://www.census.gov/geographies/mapping-files/2025/geo/carto-boundary-file.html),
+extracts and validates the KML ZIP, and records its source URL, UTC retrieval
+time, Congress, and SHA-256 checksum. It validates all 17 Illinois districts
+and their polygon geometry before atomically replacing each reference file;
+download, ZIP, XML, checksum, or validation failures preserve the prior
+snapshot. Review and commit the KML and JSON together. Maintainers may supply
+`--source-url` and `--congressional-session` only when reviewing a future
+official Census release.
+
 ## External congressional reports
 
 After `enrich-districts` and `aggregate-districts`, create offline external

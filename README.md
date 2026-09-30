@@ -83,15 +83,22 @@ report additionally requires every included Illinois company to have confirmed
 district geography. Resolve `address-district-review.csv` and rerun enrichment
 when that check fails.
 
-The checked-in Census KML/map metadata is used offline. Maintainers refresh a
-reviewed official Census KML source explicitly, then review and commit both
-files:
+The checked-in Census KML/map metadata is used offline, so PDF creation stays
+reproducible when a network connection is unavailable. Maintainers can refresh
+the official Census 2025 Illinois 119th-Congress KML archive, then review and
+commit both files:
 
 ```bash
-uv run aisc_gr_statistics refresh-district-boundaries \
-  --source-url https://example.census.gov/reviewed-illinois-boundaries.kml \
-  --congressional-session 119
+uv run aisc_gr_statistics refresh-district-boundaries
 ```
+
+The refresh command downloads the official [Census Cartographic Boundary
+File](https://www.census.gov/geographies/mapping-files/2025/geo/carto-boundary-file.html),
+extracts its Illinois KML, verifies all 17 district GEOIDs and its geometry,
+and records the source URL, retrieval time, Congress, and KML checksum. A bad
+download, ZIP, XML document, or district set leaves the existing KML and
+metadata unchanged. `--source-url` and `--congressional-session` are optional
+overrides for a reviewed future Census release.
 
 District lookup is intentionally separate, so PDF creation remains offline. It
 uses the public [U.S. Census Geocoding Services API](https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html)

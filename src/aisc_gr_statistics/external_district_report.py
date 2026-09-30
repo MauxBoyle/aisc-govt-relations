@@ -168,19 +168,20 @@ def _draw_photo_placeholder(canvas, x, y, label):
 
 
 def _draw_map(canvas, shapes, highlighted, x, y, width, height):
-    points = [point for shape in shapes.values() for point in shape]
+    points = [point for rings in shapes.values() for ring in rings for point in ring]
     min_x, max_x = min(p[0] for p in points), max(p[0] for p in points)
     min_y, max_y = min(p[1] for p in points), max(p[1] for p in points)
     scale = min(width / (max_x - min_x), height / (max_y - min_y))
-    for geoid, shape in shapes.items():
-        path = canvas.beginPath()
-        for index, (longitude, latitude) in enumerate(shape):
-            px, py = x + (longitude - min_x) * scale, y + (latitude - min_y) * scale
-            (path.moveTo if index == 0 else path.lineTo)(px, py)
-        path.close()
+    for geoid, rings in shapes.items():
         canvas.setFillColor(colors.HexColor("#c43d36") if geoid == highlighted else colors.white)
         canvas.setStrokeColor(colors.HexColor("#777777"))
-        canvas.drawPath(path, fill=1, stroke=1)
+        for ring in rings:
+            path = canvas.beginPath()
+            for index, (longitude, latitude) in enumerate(ring):
+                px, py = x + (longitude - min_x) * scale, y + (latitude - min_y) * scale
+                (path.moveTo if index == 0 else path.lineTo)(px, py)
+            path.close()
+            canvas.drawPath(path, fill=1, stroke=1)
 
 
 def _preflight(companies):

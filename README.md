@@ -71,12 +71,18 @@ uv run aisc_gr_statistics district-report \
 Use `--district` more than once, or use `--all-districts`.  Output filenames
 are stable (`illinois-congressional-district-07-external.pdf` and
 `illinois-senate-delegation-external.pdf`).  The report only contains a member
-identity, company name/city/county, company counts, Known jobs totals and
-employee-data coverage, and source dates. Its first page uses a translucent
+identity, company name/city/county, an optional future relationship summary,
+company counts, thresholded known jobs totals and employee-data coverage, and
+source dates. Its first page uses a translucent
 district map as a full-width lower-page background, with report text layered
 above it; continuation pages are text-only. It never
-receives addresses, individual employee counts, tonnage, classifications, or
-certification data.
+receives addresses, individual employee counts, tonnage, IDs, Census
+coordinates, classifications, certification data, or reconciliation data.
+Known jobs is displayed only when at least two companies contribute employee
+data; otherwise the report says `N/A (employee data not available)`.
+
+House and Senate-delegation PDFs use the same public-display contract. Map
+coordinates are private drawing input and are never public company fields.
 
 Company entries use a minimum 8-point font and wrap long names at measured
 word boundaries. Each complete entry stays in one column. Reports use the

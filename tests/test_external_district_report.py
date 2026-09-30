@@ -26,8 +26,8 @@ from aisc_gr_statistics.external_district_report import (
     MAX_REPORT_PAGES,
     DistrictReportError,
     ExternalCompany,
-    _plan_company_layout,
     _draw_map,
+    _plan_company_layout,
     _render,
     render_house_report,
     render_senate_report,
@@ -101,8 +101,8 @@ def test_house_and_senate_use_the_correct_company_populations(tmp_path):
     assert all(name in senate_text for name in (
         "Prairie Structural Steel", "Lakefront Steel Works", "Fox River Fabricators"
     ))
-    assert "District/state Known jobs: 25 (1 of 2 companies" in house_text
-    assert "District/state Known jobs: 37 (2 of 3 companies" in senate_text
+    assert "District known jobs: N/A (employee data not available)" in house_text
+    assert "Illinois known jobs: 37 (2 of 3 companies" in senate_text
 
 
 def test_render_draws_one_lower_page_map_before_company_text(monkeypatch, tmp_path):
@@ -174,17 +174,49 @@ def test_draw_map_isolates_state_and_applies_alpha_to_shapes_and_markers():
 
 def test_external_allowlist_keeps_internal_snapshot_fields_out_of_pdf(tmp_path):
     districts, aggregates = _snapshots(tmp_path)
-    output = render_senate_report(
-        districts, aggregates, tmp_path / "senate.pdf", _senators()
+    outputs = (
+        render_house_report(7, districts, aggregates, tmp_path / "house.pdf", _house_member()),
+        render_senate_report(districts, aggregates, tmp_path / "senate.pdf", _senators()),
+    )
+
+    for output in outputs:
+        _, text = _text(output)
+        assert "Prairie Structural Steel" in text
+        assert "Chicago, Cook" in text
+        assert "County" in text
+        assert "Census boundaries as of" in text
+        for sentinel in (
+            "SECRET-IMIS", "SECRET-SF", "Hidden Street", "HIDDEN AVE",
+            "41.SECRET", "87.PRIVATE", "INTERNAL-CLASS", "SECRET-BENCHMARK",
+            "SECRET-VINTAGE", "SECRET-CONFIDENCE", "tonnage", "reconciliation",
+        ):
+            assert sentinel.casefold() not in text.casefold()
+
+
+@pytest.mark.parametrize(
+    ("contributors", "expected"),
+    [
+        (0, "District known jobs: N/A (employee data not available)"),
+        (1, "District known jobs: N/A (employee data not available)"),
+        (2, "District known jobs: 25 (2 of 2 companies have employee data)"),
+    ],
+)
+def test_pdf_known_jobs_threshold_is_applied_before_text_is_drawn(tmp_path, contributors, expected):
+    aggregate = DistrictAggregateRow("district", "IL", "17", "7", "1707", 2, 25, contributors, 0)
+    output = _render(
+        tmp_path / f"threshold-{contributors}.pdf",
+        "Illinois Congressional District 7",
+        "Representative Example",
+        [ExternalCompany("Example Steel", "Chicago", "Cook County")],
+        aggregate,
+        aggregate,
+        {"1707": [[(-88.0, 41.0), (-87.0, 41.0), (-87.0, 42.0), (-88.0, 41.0)]]},
+        "1707",
+        {"retrieved_at": "2026-09-30T00:00:00Z"},
+        "2026-09-30",
     )
     _, text = _text(output)
-
-    for sentinel in (
-        "SECRET-IMIS", "SECRET-SF", "Hidden Street", "HIDDEN AVE",
-        "41.SECRET", "87.PRIVATE", "INTERNAL-CLASS", "SECRET-BENCHMARK",
-        "SECRET-VINTAGE", "SECRET-CONFIDENCE",
-    ):
-        assert sentinel not in text
+    assert expected in text
 
 
 def test_count_mismatch_fails_without_creating_final_pdf(tmp_path):

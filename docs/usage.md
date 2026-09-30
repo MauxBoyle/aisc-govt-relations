@@ -59,6 +59,26 @@ unknown-code and tonnage-review scans.
 
 ## Congressional district enrichment
 
+## External congressional reports
+
+After `enrich-districts` and `aggregate-districts`, create offline external
+one-page PDFs from their saved CSV snapshots:
+
+```bash
+uv run aisc_gr_statistics district-report \
+  --district 7 --district 8 --senate \
+  --districts-csv data/processed/company-districts.csv \
+  --aggregates-csv data/processed/district-aggregates.csv
+```
+
+`--all-districts` creates the House batch. The command validates CSV checksum
+sidecars, House and Senate snapshots, and the committed Census boundary KML
+before writing a PDF. It will stop before output when a company list cannot
+fit in readable type; the Senate version also stops until every Illinois
+company has confirmed geography. External reports intentionally disclose only
+company name, city, county, aggregate Known jobs/coverage, public official
+identity, map, and source dates.
+
 Keep Census lookups separate from the offline PDF command:
 
 ```bash

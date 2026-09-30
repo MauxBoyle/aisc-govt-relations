@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2"><Document>
+<!-- Compact checked-in render snapshot.  GEOID membership is the integrity
+     contract; refresh-district-boundaries replaces this with Census KML. -->
+<Placemark><name>1701</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-91,37 -90,37 -90,38 -91,38 -91,37</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1702</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-90,37 -89,37 -89,38 -90,38 -90,37</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1703</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-89,37 -88,37 -88,38 -89,38 -89,37</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1704</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-88,37 -87,37 -87,38 -88,38 -88,37</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1705</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-87,37 -86,37 -86,38 -87,38 -87,37</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1706</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-91,38 -90,38 -90,39 -91,39 -91,38</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1707</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-90,38 -89,38 -89,39 -90,39 -90,38</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1708</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-89,38 -88,38 -88,39 -89,39 -89,38</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1709</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-88,38 -87,38 -87,39 -88,39 -88,38</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1710</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-87,38 -86,38 -86,39 -87,39 -87,38</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1711</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-91,39 -90,39 -90,40 -91,40 -91,39</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1712</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-90,39 -89,39 -89,40 -90,40 -90,39</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1713</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-89,39 -88,39 -88,40 -89,40 -89,39</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1714</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-88,39 -87,39 -87,40 -88,40 -88,39</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1715</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-87,39 -86,39 -86,40 -87,40 -87,39</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1716</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-90,40 -89,40 -89,41 -90,41 -90,40</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+<Placemark><name>1717</name><Polygon><outerBoundaryIs><LinearRing><coordinates>-89,40 -88,40 -88,41 -89,41 -89,40</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>
+</Document></kml>

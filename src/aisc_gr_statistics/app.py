@@ -17,6 +17,13 @@ from .districts import (
     write_districts_csv,
     write_review_csv,
 )
+from .external_district_report import (
+    DistrictReportError,
+    district_filename,
+    render_house_report,
+    render_senate_report,
+    senate_filename,
+)
 from .house import (
     HouseDataError,
     members_for_state,
@@ -87,6 +94,12 @@ def main(argv=()):
         return
     if arguments.command == "aggregate-districts":
         _run_aggregate_districts(arguments)
+        return
+    if arguments.command == "district-report":
+        _run_district_report(arguments)
+        return
+    if arguments.command == "refresh-district-boundaries":
+        _run_refresh_district_boundaries(arguments)
         return
     logger.info("Hello from aisc_gr_statistics!")
 
@@ -246,6 +259,29 @@ def _build_parser():
         type=Path,
         help="Destination CSV for national and district aggregates.",
     )
+    district_report = subcommands.add_parser(
+        "district-report", help="Create one-page external Illinois district PDFs offline."
+    )
+    district_report.add_argument("--district", action="append", type=int, help="Illinois House district; repeat to select several.")
+    district_report.add_argument("--all-districts", action="store_true", help="Create all 17 Illinois House reports.")
+    district_report.add_argument("--senate", action="store_true", help="Also create the Illinois Senate delegation report.")
+    district_report.add_argument(
+        "--districts-csv",
+        type=Path,
+        default=Path("data/processed/company-districts.csv"),
+        help="Saved district snapshot (default: data/processed/company-districts.csv).",
+    )
+    district_report.add_argument(
+        "--aggregates-csv",
+        type=Path,
+        default=Path("data/processed/district-aggregates.csv"),
+        help="Saved aggregate snapshot (default: data/processed/district-aggregates.csv).",
+    )
+    district_report.add_argument("--output-dir", type=Path, default=Path("data/processed"))
+    district_report.add_argument("--as-of", default="", help="Optional YYYY-MM-DD saved district-data date.")
+    boundaries = subcommands.add_parser("refresh-district-boundaries", help="Refresh the reviewed Census KML boundary snapshot.")
+    boundaries.add_argument("--source-url", required=True, help="Official Census KML URL selected by the maintainer.")
+    boundaries.add_argument("--congressional-session", required=True, type=int)
     return parser
 
 
@@ -369,6 +405,43 @@ def _run_aggregate_districts(arguments):
         raise SystemExit(1) from error
     write_district_aggregates_csv(rows, arguments.aggregates_csv)
     logger.info("Created district aggregate file: rows={}", len(rows))
+
+
+def _run_district_report(arguments):
+    """Render selected PDFs from local snapshots only; no network calls occur."""
+    try:
+        if not arguments.district and not arguments.all_districts and not arguments.senate:
+            raise DistrictReportError("select --district, --all-districts, and/or --senate")
+        house = load_house_snapshot()
+        senate = load_snapshot()
+        districts = sorted(set((list(range(1, 18)) if arguments.all_districts else []) + (arguments.district or [])))
+        output_paths = []
+        for district in districts:
+            if district < 1 or district > 17:
+                raise DistrictReportError("Illinois House districts must be between 1 and 17.")
+            output_paths.append(render_house_report(
+                district, arguments.districts_csv, arguments.aggregates_csv,
+                arguments.output_dir / district_filename(str(district)), house.members,
+                as_of=arguments.as_of,
+            ))
+        if arguments.senate:
+            output_paths.append(render_senate_report(
+                arguments.districts_csv, arguments.aggregates_csv,
+                arguments.output_dir / senate_filename(), senate.senators, as_of=arguments.as_of,
+            ))
+    except (DistrictReportError, DistrictSnapshotError, HouseDataError, SenateDataError, ValueError) as error:
+        logger.error("District report was not created: {}", error)
+        raise SystemExit(1) from error
+    logger.info("Created external district report(s): {}", ", ".join(map(str, output_paths)))
+
+
+def _run_refresh_district_boundaries(arguments):
+    from .census_boundaries import BoundarySnapshotError, refresh_boundary_snapshot
+    try:
+        refresh_boundary_snapshot(source_url=arguments.source_url, congressional_session=arguments.congressional_session)
+    except BoundarySnapshotError as error:
+        logger.error("Census boundary snapshot was not refreshed: {}", error)
+        raise SystemExit(1) from error
 
 
 def _salesforce_accounts_if_configured(environment=None):

@@ -72,14 +72,17 @@ Use `--district` more than once, or use `--all-districts`.  Output filenames
 are stable (`illinois-congressional-district-07-external.pdf` and
 `illinois-senate-delegation-external.pdf`).  The report only contains a member
 identity, company name/city/county, company counts, Known jobs totals and
-employee-data coverage, a compact district map, and source dates. It never
+employee-data coverage, and source dates. Its first page uses a translucent
+district map as a full-width lower-page background, with report text layered
+above it; continuation pages are text-only. It never
 receives addresses, individual employee counts, tonnage, classifications, or
 certification data.
 
 Company entries use a minimum 8-point font and wrap long names at measured
 word boundaries. Each complete entry stays in one column. Reports use the
-existing full first-page layout and, when needed, one compact continuation
-page with the company list and source footer.
+existing full first-page layout with a 75%-opaque lower-page map behind the
+text and, when needed, one compact text-only continuation page with the
+company list and source footer.
 
 Each CSV has a checksum sidecar written beside it. The report rejects a missing
 or changed sidecar, missing aggregate row, incompatible Census map, an

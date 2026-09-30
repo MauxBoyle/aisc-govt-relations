@@ -121,8 +121,9 @@ uv run aisc_gr_statistics district-report \
 sidecars, House and Senate snapshots, and the committed Census boundary KML
 before writing a PDF. Company-list text is never smaller than 8 points. Long
 names wrap at measured word boundaries, and each company stays together in a
-single column. The usual report is one page; a full list may use one compact
-continuation page with its own heading and source footer.
+single column. The first page layers its text over a 75%-opaque map that fills
+the printable lower page. The usual report is one page; a full list may use
+one compact text-only continuation page with its own heading and source footer.
 
 The command stops before producing a new PDF if a word is too wide for a
 column or if the complete list cannot fit safely within two pages. It does not

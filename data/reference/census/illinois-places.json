@@ -1,0 +1,7242 @@
+{
+  "abingdon": {
+    "latitude": 40.803781,
+    "longitude": -90.400935,
+    "name": "Abingdon city"
+  },
+  "adair": {
+    "latitude": 40.418307,
+    "longitude": -90.497373,
+    "name": "Adair CDP"
+  },
+  "adams": {
+    "latitude": 39.87086,
+    "longitude": -91.19985,
+    "name": "Adams CDP"
+  },
+  "addieville": {
+    "latitude": 38.391299,
+    "longitude": -89.486455,
+    "name": "Addieville village"
+  },
+  "addison": {
+    "latitude": 41.930782,
+    "longitude": -88.008987,
+    "name": "Addison village"
+  },
+  "adeline": {
+    "latitude": 42.140551,
+    "longitude": -89.491859,
+    "name": "Adeline village"
+  },
+  "albany": {
+    "latitude": 41.786132,
+    "longitude": -90.21635,
+    "name": "Albany village"
+  },
+  "albers": {
+    "latitude": 38.543434,
+    "longitude": -89.617159,
+    "name": "Albers village"
+  },
+  "albion": {
+    "latitude": 38.376598,
+    "longitude": -88.057625,
+    "name": "Albion city"
+  },
+  "alden": {
+    "latitude": 42.458607,
+    "longitude": -88.518517,
+    "name": "Alden CDP"
+  },
+  "aledo": {
+    "latitude": 41.198561,
+    "longitude": -90.746351,
+    "name": "Aledo city"
+  },
+  "alexander": {
+    "latitude": 39.721772,
+    "longitude": -90.036846,
+    "name": "Alexander CDP"
+  },
+  "alexis": {
+    "latitude": 41.062906,
+    "longitude": -90.555402,
+    "name": "Alexis village"
+  },
+  "algonquin": {
+    "latitude": 42.159466,
+    "longitude": -88.321873,
+    "name": "Algonquin village"
+  },
+  "alhambra": {
+    "latitude": 38.887446,
+    "longitude": -89.736876,
+    "name": "Alhambra village"
+  },
+  "allendale": {
+    "latitude": 38.527627,
+    "longitude": -87.710344,
+    "name": "Allendale village"
+  },
+  "allenville": {
+    "latitude": 39.558307,
+    "longitude": -88.538709,
+    "name": "Allenville village"
+  },
+  "allerton": {
+    "latitude": 39.916139,
+    "longitude": -87.935258,
+    "name": "Allerton village"
+  },
+  "alma": {
+    "latitude": 38.722888,
+    "longitude": -88.911695,
+    "name": "Alma village"
+  },
+  "alpha": {
+    "latitude": 41.191688,
+    "longitude": -90.380463,
+    "name": "Alpha village"
+  },
+  "alsey": {
+    "latitude": 39.559411,
+    "longitude": -90.433585,
+    "name": "Alsey village"
+  },
+  "alsip": {
+    "latitude": 41.67027,
+    "longitude": -87.737085,
+    "name": "Alsip village"
+  },
+  "altamont": {
+    "latitude": 39.056115,
+    "longitude": -88.746922,
+    "name": "Altamont city"
+  },
+  "alton": {
+    "latitude": 38.903898,
+    "longitude": -90.151204,
+    "name": "Alton city"
+  },
+  "altona": {
+    "latitude": 41.115052,
+    "longitude": -90.164819,
+    "name": "Altona village"
+  },
+  "altopass": {
+    "latitude": 37.573654,
+    "longitude": -89.319546,
+    "name": "Alto Pass village"
+  },
+  "alvanalvin": {
+    "latitude": 40.307028,
+    "longitude": -87.606903,
+    "name": "Alvan (Alvin) village"
+  },
+  "amboy": {
+    "latitude": 41.715885,
+    "longitude": -89.34089,
+    "name": "Amboy city"
+  },
+  "anchor": {
+    "latitude": 40.56814,
+    "longitude": -88.53846,
+    "name": "Anchor village"
+  },
+  "andalusia": {
+    "latitude": 41.435891,
+    "longitude": -90.713922,
+    "name": "Andalusia village"
+  },
+  "andover": {
+    "latitude": 41.294916,
+    "longitude": -90.290743,
+    "name": "Andover village"
+  },
+  "andres": {
+    "latitude": 41.371007,
+    "longitude": -87.881453,
+    "name": "Andres CDP"
+  },
+  "anna": {
+    "latitude": 37.46106,
+    "longitude": -89.237478,
+    "name": "Anna city"
+  },
+  "annapolis": {
+    "latitude": 39.143046,
+    "longitude": -87.817129,
+    "name": "Annapolis CDP"
+  },
+  "annawan": {
+    "latitude": 41.396382,
+    "longitude": -89.890567,
+    "name": "Annawan town"
+  },
+  "antioch": {
+    "latitude": 42.47715,
+    "longitude": -88.067129,
+    "name": "Antioch village"
+  },
+  "applecanyonlake": {
+    "latitude": 42.433843,
+    "longitude": -90.159677,
+    "name": "Apple Canyon Lake CDP"
+  },
+  "appleriver": {
+    "latitude": 42.502261,
+    "longitude": -90.093699,
+    "name": "Apple River village"
+  },
+  "arburyhills": {
+    "latitude": 41.535311,
+    "longitude": -87.846065,
+    "name": "Arbury Hills CDP"
+  },
+  "arcola": {
+    "latitude": 39.683576,
+    "longitude": -88.300851,
+    "name": "Arcola city"
+  },
+  "arenzville": {
+    "latitude": 39.880462,
+    "longitude": -90.37055,
+    "name": "Arenzville village"
+  },
+  "argenta": {
+    "latitude": 39.985506,
+    "longitude": -88.819725,
+    "name": "Argenta village"
+  },
+  "argyle": {
+    "latitude": 42.35479,
+    "longitude": -88.939167,
+    "name": "Argyle CDP"
+  },
+  "arlington": {
+    "latitude": 41.471542,
+    "longitude": -89.24787,
+    "name": "Arlington village"
+  },
+  "arlingtonheights": {
+    "latitude": 42.097362,
+    "longitude": -87.981671,
+    "name": "Arlington Heights village"
+  },
+  "armington": {
+    "latitude": 40.339739,
+    "longitude": -89.314386,
+    "name": "Armington village"
+  },
+  "aromapark": {
+    "latitude": 41.081805,
+    "longitude": -87.804373,
+    "name": "Aroma Park village"
+  },
+  "arrowsmith": {
+    "latitude": 40.449273,
+    "longitude": -88.632098,
+    "name": "Arrowsmith village"
+  },
+  "arthur": {
+    "latitude": 39.714453,
+    "longitude": -88.469594,
+    "name": "Arthur village"
+  },
+  "ashkum": {
+    "latitude": 40.878331,
+    "longitude": -87.953214,
+    "name": "Ashkum village"
+  },
+  "ashland": {
+    "latitude": 39.888539,
+    "longitude": -90.007874,
+    "name": "Ashland village"
+  },
+  "ashley": {
+    "latitude": 38.328335,
+    "longitude": -89.188951,
+    "name": "Ashley city"
+  },
+  "ashmore": {
+    "latitude": 39.530563,
+    "longitude": -88.020109,
+    "name": "Ashmore village"
+  },
+  "ashton": {
+    "latitude": 41.867871,
+    "longitude": -89.223634,
+    "name": "Ashton village"
+  },
+  "assumption": {
+    "latitude": 39.518002,
+    "longitude": -89.047729,
+    "name": "Assumption city"
+  },
+  "astoria": {
+    "latitude": 40.227858,
+    "longitude": -90.356524,
+    "name": "Astoria town"
+  },
+  "athens": {
+    "latitude": 39.961863,
+    "longitude": -89.721631,
+    "name": "Athens city"
+  },
+  "atkinson": {
+    "latitude": 41.413245,
+    "longitude": -90.005345,
+    "name": "Atkinson town"
+  },
+  "atlanta": {
+    "latitude": 40.263574,
+    "longitude": -89.230845,
+    "name": "Atlanta city"
+  },
+  "atwood": {
+    "latitude": 39.799271,
+    "longitude": -88.462695,
+    "name": "Atwood village"
+  },
+  "auburn": {
+    "latitude": 39.5763,
+    "longitude": -89.743982,
+    "name": "Auburn city"
+  },
+  "augusta": {
+    "latitude": 40.23073,
+    "longitude": -90.950063,
+    "name": "Augusta village"
+  },
+  "aurora": {
+    "latitude": 41.763455,
+    "longitude": -88.290099,
+    "name": "Aurora city"
+  },
+  "ava": {
+    "latitude": 37.888524,
+    "longitude": -89.496305,
+    "name": "Ava city"
+  },
+  "aviston": {
+    "latitude": 38.625967,
+    "longitude": -89.613424,
+    "name": "Aviston village"
+  },
+  "avon": {
+    "latitude": 40.662002,
+    "longitude": -90.435261,
+    "name": "Avon village"
+  },
+  "baileyville": {
+    "latitude": 42.198332,
+    "longitude": -89.594528,
+    "name": "Baileyville CDP"
+  },
+  "baldwin": {
+    "latitude": 38.183829,
+    "longitude": -89.845152,
+    "name": "Baldwin village"
+  },
+  "banner": {
+    "latitude": 40.512612,
+    "longitude": -89.915609,
+    "name": "Banner village"
+  },
+  "bannockburn": {
+    "latitude": 42.192226,
+    "longitude": -87.869811,
+    "name": "Bannockburn village"
+  },
+  "bardolph": {
+    "latitude": 40.495917,
+    "longitude": -90.563071,
+    "name": "Bardolph village"
+  },
+  "barrington": {
+    "latitude": 42.151535,
+    "longitude": -88.128534,
+    "name": "Barrington village"
+  },
+  "barringtonhills": {
+    "latitude": 42.138642,
+    "longitude": -88.202959,
+    "name": "Barrington Hills village"
+  },
+  "barry": {
+    "latitude": 39.69831,
+    "longitude": -91.039918,
+    "name": "Barry city"
+  },
+  "barstow": {
+    "latitude": 41.515922,
+    "longitude": -90.356708,
+    "name": "Barstow CDP"
+  },
+  "bartelso": {
+    "latitude": 38.53818,
+    "longitude": -89.461475,
+    "name": "Bartelso village"
+  },
+  "bartlett": {
+    "latitude": 41.960637,
+    "longitude": -88.177747,
+    "name": "Bartlett village"
+  },
+  "bartonville": {
+    "latitude": 40.642046,
+    "longitude": -89.659792,
+    "name": "Bartonville village"
+  },
+  "basco": {
+    "latitude": 40.327801,
+    "longitude": -91.199495,
+    "name": "Basco village"
+  },
+  "batavia": {
+    "latitude": 41.847692,
+    "longitude": -88.311047,
+    "name": "Batavia city"
+  },
+  "batchtown": {
+    "latitude": 39.033197,
+    "longitude": -90.653366,
+    "name": "Batchtown village"
+  },
+  "bath": {
+    "latitude": 40.189972,
+    "longitude": -90.142448,
+    "name": "Bath village"
+  },
+  "baylis": {
+    "latitude": 39.729454,
+    "longitude": -90.909422,
+    "name": "Baylis village"
+  },
+  "bayviewgardens": {
+    "latitude": 40.813813,
+    "longitude": -89.527986,
+    "name": "Bay View Gardens village"
+  },
+  "beachpark": {
+    "latitude": 42.442271,
+    "longitude": -87.875368,
+    "name": "Beach Park village"
+  },
+  "beardstown": {
+    "latitude": 40.010103,
+    "longitude": -90.431131,
+    "name": "Beardstown city"
+  },
+  "beason": {
+    "latitude": 40.142831,
+    "longitude": -89.192763,
+    "name": "Beason CDP"
+  },
+  "beaverville": {
+    "latitude": 40.95366,
+    "longitude": -87.654031,
+    "name": "Beaverville village"
+  },
+  "beckemeyer": {
+    "latitude": 38.605828,
+    "longitude": -89.432298,
+    "name": "Beckemeyer village"
+  },
+  "bedfordpark": {
+    "latitude": 41.767773,
+    "longitude": -87.772556,
+    "name": "Bedford Park village"
+  },
+  "beecher": {
+    "latitude": 41.350011,
+    "longitude": -87.617293,
+    "name": "Beecher village"
+  },
+  "belgium": {
+    "latitude": 40.06076,
+    "longitude": -87.632829,
+    "name": "Belgium village"
+  },
+  "belknap": {
+    "latitude": 37.322592,
+    "longitude": -88.939685,
+    "name": "Belknap village"
+  },
+  "belleprairie": {
+    "latitude": 38.22349,
+    "longitude": -88.555741,
+    "name": "Belle Prairie City town"
+  },
+  "bellerive": {
+    "latitude": 38.231725,
+    "longitude": -88.74049,
+    "name": "Belle Rive village"
+  },
+  "belleville": {
+    "latitude": 38.515973,
+    "longitude": -89.989779,
+    "name": "Belleville city"
+  },
+  "bellevue": {
+    "latitude": 40.687644,
+    "longitude": -89.673193,
+    "name": "Bellevue village"
+  },
+  "bellflower": {
+    "latitude": 40.340552,
+    "longitude": -88.525638,
+    "name": "Bellflower village"
+  },
+  "bellmont": {
+    "latitude": 38.383026,
+    "longitude": -87.910604,
+    "name": "Bellmont village"
+  },
+  "bellwood": {
+    "latitude": 41.882901,
+    "longitude": -87.87617,
+    "name": "Bellwood village"
+  },
+  "belvidere": {
+    "latitude": 42.265448,
+    "longitude": -88.887758,
+    "name": "Belvidere city"
+  },
+  "bement": {
+    "latitude": 39.923001,
+    "longitude": -88.572437,
+    "name": "Bement village"
+  },
+  "benld": {
+    "latitude": 39.092998,
+    "longitude": -89.802332,
+    "name": "Benld city"
+  },
+  "bensenville": {
+    "latitude": 41.958011,
+    "longitude": -87.943825,
+    "name": "Bensenville village"
+  },
+  "benson": {
+    "latitude": 40.850709,
+    "longitude": -89.121097,
+    "name": "Benson village"
+  },
+  "bentley": {
+    "latitude": 40.34367,
+    "longitude": -91.112288,
+    "name": "Bentley town"
+  },
+  "benton": {
+    "latitude": 38.013187,
+    "longitude": -88.917281,
+    "name": "Benton city"
+  },
+  "berkeley": {
+    "latitude": 41.889116,
+    "longitude": -87.911471,
+    "name": "Berkeley village"
+  },
+  "berlin": {
+    "latitude": 39.756879,
+    "longitude": -89.902439,
+    "name": "Berlin village"
+  },
+  "berwyn": {
+    "latitude": 41.843333,
+    "longitude": -87.790926,
+    "name": "Berwyn city"
+  },
+  "bethalto": {
+    "latitude": 38.90166,
+    "longitude": -90.044841,
+    "name": "Bethalto village"
+  },
+  "bethany": {
+    "latitude": 39.644185,
+    "longitude": -88.740882,
+    "name": "Bethany village"
+  },
+  "beverly": {
+    "latitude": 39.794554,
+    "longitude": -90.990019,
+    "name": "Beverly CDP"
+  },
+  "bigfootprairie": {
+    "latitude": 42.491518,
+    "longitude": -88.600739,
+    "name": "Big Foot Prairie CDP"
+  },
+  "biggsville": {
+    "latitude": 40.853628,
+    "longitude": -90.862211,
+    "name": "Biggsville village"
+  },
+  "bigrock": {
+    "latitude": 41.766801,
+    "longitude": -88.526444,
+    "name": "Big Rock village"
+  },
+  "bingham": {
+    "latitude": 39.112236,
+    "longitude": -89.213728,
+    "name": "Bingham village"
+  },
+  "bishophill": {
+    "latitude": 41.199808,
+    "longitude": -90.117519,
+    "name": "Bishop Hill village"
+  },
+  "bismarck": {
+    "latitude": 40.259434,
+    "longitude": -87.61126,
+    "name": "Bismarck village"
+  },
+  "blairsville": {
+    "latitude": 37.810539,
+    "longitude": -89.123826,
+    "name": "Blairsville CDP"
+  },
+  "blandinsville": {
+    "latitude": 40.553969,
+    "longitude": -90.868332,
+    "name": "Blandinsville village"
+  },
+  "bloomfield": {
+    "latitude": 40.017198,
+    "longitude": -91.304947,
+    "name": "Bloomfield CDP"
+  },
+  "bloomingdale": {
+    "latitude": 41.951525,
+    "longitude": -88.089118,
+    "name": "Bloomingdale village"
+  },
+  "bloomington": {
+    "latitude": 40.475777,
+    "longitude": -88.969912,
+    "name": "Bloomington city"
+  },
+  "blueisland": {
+    "latitude": 41.65757,
+    "longitude": -87.681126,
+    "name": "Blue Island city"
+  },
+  "bluemound": {
+    "latitude": 39.700562,
+    "longitude": -89.118547,
+    "name": "Blue Mound village"
+  },
+  "bluffs": {
+    "latitude": 39.749254,
+    "longitude": -90.535253,
+    "name": "Bluffs village"
+  },
+  "bluford": {
+    "latitude": 38.326069,
+    "longitude": -88.734797,
+    "name": "Bluford village"
+  },
+  "bolingbrook": {
+    "latitude": 41.687466,
+    "longitude": -88.106215,
+    "name": "Bolingbrook village"
+  },
+  "bondville": {
+    "latitude": 40.111504,
+    "longitude": -88.368293,
+    "name": "Bondville village"
+  },
+  "bonegap": {
+    "latitude": 38.444882,
+    "longitude": -87.997571,
+    "name": "Bone Gap village"
+  },
+  "bonfield": {
+    "latitude": 41.145018,
+    "longitude": -88.054037,
+    "name": "Bonfield village"
+  },
+  "bonnie": {
+    "latitude": 38.203001,
+    "longitude": -88.906772,
+    "name": "Bonnie village"
+  },
+  "bonniebrae": {
+    "latitude": 41.599932,
+    "longitude": -88.034475,
+    "name": "Bonnie Brae CDP"
+  },
+  "boody": {
+    "latitude": 39.764377,
+    "longitude": -89.046671,
+    "name": "Boody CDP"
+  },
+  "boulderhill": {
+    "latitude": 41.710352,
+    "longitude": -88.333783,
+    "name": "Boulder Hill CDP"
+  },
+  "bourbonnais": {
+    "latitude": 41.182491,
+    "longitude": -87.878677,
+    "name": "Bourbonnais village"
+  },
+  "bowen": {
+    "latitude": 40.232054,
+    "longitude": -91.063282,
+    "name": "Bowen village"
+  },
+  "braceville": {
+    "latitude": 41.225288,
+    "longitude": -88.267629,
+    "name": "Braceville village"
+  },
+  "bradford": {
+    "latitude": 41.177181,
+    "longitude": -89.658213,
+    "name": "Bradford village"
+  },
+  "bradley": {
+    "latitude": 41.163726,
+    "longitude": -87.846534,
+    "name": "Bradley village"
+  },
+  "braidwood": {
+    "latitude": 41.27018,
+    "longitude": -88.223421,
+    "name": "Braidwood city"
+  },
+  "breese": {
+    "latitude": 38.613802,
+    "longitude": -89.523713,
+    "name": "Breese city"
+  },
+  "bridgeport": {
+    "latitude": 38.709948,
+    "longitude": -87.758646,
+    "name": "Bridgeport city"
+  },
+  "bridgeview": {
+    "latitude": 41.74028,
+    "longitude": -87.806682,
+    "name": "Bridgeview village"
+  },
+  "brighton": {
+    "latitude": 39.040863,
+    "longitude": -90.140041,
+    "name": "Brighton village"
+  },
+  "brimfield": {
+    "latitude": 40.836955,
+    "longitude": -89.880574,
+    "name": "Brimfield village"
+  },
+  "broadlands": {
+    "latitude": 39.908726,
+    "longitude": -87.997117,
+    "name": "Broadlands village"
+  },
+  "broadview": {
+    "latitude": 41.858367,
+    "longitude": -87.856192,
+    "name": "Broadview village"
+  },
+  "broadwell": {
+    "latitude": 40.066881,
+    "longitude": -89.44283,
+    "name": "Broadwell village"
+  },
+  "brocton": {
+    "latitude": 39.715407,
+    "longitude": -87.933607,
+    "name": "Brocton village"
+  },
+  "brookfield": {
+    "latitude": 41.825059,
+    "longitude": -87.847546,
+    "name": "Brookfield village"
+  },
+  "brooklyn": {
+    "latitude": 38.654247,
+    "longitude": -90.167873,
+    "name": "Brooklyn village"
+  },
+  "brookport": {
+    "latitude": 37.125817,
+    "longitude": -88.625983,
+    "name": "Brookport city"
+  },
+  "broughton": {
+    "latitude": 37.933933,
+    "longitude": -88.462433,
+    "name": "Broughton village"
+  },
+  "browning": {
+    "latitude": 40.12705,
+    "longitude": -90.373003,
+    "name": "Browning village"
+  },
+  "browns": {
+    "latitude": 38.377532,
+    "longitude": -87.983159,
+    "name": "Browns village"
+  },
+  "brownstown": {
+    "latitude": 38.994218,
+    "longitude": -88.955331,
+    "name": "Brownstown village"
+  },
+  "brussels": {
+    "latitude": 38.948465,
+    "longitude": -90.589034,
+    "name": "Brussels village"
+  },
+  "bryant": {
+    "latitude": 40.465437,
+    "longitude": -90.094885,
+    "name": "Bryant village"
+  },
+  "buckingham": {
+    "latitude": 41.047066,
+    "longitude": -88.174926,
+    "name": "Buckingham village"
+  },
+  "buckley": {
+    "latitude": 40.597274,
+    "longitude": -88.037681,
+    "name": "Buckley village"
+  },
+  "buckner": {
+    "latitude": 37.981015,
+    "longitude": -89.015659,
+    "name": "Buckner village"
+  },
+  "buda": {
+    "latitude": 41.329004,
+    "longitude": -89.679255,
+    "name": "Buda village"
+  },
+  "buffalo": {
+    "latitude": 39.849911,
+    "longitude": -89.409125,
+    "name": "Buffalo village"
+  },
+  "buffalogrove": {
+    "latitude": 42.165981,
+    "longitude": -87.961826,
+    "name": "Buffalo Grove village"
+  },
+  "buffaloprairie": {
+    "latitude": 41.340855,
+    "longitude": -90.848206,
+    "name": "Buffalo Prairie CDP"
+  },
+  "bullvalley": {
+    "latitude": 42.323472,
+    "longitude": -88.360947,
+    "name": "Bull Valley village"
+  },
+  "bulpitt": {
+    "latitude": 39.591879,
+    "longitude": -89.425762,
+    "name": "Bulpitt village"
+  },
+  "buncombe": {
+    "latitude": 37.471116,
+    "longitude": -88.97466,
+    "name": "Buncombe village"
+  },
+  "bunkerhill": {
+    "latitude": 39.041478,
+    "longitude": -89.95114,
+    "name": "Bunker Hill city"
+  },
+  "burbank": {
+    "latitude": 41.74441,
+    "longitude": -87.768568,
+    "name": "Burbank city"
+  },
+  "bureaujunction": {
+    "latitude": 41.289448,
+    "longitude": -89.364522,
+    "name": "Bureau Junction village"
+  },
+  "burlington": {
+    "latitude": 42.052859,
+    "longitude": -88.568931,
+    "name": "Burlington village"
+  },
+  "burnham": {
+    "latitude": 41.63948,
+    "longitude": -87.54496,
+    "name": "Burnham village"
+  },
+  "burntprairie": {
+    "latitude": 38.250865,
+    "longitude": -88.25826,
+    "name": "Burnt Prairie village"
+  },
+  "burrridge": {
+    "latitude": 41.747898,
+    "longitude": -87.920105,
+    "name": "Burr Ridge village"
+  },
+  "burton": {
+    "latitude": 39.907938,
+    "longitude": -91.249269,
+    "name": "Burton CDP"
+  },
+  "burtonsbridge": {
+    "latitude": 42.27789,
+    "longitude": -88.23035,
+    "name": "Burtons Bridge CDP"
+  },
+  "bush": {
+    "latitude": 37.841929,
+    "longitude": -89.129906,
+    "name": "Bush village"
+  },
+  "bushnell": {
+    "latitude": 40.551619,
+    "longitude": -90.504684,
+    "name": "Bushnell city"
+  },
+  "butler": {
+    "latitude": 39.197536,
+    "longitude": -89.532233,
+    "name": "Butler village"
+  },
+  "byron": {
+    "latitude": 42.121835,
+    "longitude": -89.266806,
+    "name": "Byron city"
+  },
+  "cabery": {
+    "latitude": 40.995751,
+    "longitude": -88.203692,
+    "name": "Cabery village"
+  },
+  "cable": {
+    "latitude": 41.279696,
+    "longitude": -90.505781,
+    "name": "Cable CDP"
+  },
+  "cahokiaheights": {
+    "latitude": 38.572053,
+    "longitude": -90.155317,
+    "name": "Cahokia Heights city"
+  },
+  "cairo": {
+    "latitude": 37.006288,
+    "longitude": -89.18288,
+    "name": "Cairo city"
+  },
+  "caledonia": {
+    "latitude": 42.368623,
+    "longitude": -88.893925,
+    "name": "Caledonia village"
+  },
+  "calhoun": {
+    "latitude": 38.651161,
+    "longitude": -88.044023,
+    "name": "Calhoun village"
+  },
+  "calumet": {
+    "latitude": 41.596493,
+    "longitude": -87.538572,
+    "name": "Calumet City city"
+  },
+  "calumetpark": {
+    "latitude": 41.665735,
+    "longitude": -87.65765,
+    "name": "Calumet Park village"
+  },
+  "camargo": {
+    "latitude": 39.79944,
+    "longitude": -88.16838,
+    "name": "Camargo village"
+  },
+  "cambria": {
+    "latitude": 37.779364,
+    "longitude": -89.119356,
+    "name": "Cambria village"
+  },
+  "cambridge": {
+    "latitude": 41.292445,
+    "longitude": -90.19092,
+    "name": "Cambridge village"
+  },
+  "camden": {
+    "latitude": 40.152829,
+    "longitude": -90.773324,
+    "name": "Camden village"
+  },
+  "cameron": {
+    "latitude": 40.887545,
+    "longitude": -90.51644,
+    "name": "Cameron CDP"
+  },
+  "campbellhill": {
+    "latitude": 37.930783,
+    "longitude": -89.551387,
+    "name": "Campbell Hill village"
+  },
+  "campbellsisland": {
+    "latitude": 41.54036,
+    "longitude": -90.430323,
+    "name": "Campbell's Island CDP"
+  },
+  "camppoint": {
+    "latitude": 40.03641,
+    "longitude": -91.064134,
+    "name": "Camp Point village"
+  },
+  "camptonhills": {
+    "latitude": 41.950241,
+    "longitude": -88.417049,
+    "name": "Campton Hills village"
+  },
+  "campus": {
+    "latitude": 41.024613,
+    "longitude": -88.307309,
+    "name": "Campus village"
+  },
+  "candlewicklake": {
+    "latitude": 42.351108,
+    "longitude": -88.870408,
+    "name": "Candlewick Lake CDP"
+  },
+  "canton": {
+    "latitude": 40.563863,
+    "longitude": -90.036562,
+    "name": "Canton city"
+  },
+  "cantrall": {
+    "latitude": 39.935265,
+    "longitude": -89.678762,
+    "name": "Cantrall village"
+  },
+  "capron": {
+    "latitude": 42.398777,
+    "longitude": -88.738656,
+    "name": "Capron village"
+  },
+  "carboncliff": {
+    "latitude": 41.498072,
+    "longitude": -90.391733,
+    "name": "Carbon Cliff village"
+  },
+  "carbondale": {
+    "latitude": 37.722062,
+    "longitude": -89.223664,
+    "name": "Carbondale city"
+  },
+  "carbonhill": {
+    "latitude": 41.296921,
+    "longitude": -88.299892,
+    "name": "Carbon Hill village"
+  },
+  "carlinville": {
+    "latitude": 39.277475,
+    "longitude": -89.876125,
+    "name": "Carlinville city"
+  },
+  "carlock": {
+    "latitude": 40.583193,
+    "longitude": -89.128561,
+    "name": "Carlock village"
+  },
+  "carlyle": {
+    "latitude": 38.622266,
+    "longitude": -89.375442,
+    "name": "Carlyle city"
+  },
+  "carman": {
+    "latitude": 40.736216,
+    "longitude": -91.061674,
+    "name": "Carman CDP"
+  },
+  "carmi": {
+    "latitude": 38.08615,
+    "longitude": -88.172062,
+    "name": "Carmi city"
+  },
+  "carolstream": {
+    "latitude": 41.920346,
+    "longitude": -88.133223,
+    "name": "Carol Stream village"
+  },
+  "carpentersville": {
+    "latitude": 42.122736,
+    "longitude": -88.293896,
+    "name": "Carpentersville village"
+  },
+  "carriermills": {
+    "latitude": 37.688601,
+    "longitude": -88.628976,
+    "name": "Carrier Mills village"
+  },
+  "carrollton": {
+    "latitude": 39.294493,
+    "longitude": -90.406894,
+    "name": "Carrollton city"
+  },
+  "carterville": {
+    "latitude": 37.762798,
+    "longitude": -89.084481,
+    "name": "Carterville city"
+  },
+  "carthage": {
+    "latitude": 40.414292,
+    "longitude": -91.1281,
+    "name": "Carthage city"
+  },
+  "cary": {
+    "latitude": 42.212144,
+    "longitude": -88.249627,
+    "name": "Cary village"
+  },
+  "casey": {
+    "latitude": 39.305417,
+    "longitude": -87.985309,
+    "name": "Casey city"
+  },
+  "caseyville": {
+    "latitude": 38.628961,
+    "longitude": -90.034459,
+    "name": "Caseyville village"
+  },
+  "catlin": {
+    "latitude": 40.06799,
+    "longitude": -87.708383,
+    "name": "Catlin village"
+  },
+  "caveinrock": {
+    "latitude": 37.471016,
+    "longitude": -88.165762,
+    "name": "Cave-In-Rock village"
+  },
+  "cedarpoint": {
+    "latitude": 41.26511,
+    "longitude": -89.126016,
+    "name": "Cedar Point village"
+  },
+  "cedarville": {
+    "latitude": 42.375727,
+    "longitude": -89.636268,
+    "name": "Cedarville village"
+  },
+  "central": {
+    "latitude": 38.548549,
+    "longitude": -89.128298,
+    "name": "Central City village"
+  },
+  "centralia": {
+    "latitude": 38.522066,
+    "longitude": -89.123533,
+    "name": "Centralia city"
+  },
+  "cerrogordo": {
+    "latitude": 39.889202,
+    "longitude": -88.734472,
+    "name": "Cerro Gordo village"
+  },
+  "chadwick": {
+    "latitude": 42.014236,
+    "longitude": -89.888442,
+    "name": "Chadwick village"
+  },
+  "champaign": {
+    "latitude": 40.114099,
+    "longitude": -88.274619,
+    "name": "Champaign city"
+  },
+  "chandlerville": {
+    "latitude": 40.047011,
+    "longitude": -90.151257,
+    "name": "Chandlerville village"
+  },
+  "channahon": {
+    "latitude": 41.422789,
+    "longitude": -88.262954,
+    "name": "Channahon village"
+  },
+  "channellake": {
+    "latitude": 42.482745,
+    "longitude": -88.14713,
+    "name": "Channel Lake CDP"
+  },
+  "chapin": {
+    "latitude": 39.766869,
+    "longitude": -90.402746,
+    "name": "Chapin village"
+  },
+  "charleston": {
+    "latitude": 39.48483,
+    "longitude": -88.177609,
+    "name": "Charleston city"
+  },
+  "chatham": {
+    "latitude": 39.674535,
+    "longitude": -89.693303,
+    "name": "Chatham village"
+  },
+  "chatsworth": {
+    "latitude": 40.72136,
+    "longitude": -88.299594,
+    "name": "Chatsworth town"
+  },
+  "chebanse": {
+    "latitude": 41.000301,
+    "longitude": -87.911135,
+    "name": "Chebanse village"
+  },
+  "chemung": {
+    "latitude": 42.416201,
+    "longitude": -88.66416,
+    "name": "Chemung CDP"
+  },
+  "chenoa": {
+    "latitude": 40.737639,
+    "longitude": -88.727778,
+    "name": "Chenoa city"
+  },
+  "cherry": {
+    "latitude": 41.428141,
+    "longitude": -89.213239,
+    "name": "Cherry village"
+  },
+  "cherryvalley": {
+    "latitude": 42.235178,
+    "longitude": -88.975113,
+    "name": "Cherry Valley village"
+  },
+  "chester": {
+    "latitude": 37.925757,
+    "longitude": -89.827704,
+    "name": "Chester city"
+  },
+  "chesterfield": {
+    "latitude": 39.256614,
+    "longitude": -90.066765,
+    "name": "Chesterfield village"
+  },
+  "chestnut": {
+    "latitude": 40.053734,
+    "longitude": -89.187111,
+    "name": "Chestnut CDP"
+  },
+  "chicago": {
+    "latitude": 41.837045,
+    "longitude": -87.684939,
+    "name": "Chicago city"
+  },
+  "chicagoheights": {
+    "latitude": 41.510684,
+    "longitude": -87.634069,
+    "name": "Chicago Heights city"
+  },
+  "chicagoridge": {
+    "latitude": 41.703415,
+    "longitude": -87.779467,
+    "name": "Chicago Ridge village"
+  },
+  "chillicothe": {
+    "latitude": 40.915961,
+    "longitude": -89.50268,
+    "name": "Chillicothe city"
+  },
+  "chrisman": {
+    "latitude": 39.804357,
+    "longitude": -87.674873,
+    "name": "Chrisman city"
+  },
+  "christopher": {
+    "latitude": 37.970999,
+    "longitude": -89.052985,
+    "name": "Christopher city"
+  },
+  "cicero": {
+    "latitude": 41.844537,
+    "longitude": -87.75929,
+    "name": "Cicero town"
+  },
+  "cisco": {
+    "latitude": 40.011615,
+    "longitude": -88.725419,
+    "name": "Cisco village"
+  },
+  "cisne": {
+    "latitude": 38.51391,
+    "longitude": -88.43714,
+    "name": "Cisne village"
+  },
+  "cissnapark": {
+    "latitude": 40.566981,
+    "longitude": -87.892197,
+    "name": "Cissna Park village"
+  },
+  "claremont": {
+    "latitude": 38.717594,
+    "longitude": -87.972866,
+    "name": "Claremont village"
+  },
+  "clarendonhills": {
+    "latitude": 41.798448,
+    "longitude": -87.957239,
+    "name": "Clarendon Hills village"
+  },
+  "clay": {
+    "latitude": 38.685793,
+    "longitude": -88.348621,
+    "name": "Clay City village"
+  },
+  "clayton": {
+    "latitude": 40.030564,
+    "longitude": -90.957999,
+    "name": "Clayton village"
+  },
+  "cleveland": {
+    "latitude": 41.503203,
+    "longitude": -90.317006,
+    "name": "Cleveland village"
+  },
+  "clifton": {
+    "latitude": 40.934726,
+    "longitude": -87.93433,
+    "name": "Clifton village"
+  },
+  "clinton": {
+    "latitude": 40.147001,
+    "longitude": -88.962999,
+    "name": "Clinton city"
+  },
+  "coal": {
+    "latitude": 41.278903,
+    "longitude": -88.280053,
+    "name": "Coal City village"
+  },
+  "coalton": {
+    "latitude": 39.284146,
+    "longitude": -89.302918,
+    "name": "Coalton village"
+  },
+  "coalvalley": {
+    "latitude": 41.438418,
+    "longitude": -90.439385,
+    "name": "Coal Valley village"
+  },
+  "coatsburg": {
+    "latitude": 40.032456,
+    "longitude": -91.160371,
+    "name": "Coatsburg village"
+  },
+  "cobden": {
+    "latitude": 37.533303,
+    "longitude": -89.254406,
+    "name": "Cobden village"
+  },
+  "coffeen": {
+    "latitude": 39.088243,
+    "longitude": -89.389771,
+    "name": "Coffeen city"
+  },
+  "colchester": {
+    "latitude": 40.42561,
+    "longitude": -90.792174,
+    "name": "Colchester city"
+  },
+  "coleta": {
+    "latitude": 41.902036,
+    "longitude": -89.799812,
+    "name": "Coleta village"
+  },
+  "colfax": {
+    "latitude": 40.566598,
+    "longitude": -88.616051,
+    "name": "Colfax village"
+  },
+  "collinsville": {
+    "latitude": 38.677398,
+    "longitude": -90.007708,
+    "name": "Collinsville city"
+  },
+  "colona": {
+    "latitude": 41.473375,
+    "longitude": -90.332418,
+    "name": "Colona city"
+  },
+  "colp": {
+    "latitude": 37.80735,
+    "longitude": -89.078531,
+    "name": "Colp village"
+  },
+  "columbia": {
+    "latitude": 38.458056,
+    "longitude": -90.216,
+    "name": "Columbia city"
+  },
+  "columbus": {
+    "latitude": 39.986472,
+    "longitude": -91.144971,
+    "name": "Columbus village"
+  },
+  "como": {
+    "latitude": 41.766462,
+    "longitude": -89.765344,
+    "name": "Como CDP"
+  },
+  "compton": {
+    "latitude": 41.694082,
+    "longitude": -89.086346,
+    "name": "Compton village"
+  },
+  "concord": {
+    "latitude": 39.815604,
+    "longitude": -90.370394,
+    "name": "Concord village"
+  },
+  "congerville": {
+    "latitude": 40.616652,
+    "longitude": -89.204822,
+    "name": "Congerville village"
+  },
+  "cooksville": {
+    "latitude": 40.542662,
+    "longitude": -88.714708,
+    "name": "Cooksville village"
+  },
+  "coral": {
+    "latitude": 42.217995,
+    "longitude": -88.566203,
+    "name": "Coral CDP"
+  },
+  "cordova": {
+    "latitude": 41.677028,
+    "longitude": -90.320713,
+    "name": "Cordova village"
+  },
+  "cornell": {
+    "latitude": 40.992022,
+    "longitude": -88.729881,
+    "name": "Cornell village"
+  },
+  "cornland": {
+    "latitude": 39.937628,
+    "longitude": -89.401578,
+    "name": "Cornland CDP"
+  },
+  "cortland": {
+    "latitude": 41.937239,
+    "longitude": -88.689303,
+    "name": "Cortland town"
+  },
+  "coulterville": {
+    "latitude": 38.185079,
+    "longitude": -89.604316,
+    "name": "Coulterville village"
+  },
+  "countryclubhills": {
+    "latitude": 41.563453,
+    "longitude": -87.725409,
+    "name": "Country Club Hills city"
+  },
+  "countryside": {
+    "latitude": 41.774206,
+    "longitude": -87.875224,
+    "name": "Countryside city"
+  },
+  "cowden": {
+    "latitude": 39.249224,
+    "longitude": -88.859351,
+    "name": "Cowden village"
+  },
+  "coynecenter": {
+    "latitude": 41.400637,
+    "longitude": -90.562666,
+    "name": "Coyne Center CDP"
+  },
+  "craborchard": {
+    "latitude": 37.723611,
+    "longitude": -88.810281,
+    "name": "Crab Orchard CDP"
+  },
+  "crainville": {
+    "latitude": 37.753795,
+    "longitude": -89.059121,
+    "name": "Crainville village"
+  },
+  "crealsprings": {
+    "latitude": 37.619847,
+    "longitude": -88.837446,
+    "name": "Creal Springs city"
+  },
+  "crescent": {
+    "latitude": 40.771665,
+    "longitude": -87.856578,
+    "name": "Crescent City village"
+  },
+  "cresthill": {
+    "latitude": 41.57436,
+    "longitude": -88.113261,
+    "name": "Crest Hill city"
+  },
+  "creston": {
+    "latitude": 41.93356,
+    "longitude": -88.974289,
+    "name": "Creston village"
+  },
+  "crestwood": {
+    "latitude": 41.645598,
+    "longitude": -87.740078,
+    "name": "Crestwood village"
+  },
+  "crete": {
+    "latitude": 41.440524,
+    "longitude": -87.624471,
+    "name": "Crete village"
+  },
+  "crevecoeur": {
+    "latitude": 40.638174,
+    "longitude": -89.60165,
+    "name": "Creve Coeur village"
+  },
+  "crossville": {
+    "latitude": 38.162569,
+    "longitude": -88.064355,
+    "name": "Crossville village"
+  },
+  "crystallake": {
+    "latitude": 42.233209,
+    "longitude": -88.33436,
+    "name": "Crystal Lake city"
+  },
+  "crystallawns": {
+    "latitude": 41.568532,
+    "longitude": -88.163917,
+    "name": "Crystal Lawns CDP"
+  },
+  "cuba": {
+    "latitude": 40.493601,
+    "longitude": -90.193353,
+    "name": "Cuba city"
+  },
+  "cullom": {
+    "latitude": 40.878445,
+    "longitude": -88.269766,
+    "name": "Cullom village"
+  },
+  "curran": {
+    "latitude": 39.741962,
+    "longitude": -89.778415,
+    "name": "Curran village"
+  },
+  "custerpark": {
+    "latitude": 41.24325,
+    "longitude": -88.129689,
+    "name": "Custer Park CDP"
+  },
+  "cutler": {
+    "latitude": 38.032549,
+    "longitude": -89.567572,
+    "name": "Cutler village"
+  },
+  "cypress": {
+    "latitude": 37.365722,
+    "longitude": -89.018887,
+    "name": "Cypress village"
+  },
+  "dahlgren": {
+    "latitude": 38.198052,
+    "longitude": -88.684687,
+    "name": "Dahlgren village"
+  },
+  "dakota": {
+    "latitude": 42.387909,
+    "longitude": -89.526559,
+    "name": "Dakota village"
+  },
+  "dallas": {
+    "latitude": 40.6353,
+    "longitude": -91.164279,
+    "name": "Dallas City city"
+  },
+  "dalton": {
+    "latitude": 39.717018,
+    "longitude": -88.807043,
+    "name": "Dalton City village"
+  },
+  "dalzell": {
+    "latitude": 41.356487,
+    "longitude": -89.173366,
+    "name": "Dalzell village"
+  },
+  "damiansville": {
+    "latitude": 38.508778,
+    "longitude": -89.615019,
+    "name": "Damiansville village"
+  },
+  "dana": {
+    "latitude": 40.956508,
+    "longitude": -88.949973,
+    "name": "Dana village"
+  },
+  "danforth": {
+    "latitude": 40.821975,
+    "longitude": -87.977847,
+    "name": "Danforth village"
+  },
+  "danvers": {
+    "latitude": 40.529985,
+    "longitude": -89.175073,
+    "name": "Danvers village"
+  },
+  "danville": {
+    "latitude": 40.142628,
+    "longitude": -87.610707,
+    "name": "Danville city"
+  },
+  "darien": {
+    "latitude": 41.745663,
+    "longitude": -87.981494,
+    "name": "Darien city"
+  },
+  "darmstadt": {
+    "latitude": 38.318739,
+    "longitude": -89.729237,
+    "name": "Darmstadt CDP"
+  },
+  "davis": {
+    "latitude": 42.421561,
+    "longitude": -89.414911,
+    "name": "Davis village"
+  },
+  "davisjunction": {
+    "latitude": 42.114561,
+    "longitude": -89.090288,
+    "name": "Davis Junction village"
+  },
+  "dawson": {
+    "latitude": 39.852952,
+    "longitude": -89.461948,
+    "name": "Dawson village"
+  },
+  "dayton": {
+    "latitude": 41.391523,
+    "longitude": -88.799197,
+    "name": "Dayton CDP"
+  },
+  "decatur": {
+    "latitude": 39.855983,
+    "longitude": -88.933746,
+    "name": "Decatur city"
+  },
+  "deercreek": {
+    "latitude": 40.629498,
+    "longitude": -89.33172,
+    "name": "Deer Creek village"
+  },
+  "deerfield": {
+    "latitude": 42.166069,
+    "longitude": -87.852467,
+    "name": "Deerfield village"
+  },
+  "deergrove": {
+    "latitude": 41.60965,
+    "longitude": -89.686582,
+    "name": "Deer Grove village"
+  },
+  "deerpark": {
+    "latitude": 42.166284,
+    "longitude": -88.08618,
+    "name": "Deer Park village"
+  },
+  "dekalb": {
+    "latitude": 41.928186,
+    "longitude": -88.747585,
+    "name": "DeKalb city"
+  },
+  "deland": {
+    "latitude": 40.121815,
+    "longitude": -88.64347,
+    "name": "De Land village"
+  },
+  "delavan": {
+    "latitude": 40.371022,
+    "longitude": -89.546069,
+    "name": "Delavan city"
+  },
+  "depue": {
+    "latitude": 41.329565,
+    "longitude": -89.303736,
+    "name": "De Pue village"
+  },
+  "desoto": {
+    "latitude": 37.815788,
+    "longitude": -89.226984,
+    "name": "De Soto village"
+  },
+  "desplaines": {
+    "latitude": 42.034398,
+    "longitude": -87.901136,
+    "name": "Des Plaines city"
+  },
+  "detroit": {
+    "latitude": 39.620161,
+    "longitude": -90.675914,
+    "name": "Detroit village"
+  },
+  "dewey": {
+    "latitude": 40.319252,
+    "longitude": -88.283378,
+    "name": "Dewey CDP"
+  },
+  "dewitt": {
+    "latitude": 40.184638,
+    "longitude": -88.785263,
+    "name": "De Witt village"
+  },
+  "diamond": {
+    "latitude": 41.285224,
+    "longitude": -88.250701,
+    "name": "Diamond village"
+  },
+  "dieterich": {
+    "latitude": 39.060311,
+    "longitude": -88.3814,
+    "name": "Dieterich village"
+  },
+  "divernon": {
+    "latitude": 39.570431,
+    "longitude": -89.653638,
+    "name": "Divernon village"
+  },
+  "dix": {
+    "latitude": 38.44448,
+    "longitude": -88.945965,
+    "name": "Dix village"
+  },
+  "dixmoor": {
+    "latitude": 41.63295,
+    "longitude": -87.667233,
+    "name": "Dixmoor village"
+  },
+  "dixon": {
+    "latitude": 41.843288,
+    "longitude": -89.477547,
+    "name": "Dixon city"
+  },
+  "dolton": {
+    "latitude": 41.630275,
+    "longitude": -87.596834,
+    "name": "Dolton village"
+  },
+  "dongola": {
+    "latitude": 37.357109,
+    "longitude": -89.164989,
+    "name": "Dongola village"
+  },
+  "donnellson": {
+    "latitude": 39.030545,
+    "longitude": -89.475639,
+    "name": "Donnellson village"
+  },
+  "donovan": {
+    "latitude": 40.884883,
+    "longitude": -87.613852,
+    "name": "Donovan village"
+  },
+  "dorchester": {
+    "latitude": 39.085883,
+    "longitude": -89.887738,
+    "name": "Dorchester village"
+  },
+  "dover": {
+    "latitude": 41.434226,
+    "longitude": -89.395762,
+    "name": "Dover village"
+  },
+  "dowell": {
+    "latitude": 37.939573,
+    "longitude": -89.239529,
+    "name": "Dowell village"
+  },
+  "downersgrove": {
+    "latitude": 41.79503,
+    "longitude": -88.021055,
+    "name": "Downers Grove village"
+  },
+  "downs": {
+    "latitude": 40.398775,
+    "longitude": -88.889199,
+    "name": "Downs village"
+  },
+  "dubois": {
+    "latitude": 38.22139,
+    "longitude": -89.212674,
+    "name": "Du Bois village"
+  },
+  "dundas": {
+    "latitude": 38.83459,
+    "longitude": -88.085491,
+    "name": "Dundas CDP"
+  },
+  "dunfermline": {
+    "latitude": 40.491709,
+    "longitude": -90.032464,
+    "name": "Dunfermline village"
+  },
+  "dunlap": {
+    "latitude": 40.845213,
+    "longitude": -89.675922,
+    "name": "Dunlap village"
+  },
+  "dupo": {
+    "latitude": 38.516124,
+    "longitude": -90.217599,
+    "name": "Dupo village"
+  },
+  "duquoin": {
+    "latitude": 38.001719,
+    "longitude": -89.23284,
+    "name": "Du Quoin city"
+  },
+  "durand": {
+    "latitude": 42.433801,
+    "longitude": -89.326782,
+    "name": "Durand village"
+  },
+  "dwight": {
+    "latitude": 41.098705,
+    "longitude": -88.422077,
+    "name": "Dwight village"
+  },
+  "eagarville": {
+    "latitude": 39.108699,
+    "longitude": -89.779025,
+    "name": "Eagarville village"
+  },
+  "eaglelake": {
+    "latitude": 41.370257,
+    "longitude": -87.5552,
+    "name": "Eagle Lake CDP"
+  },
+  "earlville": {
+    "latitude": 41.588068,
+    "longitude": -88.922954,
+    "name": "Earlville city"
+  },
+  "eastalton": {
+    "latitude": 38.88412,
+    "longitude": -90.107943,
+    "name": "East Alton village"
+  },
+  "eastbrooklyn": {
+    "latitude": 41.172687,
+    "longitude": -88.265426,
+    "name": "East Brooklyn village"
+  },
+  "eastcapegirardeau": {
+    "latitude": 37.294005,
+    "longitude": -89.480188,
+    "name": "East Cape Girardeau village"
+  },
+  "eastcarondelet": {
+    "latitude": 38.537126,
+    "longitude": -90.239997,
+    "name": "East Carondelet village"
+  },
+  "eastdubuque": {
+    "latitude": 42.488329,
+    "longitude": -90.624225,
+    "name": "East Dubuque city"
+  },
+  "eastdundee": {
+    "latitude": 42.09767,
+    "longitude": -88.247504,
+    "name": "East Dundee village"
+  },
+  "eastgalesburg": {
+    "latitude": 40.942833,
+    "longitude": -90.31096,
+    "name": "East Galesburg village"
+  },
+  "eastgillespie": {
+    "latitude": 39.137819,
+    "longitude": -89.812685,
+    "name": "East Gillespie village"
+  },
+  "easthazelcrest": {
+    "latitude": 41.575799,
+    "longitude": -87.650273,
+    "name": "East Hazel Crest village"
+  },
+  "eastlynn": {
+    "latitude": 40.466238,
+    "longitude": -87.800673,
+    "name": "East Lynn CDP"
+  },
+  "eastmoline": {
+    "latitude": 41.519867,
+    "longitude": -90.387949,
+    "name": "East Moline city"
+  },
+  "easton": {
+    "latitude": 40.232079,
+    "longitude": -89.841584,
+    "name": "Easton village"
+  },
+  "eastpeoria": {
+    "latitude": 40.673377,
+    "longitude": -89.541764,
+    "name": "East Peoria city"
+  },
+  "eaststlouis": {
+    "latitude": 38.616361,
+    "longitude": -90.130528,
+    "name": "East St. Louis city"
+  },
+  "eddyville": {
+    "latitude": 37.500191,
+    "longitude": -88.585059,
+    "name": "Eddyville village"
+  },
+  "edgewood": {
+    "latitude": 38.921865,
+    "longitude": -88.664076,
+    "name": "Edgewood village"
+  },
+  "edgington": {
+    "latitude": 41.386886,
+    "longitude": -90.76368,
+    "name": "Edgington CDP"
+  },
+  "edinburg": {
+    "latitude": 39.65789,
+    "longitude": -89.390121,
+    "name": "Edinburg village"
+  },
+  "edwardsville": {
+    "latitude": 38.790835,
+    "longitude": -89.988605,
+    "name": "Edwardsville city"
+  },
+  "effingham": {
+    "latitude": 39.120662,
+    "longitude": -88.550859,
+    "name": "Effingham city"
+  },
+  "elburn": {
+    "latitude": 41.885994,
+    "longitude": -88.460921,
+    "name": "Elburn village"
+  },
+  "eldara": {
+    "latitude": 39.62275,
+    "longitude": -90.991729,
+    "name": "El Dara village"
+  },
+  "eldorado": {
+    "latitude": 37.811726,
+    "longitude": -88.441578,
+    "name": "Eldorado city"
+  },
+  "eldred": {
+    "latitude": 39.286151,
+    "longitude": -90.553975,
+    "name": "Eldred village"
+  },
+  "elgin": {
+    "latitude": 42.038963,
+    "longitude": -88.325671,
+    "name": "Elgin city"
+  },
+  "eliza": {
+    "latitude": 41.294769,
+    "longitude": -90.972545,
+    "name": "Eliza CDP"
+  },
+  "elizabeth": {
+    "latitude": 42.316331,
+    "longitude": -90.222077,
+    "name": "Elizabeth village"
+  },
+  "elizabethtown": {
+    "latitude": 37.449937,
+    "longitude": -88.303521,
+    "name": "Elizabethtown village"
+  },
+  "elkgrove": {
+    "latitude": 42.005271,
+    "longitude": -87.992348,
+    "name": "Elk Grove Village village"
+  },
+  "elkhart": {
+    "latitude": 40.012326,
+    "longitude": -89.476113,
+    "name": "Elkhart village"
+  },
+  "elkville": {
+    "latitude": 37.909382,
+    "longitude": -89.237123,
+    "name": "Elkville village"
+  },
+  "elliott": {
+    "latitude": 40.466198,
+    "longitude": -88.276942,
+    "name": "Elliott village"
+  },
+  "ellisgrove": {
+    "latitude": 38.010185,
+    "longitude": -89.91261,
+    "name": "Ellis Grove village"
+  },
+  "ellisville": {
+    "latitude": 40.627308,
+    "longitude": -90.306042,
+    "name": "Ellisville village"
+  },
+  "ellsworth": {
+    "latitude": 40.449532,
+    "longitude": -88.71614,
+    "name": "Ellsworth village"
+  },
+  "elmhurst": {
+    "latitude": 41.897014,
+    "longitude": -87.943657,
+    "name": "Elmhurst city"
+  },
+  "elmwood": {
+    "latitude": 40.780378,
+    "longitude": -89.966141,
+    "name": "Elmwood city"
+  },
+  "elmwoodpark": {
+    "latitude": 41.922458,
+    "longitude": -87.816321,
+    "name": "Elmwood Park village"
+  },
+  "elpaso": {
+    "latitude": 40.740492,
+    "longitude": -89.01825,
+    "name": "El Paso city"
+  },
+  "elsah": {
+    "latitude": 38.954122,
+    "longitude": -90.355257,
+    "name": "Elsah village"
+  },
+  "elvaston": {
+    "latitude": 40.395595,
+    "longitude": -91.248792,
+    "name": "Elvaston village"
+  },
+  "elwin": {
+    "latitude": 39.776207,
+    "longitude": -88.9776,
+    "name": "Elwin CDP"
+  },
+  "elwood": {
+    "latitude": 41.418139,
+    "longitude": -88.11717,
+    "name": "Elwood village"
+  },
+  "emden": {
+    "latitude": 40.298249,
+    "longitude": -89.485125,
+    "name": "Emden village"
+  },
+  "emington": {
+    "latitude": 40.969416,
+    "longitude": -88.35777,
+    "name": "Emington village"
+  },
+  "energy": {
+    "latitude": 37.770658,
+    "longitude": -89.023869,
+    "name": "Energy village"
+  },
+  "enfield": {
+    "latitude": 38.100875,
+    "longitude": -88.338107,
+    "name": "Enfield village"
+  },
+  "equality": {
+    "latitude": 37.736911,
+    "longitude": -88.342211,
+    "name": "Equality village"
+  },
+  "erie": {
+    "latitude": 41.658586,
+    "longitude": -90.081304,
+    "name": "Erie village"
+  },
+  "essex": {
+    "latitude": 41.183053,
+    "longitude": -88.192367,
+    "name": "Essex village"
+  },
+  "eureka": {
+    "latitude": 40.714045,
+    "longitude": -89.277016,
+    "name": "Eureka city"
+  },
+  "evanston": {
+    "latitude": 42.046391,
+    "longitude": -87.694352,
+    "name": "Evanston city"
+  },
+  "evansville": {
+    "latitude": 38.089045,
+    "longitude": -89.932543,
+    "name": "Evansville village"
+  },
+  "evergreenpark": {
+    "latitude": 41.721275,
+    "longitude": -87.701334,
+    "name": "Evergreen Park village"
+  },
+  "ewing": {
+    "latitude": 38.089357,
+    "longitude": -88.85219,
+    "name": "Ewing village"
+  },
+  "exeter": {
+    "latitude": 39.719069,
+    "longitude": -90.496033,
+    "name": "Exeter village"
+  },
+  "fairbury": {
+    "latitude": 40.746183,
+    "longitude": -88.515556,
+    "name": "Fairbury city"
+  },
+  "fairfield": {
+    "latitude": 38.380632,
+    "longitude": -88.372524,
+    "name": "Fairfield city"
+  },
+  "fairmont": {
+    "latitude": 41.561357,
+    "longitude": -88.058722,
+    "name": "Fairmont CDP"
+  },
+  "fairmount": {
+    "latitude": 40.04558,
+    "longitude": -87.829326,
+    "name": "Fairmount village"
+  },
+  "fairview": {
+    "latitude": 40.654735,
+    "longitude": -90.183165,
+    "name": "Fairview village"
+  },
+  "fairviewheights": {
+    "latitude": 38.595341,
+    "longitude": -90.004735,
+    "name": "Fairview Heights city"
+  },
+  "fallcreek": {
+    "latitude": 39.781384,
+    "longitude": -91.30318,
+    "name": "Fall Creek CDP"
+  },
+  "farina": {
+    "latitude": 38.829766,
+    "longitude": -88.78093,
+    "name": "Farina village"
+  },
+  "farmer": {
+    "latitude": 40.248464,
+    "longitude": -88.641655,
+    "name": "Farmer City city"
+  },
+  "farmersville": {
+    "latitude": 39.440677,
+    "longitude": -89.65254,
+    "name": "Farmersville village"
+  },
+  "farmington": {
+    "latitude": 40.697011,
+    "longitude": -90.002312,
+    "name": "Farmington city"
+  },
+  "fayetteville": {
+    "latitude": 38.377813,
+    "longitude": -89.797089,
+    "name": "Fayetteville village"
+  },
+  "ferris": {
+    "latitude": 40.469546,
+    "longitude": -91.168338,
+    "name": "Ferris village"
+  },
+  "fidelity": {
+    "latitude": 39.154609,
+    "longitude": -90.164457,
+    "name": "Fidelity village"
+  },
+  "fieldon": {
+    "latitude": 39.108674,
+    "longitude": -90.499564,
+    "name": "Fieldon village"
+  },
+  "fillmore": {
+    "latitude": 39.114651,
+    "longitude": -89.278932,
+    "name": "Fillmore village"
+  },
+  "findlay": {
+    "latitude": 39.522341,
+    "longitude": -88.754594,
+    "name": "Findlay village"
+  },
+  "fisher": {
+    "latitude": 40.315686,
+    "longitude": -88.350274,
+    "name": "Fisher village"
+  },
+  "fithian": {
+    "latitude": 40.114361,
+    "longitude": -87.874975,
+    "name": "Fithian village"
+  },
+  "flanagan": {
+    "latitude": 40.877373,
+    "longitude": -88.858798,
+    "name": "Flanagan village"
+  },
+  "flatrock": {
+    "latitude": 38.903681,
+    "longitude": -87.673398,
+    "name": "Flat Rock village"
+  },
+  "flora": {
+    "latitude": 38.665617,
+    "longitude": -88.473844,
+    "name": "Flora city"
+  },
+  "floraville": {
+    "latitude": 38.375983,
+    "longitude": -90.056017,
+    "name": "Floraville CDP"
+  },
+  "florence": {
+    "latitude": 39.628417,
+    "longitude": -90.612774,
+    "name": "Florence village"
+  },
+  "flossmoor": {
+    "latitude": 41.539107,
+    "longitude": -87.685704,
+    "name": "Flossmoor village"
+  },
+  "foosland": {
+    "latitude": 40.361081,
+    "longitude": -88.429098,
+    "name": "Foosland village"
+  },
+  "fordheights": {
+    "latitude": 41.511303,
+    "longitude": -87.581226,
+    "name": "Ford Heights village"
+  },
+  "forest": {
+    "latitude": 40.372157,
+    "longitude": -89.832498,
+    "name": "Forest City village"
+  },
+  "forestlake": {
+    "latitude": 42.211835,
+    "longitude": -88.052499,
+    "name": "Forest Lake CDP"
+  },
+  "forestpark": {
+    "latitude": 41.868369,
+    "longitude": -87.815663,
+    "name": "Forest Park village"
+  },
+  "forestview": {
+    "latitude": 41.809097,
+    "longitude": -87.773079,
+    "name": "Forest View village"
+  },
+  "forrest": {
+    "latitude": 40.751094,
+    "longitude": -88.409652,
+    "name": "Forrest village"
+  },
+  "forreston": {
+    "latitude": 42.12725,
+    "longitude": -89.578375,
+    "name": "Forreston village"
+  },
+  "forsyth": {
+    "latitude": 39.926051,
+    "longitude": -88.964082,
+    "name": "Forsyth village"
+  },
+  "fowler": {
+    "latitude": 40.008807,
+    "longitude": -91.257804,
+    "name": "Fowler CDP"
+  },
+  "foxlake": {
+    "latitude": 42.428209,
+    "longitude": -88.183932,
+    "name": "Fox Lake village"
+  },
+  "foxlakehills": {
+    "latitude": 42.413499,
+    "longitude": -88.125987,
+    "name": "Fox Lake Hills CDP"
+  },
+  "foxrivergrove": {
+    "latitude": 42.195491,
+    "longitude": -88.214806,
+    "name": "Fox River Grove village"
+  },
+  "frankfort": {
+    "latitude": 41.507025,
+    "longitude": -87.870966,
+    "name": "Frankfort village"
+  },
+  "frankfortsquare": {
+    "latitude": 41.52194,
+    "longitude": -87.803136,
+    "name": "Frankfort Square CDP"
+  },
+  "franklin": {
+    "latitude": 39.620508,
+    "longitude": -90.047694,
+    "name": "Franklin village"
+  },
+  "franklingrove": {
+    "latitude": 41.841327,
+    "longitude": -89.299966,
+    "name": "Franklin Grove village"
+  },
+  "franklinpark": {
+    "latitude": 41.935983,
+    "longitude": -87.879197,
+    "name": "Franklin Park village"
+  },
+  "franklinville": {
+    "latitude": 42.275449,
+    "longitude": -88.515538,
+    "name": "Franklinville CDP"
+  },
+  "freeburg": {
+    "latitude": 38.439111,
+    "longitude": -89.916209,
+    "name": "Freeburg village"
+  },
+  "freemanspur": {
+    "latitude": 37.859966,
+    "longitude": -88.999861,
+    "name": "Freeman Spur village"
+  },
+  "freeport": {
+    "latitude": 42.289011,
+    "longitude": -89.634265,
+    "name": "Freeport city"
+  },
+  "fulton": {
+    "latitude": 41.865211,
+    "longitude": -90.158715,
+    "name": "Fulton city"
+  },
+  "fults": {
+    "latitude": 38.164371,
+    "longitude": -90.212824,
+    "name": "Fults village"
+  },
+  "gageslake": {
+    "latitude": 42.351645,
+    "longitude": -87.982437,
+    "name": "Gages Lake CDP"
+  },
+  "galatia": {
+    "latitude": 37.841977,
+    "longitude": -88.616482,
+    "name": "Galatia village"
+  },
+  "galena": {
+    "latitude": 42.42206,
+    "longitude": -90.427804,
+    "name": "Galena city"
+  },
+  "galesburg": {
+    "latitude": 40.950217,
+    "longitude": -90.376564,
+    "name": "Galesburg city"
+  },
+  "galt": {
+    "latitude": 41.78939,
+    "longitude": -89.754271,
+    "name": "Galt CDP"
+  },
+  "galva": {
+    "latitude": 41.168966,
+    "longitude": -90.037369,
+    "name": "Galva city"
+  },
+  "gardenprairie": {
+    "latitude": 42.253621,
+    "longitude": -88.712923,
+    "name": "Garden Prairie CDP"
+  },
+  "gardner": {
+    "latitude": 41.194517,
+    "longitude": -88.311457,
+    "name": "Gardner village"
+  },
+  "garrett": {
+    "latitude": 39.797204,
+    "longitude": -88.424641,
+    "name": "Garrett village"
+  },
+  "gays": {
+    "latitude": 39.458294,
+    "longitude": -88.496306,
+    "name": "Gays village"
+  },
+  "geneseo": {
+    "latitude": 41.451252,
+    "longitude": -90.154844,
+    "name": "Geneseo city"
+  },
+  "geneva": {
+    "latitude": 41.882106,
+    "longitude": -88.329479,
+    "name": "Geneva city"
+  },
+  "genoa": {
+    "latitude": 42.091035,
+    "longitude": -88.694964,
+    "name": "Genoa city"
+  },
+  "georgetown": {
+    "latitude": 39.977415,
+    "longitude": -87.635375,
+    "name": "Georgetown city"
+  },
+  "germantown": {
+    "latitude": 38.555276,
+    "longitude": -89.541209,
+    "name": "Germantown village"
+  },
+  "germantownhills": {
+    "latitude": 40.768954,
+    "longitude": -89.462982,
+    "name": "Germantown Hills village"
+  },
+  "germanvalley": {
+    "latitude": 42.214307,
+    "longitude": -89.484646,
+    "name": "German Valley village"
+  },
+  "gibson": {
+    "latitude": 40.466831,
+    "longitude": -88.379205,
+    "name": "Gibson City city"
+  },
+  "gifford": {
+    "latitude": 40.307789,
+    "longitude": -88.021384,
+    "name": "Gifford village"
+  },
+  "gilberts": {
+    "latitude": 42.109981,
+    "longitude": -88.371882,
+    "name": "Gilberts village"
+  },
+  "gillespie": {
+    "latitude": 39.125435,
+    "longitude": -89.817283,
+    "name": "Gillespie city"
+  },
+  "gilman": {
+    "latitude": 40.763498,
+    "longitude": -88.00208,
+    "name": "Gilman city"
+  },
+  "gilson": {
+    "latitude": 40.86271,
+    "longitude": -90.199062,
+    "name": "Gilson CDP"
+  },
+  "girard": {
+    "latitude": 39.44658,
+    "longitude": -89.782047,
+    "name": "Girard city"
+  },
+  "gladstone": {
+    "latitude": 40.86431,
+    "longitude": -90.956574,
+    "name": "Gladstone village"
+  },
+  "glasford": {
+    "latitude": 40.572808,
+    "longitude": -89.813085,
+    "name": "Glasford village"
+  },
+  "glasgow": {
+    "latitude": 39.548717,
+    "longitude": -90.479992,
+    "name": "Glasgow village"
+  },
+  "glencarbon": {
+    "latitude": 38.758246,
+    "longitude": -89.983121,
+    "name": "Glen Carbon village"
+  },
+  "glencoe": {
+    "latitude": 42.134489,
+    "longitude": -87.763178,
+    "name": "Glencoe village"
+  },
+  "glendaleheights": {
+    "latitude": 41.918877,
+    "longitude": -88.078095,
+    "name": "Glendale Heights village"
+  },
+  "glenellyn": {
+    "latitude": 41.866715,
+    "longitude": -88.062711,
+    "name": "Glen Ellyn village"
+  },
+  "glenview": {
+    "latitude": 42.085162,
+    "longitude": -87.827388,
+    "name": "Glenview village"
+  },
+  "glenwood": {
+    "latitude": 41.541033,
+    "longitude": -87.611681,
+    "name": "Glenwood village"
+  },
+  "godfrey": {
+    "latitude": 38.952893,
+    "longitude": -90.222545,
+    "name": "Godfrey village"
+  },
+  "godley": {
+    "latitude": 41.244377,
+    "longitude": -88.24262,
+    "name": "Godley village"
+  },
+  "golconda": {
+    "latitude": 37.362137,
+    "longitude": -88.486721,
+    "name": "Golconda city"
+  },
+  "golden": {
+    "latitude": 40.110314,
+    "longitude": -91.019183,
+    "name": "Golden village"
+  },
+  "goldengate": {
+    "latitude": 38.358877,
+    "longitude": -88.204677,
+    "name": "Golden Gate village"
+  },
+  "golf": {
+    "latitude": 42.058549,
+    "longitude": -87.784941,
+    "name": "Golf village"
+  },
+  "goodenow": {
+    "latitude": 41.392195,
+    "longitude": -87.639671,
+    "name": "Goodenow CDP"
+  },
+  "goodfield": {
+    "latitude": 40.63059,
+    "longitude": -89.258083,
+    "name": "Goodfield village"
+  },
+  "goodhope": {
+    "latitude": 40.557402,
+    "longitude": -90.675291,
+    "name": "Good Hope village"
+  },
+  "goofyridge": {
+    "latitude": 40.394896,
+    "longitude": -89.940732,
+    "name": "Goofy Ridge CDP"
+  },
+  "goreville": {
+    "latitude": 37.555077,
+    "longitude": -88.973533,
+    "name": "Goreville village"
+  },
+  "gorham": {
+    "latitude": 37.717871,
+    "longitude": -89.477939,
+    "name": "Gorham village"
+  },
+  "grafton": {
+    "latitude": 38.976454,
+    "longitude": -90.425698,
+    "name": "Grafton city"
+  },
+  "granddetour": {
+    "latitude": 41.901154,
+    "longitude": -89.41309,
+    "name": "Grand Detour CDP"
+  },
+  "grandridge": {
+    "latitude": 41.236136,
+    "longitude": -88.831029,
+    "name": "Grand Ridge village"
+  },
+  "grandtower": {
+    "latitude": 37.64168,
+    "longitude": -89.506723,
+    "name": "Grand Tower city"
+  },
+  "grandview": {
+    "latitude": 39.817518,
+    "longitude": -89.61802,
+    "name": "Grandview village"
+  },
+  "grandwoodpark": {
+    "latitude": 42.392144,
+    "longitude": -87.989218,
+    "name": "Grandwood Park CDP"
+  },
+  "granite": {
+    "latitude": 38.729283,
+    "longitude": -90.125472,
+    "name": "Granite City city"
+  },
+  "grantfork": {
+    "latitude": 38.826398,
+    "longitude": -89.66655,
+    "name": "Grantfork village"
+  },
+  "grantpark": {
+    "latitude": 41.242747,
+    "longitude": -87.635847,
+    "name": "Grant Park village"
+  },
+  "granville": {
+    "latitude": 41.265796,
+    "longitude": -89.230476,
+    "name": "Granville village"
+  },
+  "grayslake": {
+    "latitude": 42.34082,
+    "longitude": -88.033563,
+    "name": "Grayslake village"
+  },
+  "grayville": {
+    "latitude": 38.255135,
+    "longitude": -87.996927,
+    "name": "Grayville city"
+  },
+  "greenfield": {
+    "latitude": 39.344487,
+    "longitude": -90.208191,
+    "name": "Greenfield city"
+  },
+  "greenoaks": {
+    "latitude": 42.299987,
+    "longitude": -87.910961,
+    "name": "Green Oaks village"
+  },
+  "greenup": {
+    "latitude": 39.247946,
+    "longitude": -88.160025,
+    "name": "Greenup village"
+  },
+  "greenvalley": {
+    "latitude": 40.407245,
+    "longitude": -89.644181,
+    "name": "Green Valley village"
+  },
+  "greenview": {
+    "latitude": 40.084918,
+    "longitude": -89.740524,
+    "name": "Greenview village"
+  },
+  "greenville": {
+    "latitude": 38.886602,
+    "longitude": -89.389425,
+    "name": "Greenville city"
+  },
+  "greenwood": {
+    "latitude": 42.395384,
+    "longitude": -88.383803,
+    "name": "Greenwood village"
+  },
+  "gridley": {
+    "latitude": 40.743684,
+    "longitude": -88.880908,
+    "name": "Gridley village"
+  },
+  "griggsville": {
+    "latitude": 39.707825,
+    "longitude": -90.727608,
+    "name": "Griggsville city"
+  },
+  "gulfport": {
+    "latitude": 40.808975,
+    "longitude": -91.084054,
+    "name": "Gulfport village"
+  },
+  "gurnee": {
+    "latitude": 42.370085,
+    "longitude": -87.936805,
+    "name": "Gurnee village"
+  },
+  "hainesville": {
+    "latitude": 42.336184,
+    "longitude": -88.073446,
+    "name": "Hainesville village"
+  },
+  "hamburg": {
+    "latitude": 39.232342,
+    "longitude": -90.715599,
+    "name": "Hamburg village"
+  },
+  "hamel": {
+    "latitude": 38.892463,
+    "longitude": -89.838728,
+    "name": "Hamel village"
+  },
+  "hamilton": {
+    "latitude": 40.391484,
+    "longitude": -91.361302,
+    "name": "Hamilton city"
+  },
+  "hamlet": {
+    "latitude": 41.311678,
+    "longitude": -90.733124,
+    "name": "Hamlet CDP"
+  },
+  "hammond": {
+    "latitude": 39.800212,
+    "longitude": -88.593084,
+    "name": "Hammond village"
+  },
+  "hampshire": {
+    "latitude": 42.116614,
+    "longitude": -88.505165,
+    "name": "Hampshire village"
+  },
+  "hampton": {
+    "latitude": 41.556548,
+    "longitude": -90.403432,
+    "name": "Hampton village"
+  },
+  "hanaford": {
+    "latitude": 37.955201,
+    "longitude": -88.831018,
+    "name": "Hanaford village"
+  },
+  "hanna": {
+    "latitude": 40.69315,
+    "longitude": -89.805029,
+    "name": "Hanna City village"
+  },
+  "hanover": {
+    "latitude": 42.255192,
+    "longitude": -90.273636,
+    "name": "Hanover village"
+  },
+  "hanoverpark": {
+    "latitude": 41.982485,
+    "longitude": -88.14287,
+    "name": "Hanover Park village"
+  },
+  "hardin": {
+    "latitude": 39.158973,
+    "longitude": -90.623141,
+    "name": "Hardin village"
+  },
+  "harding": {
+    "latitude": 41.517819,
+    "longitude": -88.84886,
+    "name": "Harding CDP"
+  },
+  "harmon": {
+    "latitude": 41.723456,
+    "longitude": -89.553907,
+    "name": "Harmon village"
+  },
+  "harmony": {
+    "latitude": 42.158906,
+    "longitude": -88.528598,
+    "name": "Harmony CDP"
+  },
+  "harrisburg": {
+    "latitude": 37.737717,
+    "longitude": -88.545818,
+    "name": "Harrisburg city"
+  },
+  "harrison": {
+    "latitude": 37.797557,
+    "longitude": -89.335972,
+    "name": "Harrison CDP"
+  },
+  "harristown": {
+    "latitude": 39.842945,
+    "longitude": -89.05979,
+    "name": "Harristown village"
+  },
+  "hartford": {
+    "latitude": 38.813086,
+    "longitude": -90.092073,
+    "name": "Hartford village"
+  },
+  "hartland": {
+    "latitude": 42.363077,
+    "longitude": -88.508584,
+    "name": "Hartland CDP"
+  },
+  "hartsburg": {
+    "latitude": 40.250567,
+    "longitude": -89.441113,
+    "name": "Hartsburg village"
+  },
+  "harvard": {
+    "latitude": 42.42964,
+    "longitude": -88.621065,
+    "name": "Harvard city"
+  },
+  "harvel": {
+    "latitude": 39.357745,
+    "longitude": -89.532239,
+    "name": "Harvel village"
+  },
+  "harvey": {
+    "latitude": 41.607583,
+    "longitude": -87.65199,
+    "name": "Harvey city"
+  },
+  "harwoodheights": {
+    "latitude": 41.966318,
+    "longitude": -87.80559,
+    "name": "Harwood Heights village"
+  },
+  "havana": {
+    "latitude": 40.295109,
+    "longitude": -90.05781,
+    "name": "Havana city"
+  },
+  "hawthornwoods": {
+    "latitude": 42.235755,
+    "longitude": -88.067833,
+    "name": "Hawthorn Woods village"
+  },
+  "hazelcrest": {
+    "latitude": 41.573535,
+    "longitude": -87.687967,
+    "name": "Hazel Crest village"
+  },
+  "hebron": {
+    "latitude": 42.465377,
+    "longitude": -88.434416,
+    "name": "Hebron village"
+  },
+  "hecker": {
+    "latitude": 38.304889,
+    "longitude": -89.993153,
+    "name": "Hecker village"
+  },
+  "henderson": {
+    "latitude": 41.023878,
+    "longitude": -90.353581,
+    "name": "Henderson village"
+  },
+  "hennepin": {
+    "latitude": 41.250527,
+    "longitude": -89.314094,
+    "name": "Hennepin village"
+  },
+  "henning": {
+    "latitude": 40.306855,
+    "longitude": -87.700956,
+    "name": "Henning village"
+  },
+  "henry": {
+    "latitude": 41.117367,
+    "longitude": -89.357282,
+    "name": "Henry city"
+  },
+  "heritagelake": {
+    "latitude": 40.546625,
+    "longitude": -89.32958,
+    "name": "Heritage Lake CDP"
+  },
+  "herrick": {
+    "latitude": 39.219616,
+    "longitude": -88.984789,
+    "name": "Herrick village"
+  },
+  "herrin": {
+    "latitude": 37.798389,
+    "longitude": -89.03065,
+    "name": "Herrin city"
+  },
+  "herscher": {
+    "latitude": 41.04917,
+    "longitude": -88.10057,
+    "name": "Herscher village"
+  },
+  "hettick": {
+    "latitude": 39.355736,
+    "longitude": -90.037407,
+    "name": "Hettick village"
+  },
+  "heyworth": {
+    "latitude": 40.314356,
+    "longitude": -88.992276,
+    "name": "Heyworth village"
+  },
+  "hickoryhills": {
+    "latitude": 41.724778,
+    "longitude": -87.828005,
+    "name": "Hickory Hills city"
+  },
+  "hidalgo": {
+    "latitude": 39.155917,
+    "longitude": -88.149096,
+    "name": "Hidalgo village"
+  },
+  "highland": {
+    "latitude": 38.769821,
+    "longitude": -89.686109,
+    "name": "Highland city"
+  },
+  "highlandpark": {
+    "latitude": 42.182372,
+    "longitude": -87.810845,
+    "name": "Highland Park city"
+  },
+  "highwood": {
+    "latitude": 42.206018,
+    "longitude": -87.812945,
+    "name": "Highwood city"
+  },
+  "hillcrest": {
+    "latitude": 41.966829,
+    "longitude": -89.062559,
+    "name": "Hillcrest village"
+  },
+  "hillsboro": {
+    "latitude": 39.176235,
+    "longitude": -89.472908,
+    "name": "Hillsboro city"
+  },
+  "hillsdale": {
+    "latitude": 41.606921,
+    "longitude": -90.172821,
+    "name": "Hillsdale village"
+  },
+  "hillside": {
+    "latitude": 41.867524,
+    "longitude": -87.901839,
+    "name": "Hillside village"
+  },
+  "hillview": {
+    "latitude": 39.449555,
+    "longitude": -90.538574,
+    "name": "Hillview village"
+  },
+  "hinckley": {
+    "latitude": 41.771425,
+    "longitude": -88.640361,
+    "name": "Hinckley village"
+  },
+  "hindsboro": {
+    "latitude": 39.684775,
+    "longitude": -88.134729,
+    "name": "Hindsboro village"
+  },
+  "hinsdale": {
+    "latitude": 41.800683,
+    "longitude": -87.928172,
+    "name": "Hinsdale village"
+  },
+  "hodgkins": {
+    "latitude": 41.766066,
+    "longitude": -87.861944,
+    "name": "Hodgkins village"
+  },
+  "hoffman": {
+    "latitude": 38.540484,
+    "longitude": -89.264342,
+    "name": "Hoffman village"
+  },
+  "hoffmanestates": {
+    "latitude": 42.064404,
+    "longitude": -88.14463,
+    "name": "Hoffman Estates village"
+  },
+  "holcomb": {
+    "latitude": 42.064521,
+    "longitude": -89.096993,
+    "name": "Holcomb CDP"
+  },
+  "holidayhills": {
+    "latitude": 42.295944,
+    "longitude": -88.228842,
+    "name": "Holiday Hills village"
+  },
+  "holidayshores": {
+    "latitude": 38.92714,
+    "longitude": -89.938862,
+    "name": "Holiday Shores CDP"
+  },
+  "hollowayville": {
+    "latitude": 41.364686,
+    "longitude": -89.294878,
+    "name": "Hollowayville village"
+  },
+  "homer": {
+    "latitude": 40.032985,
+    "longitude": -87.957755,
+    "name": "Homer village"
+  },
+  "homerglen": {
+    "latitude": 41.605179,
+    "longitude": -87.952373,
+    "name": "Homer Glen village"
+  },
+  "hometown": {
+    "latitude": 41.731248,
+    "longitude": -87.731134,
+    "name": "Hometown city"
+  },
+  "homewood": {
+    "latitude": 41.558549,
+    "longitude": -87.66134,
+    "name": "Homewood village"
+  },
+  "hoopeston": {
+    "latitude": 40.460824,
+    "longitude": -87.663572,
+    "name": "Hoopeston city"
+  },
+  "hooppole": {
+    "latitude": 41.521849,
+    "longitude": -89.913968,
+    "name": "Hooppole village"
+  },
+  "hopedale": {
+    "latitude": 40.423391,
+    "longitude": -89.422321,
+    "name": "Hopedale village"
+  },
+  "hopewell": {
+    "latitude": 40.984237,
+    "longitude": -89.457123,
+    "name": "Hopewell village"
+  },
+  "hopkinspark": {
+    "latitude": 41.069033,
+    "longitude": -87.606353,
+    "name": "Hopkins Park village"
+  },
+  "hoyleton": {
+    "latitude": 38.445703,
+    "longitude": -89.272101,
+    "name": "Hoyleton village"
+  },
+  "hudson": {
+    "latitude": 40.605434,
+    "longitude": -88.989023,
+    "name": "Hudson village"
+  },
+  "huey": {
+    "latitude": 38.605285,
+    "longitude": -89.289973,
+    "name": "Huey village"
+  },
+  "hull": {
+    "latitude": 39.710777,
+    "longitude": -91.200796,
+    "name": "Hull village"
+  },
+  "humboldt": {
+    "latitude": 39.604684,
+    "longitude": -88.32012,
+    "name": "Humboldt village"
+  },
+  "hume": {
+    "latitude": 39.798131,
+    "longitude": -87.86846,
+    "name": "Hume village"
+  },
+  "huntley": {
+    "latitude": 42.160801,
+    "longitude": -88.435461,
+    "name": "Huntley village"
+  },
+  "hurst": {
+    "latitude": 37.837031,
+    "longitude": -89.147364,
+    "name": "Hurst city"
+  },
+  "hutsonville": {
+    "latitude": 39.109569,
+    "longitude": -87.664676,
+    "name": "Hutsonville village"
+  },
+  "illinois": {
+    "latitude": 41.399145,
+    "longitude": -90.899652,
+    "name": "Illinois City CDP"
+  },
+  "illiopolis": {
+    "latitude": 39.849753,
+    "longitude": -89.252051,
+    "name": "Illiopolis village"
+  },
+  "ina": {
+    "latitude": 38.149892,
+    "longitude": -88.904019,
+    "name": "Ina village"
+  },
+  "indiancreek": {
+    "latitude": 42.227205,
+    "longitude": -87.978359,
+    "name": "Indian Creek village"
+  },
+  "indianheadpark": {
+    "latitude": 41.768433,
+    "longitude": -87.897405,
+    "name": "Indian Head Park village"
+  },
+  "indianola": {
+    "latitude": 39.927064,
+    "longitude": -87.740241,
+    "name": "Indianola village"
+  },
+  "industry": {
+    "latitude": 40.327275,
+    "longitude": -90.60805,
+    "name": "Industry village"
+  },
+  "ingallspark": {
+    "latitude": 41.520402,
+    "longitude": -88.034459,
+    "name": "Ingalls Park CDP"
+  },
+  "inverness": {
+    "latitude": 42.115136,
+    "longitude": -88.100894,
+    "name": "Inverness village"
+  },
+  "iola": {
+    "latitude": 38.834059,
+    "longitude": -88.627837,
+    "name": "Iola village"
+  },
+  "ipava": {
+    "latitude": 40.352569,
+    "longitude": -90.323389,
+    "name": "Ipava village"
+  },
+  "iroquois": {
+    "latitude": 40.828872,
+    "longitude": -87.584225,
+    "name": "Iroquois village"
+  },
+  "irving": {
+    "latitude": 39.205461,
+    "longitude": -89.405249,
+    "name": "Irving village"
+  },
+  "irvington": {
+    "latitude": 38.438393,
+    "longitude": -89.160268,
+    "name": "Irvington village"
+  },
+  "irwin": {
+    "latitude": 41.053069,
+    "longitude": -87.983926,
+    "name": "Irwin village"
+  },
+  "islandlake": {
+    "latitude": 42.278773,
+    "longitude": -88.200494,
+    "name": "Island Lake village"
+  },
+  "itasca": {
+    "latitude": 41.976616,
+    "longitude": -88.018775,
+    "name": "Itasca village"
+  },
+  "iuka": {
+    "latitude": 38.617806,
+    "longitude": -88.788263,
+    "name": "Iuka village"
+  },
+  "ivesdale": {
+    "latitude": 39.945806,
+    "longitude": -88.455819,
+    "name": "Ivesdale village"
+  },
+  "jacksonville": {
+    "latitude": 39.729151,
+    "longitude": -90.232201,
+    "name": "Jacksonville city"
+  },
+  "janesville": {
+    "latitude": 39.375243,
+    "longitude": -88.244991,
+    "name": "Janesville CDP"
+  },
+  "jeffersonville": {
+    "latitude": 38.442503,
+    "longitude": -88.403968,
+    "name": "Jeffersonville village"
+  },
+  "jeisyville": {
+    "latitude": 39.579165,
+    "longitude": -89.408057,
+    "name": "Jeisyville village"
+  },
+  "jerome": {
+    "latitude": 39.767751,
+    "longitude": -89.678378,
+    "name": "Jerome village"
+  },
+  "jerseyville": {
+    "latitude": 39.117243,
+    "longitude": -90.326718,
+    "name": "Jerseyville city"
+  },
+  "jewett": {
+    "latitude": 39.207709,
+    "longitude": -88.24307,
+    "name": "Jewett village"
+  },
+  "johnsburg": {
+    "latitude": 42.383246,
+    "longitude": -88.246763,
+    "name": "Johnsburg village"
+  },
+  "johnsonville": {
+    "latitude": 38.520873,
+    "longitude": -88.538223,
+    "name": "Johnsonville village"
+  },
+  "johnston": {
+    "latitude": 37.821035,
+    "longitude": -88.929295,
+    "name": "Johnston City city"
+  },
+  "joliet": {
+    "latitude": 41.516866,
+    "longitude": -88.147963,
+    "name": "Joliet city"
+  },
+  "jonesboro": {
+    "latitude": 37.450952,
+    "longitude": -89.266574,
+    "name": "Jonesboro city"
+  },
+  "joppa": {
+    "latitude": 37.209217,
+    "longitude": -88.847032,
+    "name": "Joppa village"
+  },
+  "joslin": {
+    "latitude": 41.544577,
+    "longitude": -90.221868,
+    "name": "Joslin CDP"
+  },
+  "joy": {
+    "latitude": 41.196922,
+    "longitude": -90.878792,
+    "name": "Joy village"
+  },
+  "junction": {
+    "latitude": 37.723368,
+    "longitude": -88.237671,
+    "name": "Junction village"
+  },
+  "justice": {
+    "latitude": 41.753401,
+    "longitude": -87.826941,
+    "name": "Justice village"
+  },
+  "kampsville": {
+    "latitude": 39.297181,
+    "longitude": -90.612931,
+    "name": "Kampsville village"
+  },
+  "kane": {
+    "latitude": 39.190489,
+    "longitude": -90.35118,
+    "name": "Kane village"
+  },
+  "kaneville": {
+    "latitude": 41.833246,
+    "longitude": -88.521642,
+    "name": "Kaneville village"
+  },
+  "kangley": {
+    "latitude": 41.148004,
+    "longitude": -88.872087,
+    "name": "Kangley village"
+  },
+  "kankakee": {
+    "latitude": 41.101654,
+    "longitude": -87.86369,
+    "name": "Kankakee city"
+  },
+  "kansas": {
+    "latitude": 39.55446,
+    "longitude": -87.939554,
+    "name": "Kansas village"
+  },
+  "kappa": {
+    "latitude": 40.675442,
+    "longitude": -89.005966,
+    "name": "Kappa village"
+  },
+  "karnak": {
+    "latitude": 37.294168,
+    "longitude": -88.976066,
+    "name": "Karnak village"
+  },
+  "kaskaskia": {
+    "latitude": 37.92128,
+    "longitude": -89.916325,
+    "name": "Kaskaskia village"
+  },
+  "keenes": {
+    "latitude": 38.338583,
+    "longitude": -88.641916,
+    "name": "Keenes village"
+  },
+  "keensburg": {
+    "latitude": 38.351831,
+    "longitude": -87.868261,
+    "name": "Keensburg village"
+  },
+  "keithsburg": {
+    "latitude": 41.099971,
+    "longitude": -90.936059,
+    "name": "Keithsburg city"
+  },
+  "kell": {
+    "latitude": 38.487552,
+    "longitude": -88.90001,
+    "name": "Kell village"
+  },
+  "kempton": {
+    "latitude": 40.935469,
+    "longitude": -88.236253,
+    "name": "Kempton village"
+  },
+  "kenilworth": {
+    "latitude": 42.088818,
+    "longitude": -87.714497,
+    "name": "Kenilworth village"
+  },
+  "kenney": {
+    "latitude": 40.098025,
+    "longitude": -89.086228,
+    "name": "Kenney village"
+  },
+  "kewanee": {
+    "latitude": 41.239087,
+    "longitude": -89.92566,
+    "name": "Kewanee city"
+  },
+  "keyesport": {
+    "latitude": 38.74642,
+    "longitude": -89.273756,
+    "name": "Keyesport village"
+  },
+  "kilbourne": {
+    "latitude": 40.151909,
+    "longitude": -90.011518,
+    "name": "Kilbourne village"
+  },
+  "kildeer": {
+    "latitude": 42.181353,
+    "longitude": -88.048935,
+    "name": "Kildeer village"
+  },
+  "kincaid": {
+    "latitude": 39.586808,
+    "longitude": -89.416476,
+    "name": "Kincaid village"
+  },
+  "kinderhook": {
+    "latitude": 39.703775,
+    "longitude": -91.152553,
+    "name": "Kinderhook village"
+  },
+  "kings": {
+    "latitude": 42.003146,
+    "longitude": -89.107023,
+    "name": "Kings CDP"
+  },
+  "kingston": {
+    "latitude": 39.819449,
+    "longitude": -91.027001,
+    "name": "Kingston CDP"
+  },
+  "kingstonmines": {
+    "latitude": 40.558372,
+    "longitude": -89.77105,
+    "name": "Kingston Mines village"
+  },
+  "kinmundy": {
+    "latitude": 38.772143,
+    "longitude": -88.853462,
+    "name": "Kinmundy city"
+  },
+  "kinsman": {
+    "latitude": 41.190238,
+    "longitude": -88.570024,
+    "name": "Kinsman village"
+  },
+  "kirkland": {
+    "latitude": 42.090164,
+    "longitude": -88.848625,
+    "name": "Kirkland village"
+  },
+  "kirkwood": {
+    "latitude": 40.867774,
+    "longitude": -90.748312,
+    "name": "Kirkwood village"
+  },
+  "knollwood": {
+    "latitude": 42.284584,
+    "longitude": -87.879318,
+    "name": "Knollwood CDP"
+  },
+  "knoxville": {
+    "latitude": 40.906931,
+    "longitude": -90.285697,
+    "name": "Knoxville city"
+  },
+  "laclede": {
+    "latitude": 38.880611,
+    "longitude": -88.712708,
+    "name": "La Clede CDP"
+  },
+  "lacon": {
+    "latitude": 41.022897,
+    "longitude": -89.40633,
+    "name": "Lacon city"
+  },
+  "ladd": {
+    "latitude": 41.381391,
+    "longitude": -89.21434,
+    "name": "Ladd village"
+  },
+  "lafayette": {
+    "latitude": 41.109606,
+    "longitude": -89.973522,
+    "name": "La Fayette village"
+  },
+  "lagrange": {
+    "latitude": 41.807213,
+    "longitude": -87.874148,
+    "name": "La Grange village"
+  },
+  "lagrangepark": {
+    "latitude": 41.830778,
+    "longitude": -87.872274,
+    "name": "La Grange Park village"
+  },
+  "laharpe": {
+    "latitude": 40.584786,
+    "longitude": -90.969533,
+    "name": "La Harpe city"
+  },
+  "lake": {
+    "latitude": 39.753585,
+    "longitude": -88.718578,
+    "name": "Lake City CDP"
+  },
+  "lakebarrington": {
+    "latitude": 42.210237,
+    "longitude": -88.169491,
+    "name": "Lake Barrington village"
+  },
+  "lakebluff": {
+    "latitude": 42.282695,
+    "longitude": -87.852306,
+    "name": "Lake Bluff village"
+  },
+  "lakecamelot": {
+    "latitude": 40.635059,
+    "longitude": -89.753005,
+    "name": "Lake Camelot CDP"
+  },
+  "lakecarroll": {
+    "latitude": 42.170626,
+    "longitude": -89.864716,
+    "name": "Lake Carroll CDP"
+  },
+  "lakecatherine": {
+    "latitude": 42.483383,
+    "longitude": -88.125413,
+    "name": "Lake Catherine CDP"
+  },
+  "lakeforest": {
+    "latitude": 42.23535,
+    "longitude": -87.857305,
+    "name": "Lake Forest city"
+  },
+  "lakeholiday": {
+    "latitude": 41.620087,
+    "longitude": -88.664899,
+    "name": "Lake Holiday CDP"
+  },
+  "lakeinthehills": {
+    "latitude": 42.179357,
+    "longitude": -88.315468,
+    "name": "Lake in the Hills village"
+  },
+  "lakekaho": {
+    "latitude": 39.096968,
+    "longitude": -89.746135,
+    "name": "Lake Ka-Ho village"
+  },
+  "lakemoor": {
+    "latitude": 42.338872,
+    "longitude": -88.202665,
+    "name": "Lakemoor village"
+  },
+  "lakeofthewoods": {
+    "latitude": 40.20522,
+    "longitude": -88.374622,
+    "name": "Lake of the Woods CDP"
+  },
+  "lakepetersburg": {
+    "latitude": 39.984313,
+    "longitude": -89.856159,
+    "name": "Lake Petersburg CDP"
+  },
+  "lakesummerset": {
+    "latitude": 42.45399,
+    "longitude": -89.390149,
+    "name": "Lake Summerset CDP"
+  },
+  "lakevilla": {
+    "latitude": 42.417573,
+    "longitude": -88.082609,
+    "name": "Lake Villa village"
+  },
+  "lakewood": {
+    "latitude": 42.224479,
+    "longitude": -88.386679,
+    "name": "Lakewood village"
+  },
+  "lakewoodshores": {
+    "latitude": 41.280146,
+    "longitude": -88.142813,
+    "name": "Lakewood Shores CDP"
+  },
+  "lakezurich": {
+    "latitude": 42.195009,
+    "longitude": -88.087729,
+    "name": "Lake Zurich village"
+  },
+  "lamoille": {
+    "latitude": 41.530377,
+    "longitude": -89.284351,
+    "name": "La Moille village"
+  },
+  "lanark": {
+    "latitude": 42.101885,
+    "longitude": -89.833399,
+    "name": "Lanark city"
+  },
+  "lane": {
+    "latitude": 40.121952,
+    "longitude": -88.85575,
+    "name": "Lane CDP"
+  },
+  "langleyville": {
+    "latitude": 39.561107,
+    "longitude": -89.360255,
+    "name": "Langleyville CDP"
+  },
+  "lansing": {
+    "latitude": 41.565004,
+    "longitude": -87.546004,
+    "name": "Lansing village"
+  },
+  "laplace": {
+    "latitude": 39.797545,
+    "longitude": -88.714511,
+    "name": "LaPlace CDP"
+  },
+  "laprairie": {
+    "latitude": 40.147278,
+    "longitude": -91.002449,
+    "name": "La Prairie village"
+  },
+  "larose": {
+    "latitude": 40.978732,
+    "longitude": -89.234954,
+    "name": "La Rose village"
+  },
+  "lasalle": {
+    "latitude": 41.335176,
+    "longitude": -89.097245,
+    "name": "LaSalle city"
+  },
+  "latham": {
+    "latitude": 39.966968,
+    "longitude": -89.162292,
+    "name": "Latham village"
+  },
+  "lawrence": {
+    "latitude": 42.4433,
+    "longitude": -88.64171,
+    "name": "Lawrence CDP"
+  },
+  "lawrenceville": {
+    "latitude": 38.726345,
+    "longitude": -87.687289,
+    "name": "Lawrenceville city"
+  },
+  "leafriver": {
+    "latitude": 42.123257,
+    "longitude": -89.403968,
+    "name": "Leaf River village"
+  },
+  "lebanon": {
+    "latitude": 38.600653,
+    "longitude": -89.809653,
+    "name": "Lebanon city"
+  },
+  "lee": {
+    "latitude": 41.795397,
+    "longitude": -88.94167,
+    "name": "Lee village"
+  },
+  "leecenter": {
+    "latitude": 41.750289,
+    "longitude": -89.276223,
+    "name": "Lee Center CDP"
+  },
+  "leland": {
+    "latitude": 41.615964,
+    "longitude": -88.798309,
+    "name": "Leland village"
+  },
+  "lelandgrove": {
+    "latitude": 39.778702,
+    "longitude": -89.683909,
+    "name": "Leland Grove city"
+  },
+  "lemont": {
+    "latitude": 41.667328,
+    "longitude": -87.984411,
+    "name": "Lemont village"
+  },
+  "lena": {
+    "latitude": 42.378511,
+    "longitude": -89.821665,
+    "name": "Lena village"
+  },
+  "lenzburg": {
+    "latitude": 38.28635,
+    "longitude": -89.81778,
+    "name": "Lenzburg village"
+  },
+  "leonore": {
+    "latitude": 41.188903,
+    "longitude": -88.982272,
+    "name": "Leonore village"
+  },
+  "lerna": {
+    "latitude": 39.417876,
+    "longitude": -88.288783,
+    "name": "Lerna village"
+  },
+  "leroy": {
+    "latitude": 40.339371,
+    "longitude": -88.761098,
+    "name": "Le Roy city"
+  },
+  "lewistown": {
+    "latitude": 40.396861,
+    "longitude": -90.15551,
+    "name": "Lewistown city"
+  },
+  "lexington": {
+    "latitude": 40.646951,
+    "longitude": -88.784141,
+    "name": "Lexington city"
+  },
+  "liberty": {
+    "latitude": 39.879747,
+    "longitude": -91.106595,
+    "name": "Liberty village"
+  },
+  "libertyville": {
+    "latitude": 42.284667,
+    "longitude": -87.966503,
+    "name": "Libertyville village"
+  },
+  "lilylake": {
+    "latitude": 41.957294,
+    "longitude": -88.472014,
+    "name": "Lily Lake village"
+  },
+  "lima": {
+    "latitude": 40.177036,
+    "longitude": -91.378298,
+    "name": "Lima village"
+  },
+  "limestone": {
+    "latitude": 41.132968,
+    "longitude": -87.962249,
+    "name": "Limestone village"
+  },
+  "lincoln": {
+    "latitude": 40.150678,
+    "longitude": -89.370273,
+    "name": "Lincoln city"
+  },
+  "lincolnshire": {
+    "latitude": 42.196518,
+    "longitude": -87.917737,
+    "name": "Lincolnshire village"
+  },
+  "lincolnwood": {
+    "latitude": 42.00543,
+    "longitude": -87.732959,
+    "name": "Lincolnwood village"
+  },
+  "lindenhurst": {
+    "latitude": 42.417147,
+    "longitude": -88.026434,
+    "name": "Lindenhurst village"
+  },
+  "lisbon": {
+    "latitude": 41.480652,
+    "longitude": -88.455735,
+    "name": "Lisbon village"
+  },
+  "lisle": {
+    "latitude": 41.792111,
+    "longitude": -88.087705,
+    "name": "Lisle village"
+  },
+  "litchfield": {
+    "latitude": 39.175963,
+    "longitude": -89.665482,
+    "name": "Litchfield city"
+  },
+  "literberry": {
+    "latitude": 39.851583,
+    "longitude": -90.197871,
+    "name": "Literberry CDP"
+  },
+  "littleton": {
+    "latitude": 40.234,
+    "longitude": -90.622315,
+    "name": "Littleton village"
+  },
+  "littleyork": {
+    "latitude": 41.01093,
+    "longitude": -90.747241,
+    "name": "Little York village"
+  },
+  "liverpool": {
+    "latitude": 40.389905,
+    "longitude": -90.001642,
+    "name": "Liverpool village"
+  },
+  "livingston": {
+    "latitude": 38.968596,
+    "longitude": -89.763737,
+    "name": "Livingston village"
+  },
+  "loami": {
+    "latitude": 39.6741,
+    "longitude": -89.847896,
+    "name": "Loami village"
+  },
+  "lockport": {
+    "latitude": 41.591001,
+    "longitude": -88.029697,
+    "name": "Lockport city"
+  },
+  "lockportheights": {
+    "latitude": 41.62149,
+    "longitude": -88.022401,
+    "name": "Lockport Heights CDP"
+  },
+  "loda": {
+    "latitude": 40.514887,
+    "longitude": -88.076169,
+    "name": "Loda village"
+  },
+  "lomax": {
+    "latitude": 40.679155,
+    "longitude": -91.075413,
+    "name": "Lomax village"
+  },
+  "lombard": {
+    "latitude": 41.873844,
+    "longitude": -88.015491,
+    "name": "Lombard village"
+  },
+  "londonmills": {
+    "latitude": 40.710577,
+    "longitude": -90.266154,
+    "name": "London Mills village"
+  },
+  "longcreek": {
+    "latitude": 39.805225,
+    "longitude": -88.847311,
+    "name": "Long Creek village"
+  },
+  "longgrove": {
+    "latitude": 42.195016,
+    "longitude": -88.011032,
+    "name": "Long Grove village"
+  },
+  "longlake": {
+    "latitude": 42.372117,
+    "longitude": -88.127342,
+    "name": "Long Lake CDP"
+  },
+  "longpoint": {
+    "latitude": 41.005256,
+    "longitude": -88.893031,
+    "name": "Long Point village"
+  },
+  "longview": {
+    "latitude": 39.885918,
+    "longitude": -88.06621,
+    "name": "Longview village"
+  },
+  "loraine": {
+    "latitude": 40.152571,
+    "longitude": -91.221509,
+    "name": "Loraine village"
+  },
+  "lorenzo": {
+    "latitude": 41.345691,
+    "longitude": -88.222261,
+    "name": "Lorenzo CDP"
+  },
+  "lostant": {
+    "latitude": 41.125274,
+    "longitude": -89.066753,
+    "name": "Lostant village"
+  },
+  "lostnation": {
+    "latitude": 41.911952,
+    "longitude": -89.368492,
+    "name": "Lost Nation CDP"
+  },
+  "louisville": {
+    "latitude": 38.769406,
+    "longitude": -88.506858,
+    "name": "Louisville village"
+  },
+  "lovespark": {
+    "latitude": 42.337843,
+    "longitude": -88.998649,
+    "name": "Loves Park city"
+  },
+  "lovington": {
+    "latitude": 39.715064,
+    "longitude": -88.633683,
+    "name": "Lovington village"
+  },
+  "lowpoint": {
+    "latitude": 40.872824,
+    "longitude": -89.313721,
+    "name": "Lowpoint CDP"
+  },
+  "ludlow": {
+    "latitude": 40.386619,
+    "longitude": -88.125864,
+    "name": "Ludlow village"
+  },
+  "lyndon": {
+    "latitude": 41.717523,
+    "longitude": -89.923974,
+    "name": "Lyndon village"
+  },
+  "lynncenter": {
+    "latitude": 41.294624,
+    "longitude": -90.35909,
+    "name": "Lynn Center CDP"
+  },
+  "lynnville": {
+    "latitude": 39.685787,
+    "longitude": -90.345954,
+    "name": "Lynnville village"
+  },
+  "lynwood": {
+    "latitude": 41.522565,
+    "longitude": -87.550491,
+    "name": "Lynwood village"
+  },
+  "lyons": {
+    "latitude": 41.812184,
+    "longitude": -87.818589,
+    "name": "Lyons village"
+  },
+  "macedonia": {
+    "latitude": 38.054292,
+    "longitude": -88.7033,
+    "name": "Macedonia village"
+  },
+  "machesneypark": {
+    "latitude": 42.367658,
+    "longitude": -89.024544,
+    "name": "Machesney Park village"
+  },
+  "mackinaw": {
+    "latitude": 40.533915,
+    "longitude": -89.355458,
+    "name": "Mackinaw village"
+  },
+  "macomb": {
+    "latitude": 40.470149,
+    "longitude": -90.683114,
+    "name": "Macomb city"
+  },
+  "macon": {
+    "latitude": 39.708704,
+    "longitude": -88.996686,
+    "name": "Macon city"
+  },
+  "madison": {
+    "latitude": 38.686272,
+    "longitude": -90.101796,
+    "name": "Madison city"
+  },
+  "maeystown": {
+    "latitude": 38.229728,
+    "longitude": -90.231012,
+    "name": "Maeystown village"
+  },
+  "magnolia": {
+    "latitude": 41.114078,
+    "longitude": -89.19575,
+    "name": "Magnolia village"
+  },
+  "mahomet": {
+    "latitude": 40.190133,
+    "longitude": -88.389515,
+    "name": "Mahomet village"
+  },
+  "makanda": {
+    "latitude": 37.620344,
+    "longitude": -89.23714,
+    "name": "Makanda village"
+  },
+  "malden": {
+    "latitude": 41.424978,
+    "longitude": -89.369806,
+    "name": "Malden village"
+  },
+  "malta": {
+    "latitude": 41.929477,
+    "longitude": -88.871159,
+    "name": "Malta village"
+  },
+  "manchester": {
+    "latitude": 39.542318,
+    "longitude": -90.330298,
+    "name": "Manchester village"
+  },
+  "manhattan": {
+    "latitude": 41.420177,
+    "longitude": -87.98072,
+    "name": "Manhattan village"
+  },
+  "manito": {
+    "latitude": 40.420091,
+    "longitude": -89.780609,
+    "name": "Manito village"
+  },
+  "manlius": {
+    "latitude": 41.455613,
+    "longitude": -89.669155,
+    "name": "Manlius village"
+  },
+  "mansfield": {
+    "latitude": 40.212039,
+    "longitude": -88.508744,
+    "name": "Mansfield village"
+  },
+  "manteno": {
+    "latitude": 41.24785,
+    "longitude": -87.844308,
+    "name": "Manteno village"
+  },
+  "maplepark": {
+    "latitude": 41.910779,
+    "longitude": -88.606056,
+    "name": "Maple Park village"
+  },
+  "mapleton": {
+    "latitude": 40.573039,
+    "longitude": -89.724655,
+    "name": "Mapleton village"
+  },
+  "maquon": {
+    "latitude": 40.798029,
+    "longitude": -90.163176,
+    "name": "Maquon village"
+  },
+  "marcelline": {
+    "latitude": 40.118506,
+    "longitude": -91.368301,
+    "name": "Marcelline CDP"
+  },
+  "marengo": {
+    "latitude": 42.24655,
+    "longitude": -88.5975,
+    "name": "Marengo city"
+  },
+  "marietta": {
+    "latitude": 40.49945,
+    "longitude": -90.393016,
+    "name": "Marietta village"
+  },
+  "marine": {
+    "latitude": 38.787359,
+    "longitude": -89.779078,
+    "name": "Marine village"
+  },
+  "marion": {
+    "latitude": 37.734445,
+    "longitude": -88.941164,
+    "name": "Marion city"
+  },
+  "marissa": {
+    "latitude": 38.249667,
+    "longitude": -89.771413,
+    "name": "Marissa village"
+  },
+  "mark": {
+    "latitude": 41.262349,
+    "longitude": -89.255024,
+    "name": "Mark village"
+  },
+  "markham": {
+    "latitude": 41.600036,
+    "longitude": -87.690455,
+    "name": "Markham city"
+  },
+  "marley": {
+    "latitude": 41.548225,
+    "longitude": -87.926043,
+    "name": "Marley CDP"
+  },
+  "maroa": {
+    "latitude": 40.036461,
+    "longitude": -88.956171,
+    "name": "Maroa city"
+  },
+  "marquetteheights": {
+    "latitude": 40.618404,
+    "longitude": -89.604725,
+    "name": "Marquette Heights city"
+  },
+  "marseilles": {
+    "latitude": 41.318218,
+    "longitude": -88.676194,
+    "name": "Marseilles city"
+  },
+  "marshall": {
+    "latitude": 39.399532,
+    "longitude": -87.691168,
+    "name": "Marshall city"
+  },
+  "martinsville": {
+    "latitude": 39.338421,
+    "longitude": -87.880862,
+    "name": "Martinsville city"
+  },
+  "martinton": {
+    "latitude": 40.915334,
+    "longitude": -87.726429,
+    "name": "Martinton village"
+  },
+  "maryville": {
+    "latitude": 38.727793,
+    "longitude": -89.966653,
+    "name": "Maryville village"
+  },
+  "mascoutah": {
+    "latitude": 38.518115,
+    "longitude": -89.800041,
+    "name": "Mascoutah city"
+  },
+  "mason": {
+    "latitude": 38.954328,
+    "longitude": -88.627068,
+    "name": "Mason town"
+  },
+  "matherville": {
+    "latitude": 41.259149,
+    "longitude": -90.605856,
+    "name": "Matherville village"
+  },
+  "matteson": {
+    "latitude": 41.508871,
+    "longitude": -87.746044,
+    "name": "Matteson village"
+  },
+  "mattoon": {
+    "latitude": 39.477833,
+    "longitude": -88.362225,
+    "name": "Mattoon city"
+  },
+  "maunie": {
+    "latitude": 38.035177,
+    "longitude": -88.045277,
+    "name": "Maunie village"
+  },
+  "maywood": {
+    "latitude": 41.879777,
+    "longitude": -87.844184,
+    "name": "Maywood village"
+  },
+  "mazon": {
+    "latitude": 41.241461,
+    "longitude": -88.423101,
+    "name": "Mazon village"
+  },
+  "mcclure": {
+    "latitude": 37.312582,
+    "longitude": -89.43156,
+    "name": "McClure village"
+  },
+  "mccook": {
+    "latitude": 41.798265,
+    "longitude": -87.841592,
+    "name": "McCook village"
+  },
+  "mccullomlake": {
+    "latitude": 42.367699,
+    "longitude": -88.297366,
+    "name": "McCullom Lake village"
+  },
+  "mchenry": {
+    "latitude": 42.336204,
+    "longitude": -88.291651,
+    "name": "McHenry city"
+  },
+  "mclean": {
+    "latitude": 40.313579,
+    "longitude": -89.168606,
+    "name": "McLean village"
+  },
+  "mcleansboro": {
+    "latitude": 38.090269,
+    "longitude": -88.538611,
+    "name": "McLeansboro city"
+  },
+  "mcnabb": {
+    "latitude": 41.17705,
+    "longitude": -89.209743,
+    "name": "McNabb village"
+  },
+  "mechanicsburg": {
+    "latitude": 39.797238,
+    "longitude": -89.410749,
+    "name": "Mechanicsburg village"
+  },
+  "media": {
+    "latitude": 40.769449,
+    "longitude": -90.832651,
+    "name": "Media village"
+  },
+  "medora": {
+    "latitude": 39.176524,
+    "longitude": -90.1414,
+    "name": "Medora village"
+  },
+  "melrosepark": {
+    "latitude": 41.902995,
+    "longitude": -87.863644,
+    "name": "Melrose Park village"
+  },
+  "melvin": {
+    "latitude": 40.570964,
+    "longitude": -88.247,
+    "name": "Melvin village"
+  },
+  "mendon": {
+    "latitude": 40.089183,
+    "longitude": -91.285784,
+    "name": "Mendon village"
+  },
+  "mendota": {
+    "latitude": 41.556655,
+    "longitude": -89.100507,
+    "name": "Mendota city"
+  },
+  "menominee": {
+    "latitude": 42.474683,
+    "longitude": -90.542894,
+    "name": "Menominee village"
+  },
+  "meredosia": {
+    "latitude": 39.831496,
+    "longitude": -90.557239,
+    "name": "Meredosia village"
+  },
+  "merrionettepark": {
+    "latitude": 41.681117,
+    "longitude": -87.701212,
+    "name": "Merrionette Park village"
+  },
+  "merritt": {
+    "latitude": 39.714869,
+    "longitude": -90.41572,
+    "name": "Merritt CDP"
+  },
+  "metamora": {
+    "latitude": 40.794964,
+    "longitude": -89.368401,
+    "name": "Metamora village"
+  },
+  "metcalf": {
+    "latitude": 39.800431,
+    "longitude": -87.807831,
+    "name": "Metcalf village"
+  },
+  "metropolis": {
+    "latitude": 37.149639,
+    "longitude": -88.687354,
+    "name": "Metropolis city"
+  },
+  "mettawa": {
+    "latitude": 42.243369,
+    "longitude": -87.921418,
+    "name": "Mettawa village"
+  },
+  "meyer": {
+    "latitude": 40.14825,
+    "longitude": -91.503601,
+    "name": "Meyer CDP"
+  },
+  "middletown": {
+    "latitude": 40.099308,
+    "longitude": -89.590367,
+    "name": "Middletown village"
+  },
+  "midlothian": {
+    "latitude": 41.625428,
+    "longitude": -87.724233,
+    "name": "Midlothian village"
+  },
+  "milan": {
+    "latitude": 41.435497,
+    "longitude": -90.562661,
+    "name": "Milan village"
+  },
+  "milford": {
+    "latitude": 40.627769,
+    "longitude": -87.696148,
+    "name": "Milford village"
+  },
+  "millbrook": {
+    "latitude": 41.607055,
+    "longitude": -88.54538,
+    "name": "Millbrook village"
+  },
+  "millcreek": {
+    "latitude": 37.340904,
+    "longitude": -89.253148,
+    "name": "Mill Creek village"
+  },
+  "milledgeville": {
+    "latitude": 41.963665,
+    "longitude": -89.774695,
+    "name": "Milledgeville village"
+  },
+  "millersburg": {
+    "latitude": 41.240284,
+    "longitude": -90.81858,
+    "name": "Millersburg CDP"
+  },
+  "millington": {
+    "latitude": 41.560477,
+    "longitude": -88.604104,
+    "name": "Millington village"
+  },
+  "millshoals": {
+    "latitude": 38.249536,
+    "longitude": -88.345683,
+    "name": "Mill Shoals village"
+  },
+  "millstadt": {
+    "latitude": 38.457476,
+    "longitude": -90.085859,
+    "name": "Millstadt village"
+  },
+  "milton": {
+    "latitude": 39.564615,
+    "longitude": -90.649874,
+    "name": "Milton village"
+  },
+  "mineral": {
+    "latitude": 41.38222,
+    "longitude": -89.83631,
+    "name": "Mineral village"
+  },
+  "minier": {
+    "latitude": 40.433713,
+    "longitude": -89.313903,
+    "name": "Minier village"
+  },
+  "minonk": {
+    "latitude": 40.910368,
+    "longitude": -89.038153,
+    "name": "Minonk city"
+  },
+  "minooka": {
+    "latitude": 41.450333,
+    "longitude": -88.277824,
+    "name": "Minooka village"
+  },
+  "mitchell": {
+    "latitude": 38.763065,
+    "longitude": -90.081621,
+    "name": "Mitchell CDP"
+  },
+  "modesto": {
+    "latitude": 39.478863,
+    "longitude": -89.980332,
+    "name": "Modesto village"
+  },
+  "mokena": {
+    "latitude": 41.529863,
+    "longitude": -87.87771,
+    "name": "Mokena village"
+  },
+  "moline": {
+    "latitude": 41.482333,
+    "longitude": -90.493407,
+    "name": "Moline city"
+  },
+  "momence": {
+    "latitude": 41.163576,
+    "longitude": -87.663504,
+    "name": "Momence city"
+  },
+  "monee": {
+    "latitude": 41.417833,
+    "longitude": -87.749894,
+    "name": "Monee village"
+  },
+  "monmouth": {
+    "latitude": 40.914233,
+    "longitude": -90.643075,
+    "name": "Monmouth city"
+  },
+  "monroecenter": {
+    "latitude": 42.099934,
+    "longitude": -88.994399,
+    "name": "Monroe Center village"
+  },
+  "montgomery": {
+    "latitude": 41.721028,
+    "longitude": -88.358114,
+    "name": "Montgomery village"
+  },
+  "monticello": {
+    "latitude": 40.033545,
+    "longitude": -88.574111,
+    "name": "Monticello city"
+  },
+  "montrose": {
+    "latitude": 39.166026,
+    "longitude": -88.378046,
+    "name": "Montrose village"
+  },
+  "moro": {
+    "latitude": 38.925152,
+    "longitude": -90.02636,
+    "name": "Moro CDP"
+  },
+  "morris": {
+    "latitude": 41.380229,
+    "longitude": -88.424332,
+    "name": "Morris city"
+  },
+  "morrison": {
+    "latitude": 41.807651,
+    "longitude": -89.961639,
+    "name": "Morrison city"
+  },
+  "morrisonville": {
+    "latitude": 39.421668,
+    "longitude": -89.459007,
+    "name": "Morrisonville village"
+  },
+  "morton": {
+    "latitude": 40.61373,
+    "longitude": -89.4668,
+    "name": "Morton village"
+  },
+  "mortongrove": {
+    "latitude": 42.042321,
+    "longitude": -87.789012,
+    "name": "Morton Grove village"
+  },
+  "mossville": {
+    "latitude": 40.8171,
+    "longitude": -89.570352,
+    "name": "Mossville CDP"
+  },
+  "mound": {
+    "latitude": 37.085676,
+    "longitude": -89.163005,
+    "name": "Mound City city"
+  },
+  "mounds": {
+    "latitude": 37.115371,
+    "longitude": -89.202439,
+    "name": "Mounds city"
+  },
+  "moundstation": {
+    "latitude": 40.006596,
+    "longitude": -90.873729,
+    "name": "Mound Station village"
+  },
+  "mountauburn": {
+    "latitude": 39.765376,
+    "longitude": -89.25927,
+    "name": "Mount Auburn village"
+  },
+  "mountcarmel": {
+    "latitude": 38.419047,
+    "longitude": -87.769792,
+    "name": "Mount Carmel city"
+  },
+  "mountcarroll": {
+    "latitude": 42.094787,
+    "longitude": -89.976908,
+    "name": "Mount Carroll city"
+  },
+  "mountclare": {
+    "latitude": 39.097292,
+    "longitude": -89.833673,
+    "name": "Mount Clare village"
+  },
+  "mounterie": {
+    "latitude": 38.514641,
+    "longitude": -88.232391,
+    "name": "Mount Erie village"
+  },
+  "mountmorris": {
+    "latitude": 42.048345,
+    "longitude": -89.429328,
+    "name": "Mount Morris village"
+  },
+  "mountolive": {
+    "latitude": 39.072656,
+    "longitude": -89.727885,
+    "name": "Mount Olive city"
+  },
+  "mountprospect": {
+    "latitude": 42.064202,
+    "longitude": -87.937364,
+    "name": "Mount Prospect village"
+  },
+  "mountpulaski": {
+    "latitude": 40.010101,
+    "longitude": -89.283758,
+    "name": "Mount Pulaski city"
+  },
+  "mountsterling": {
+    "latitude": 39.985888,
+    "longitude": -90.764643,
+    "name": "Mount Sterling city"
+  },
+  "mountvernon": {
+    "latitude": 38.314205,
+    "longitude": -88.91747,
+    "name": "Mount Vernon city"
+  },
+  "mountzion": {
+    "latitude": 39.784016,
+    "longitude": -88.885011,
+    "name": "Mount Zion village"
+  },
+  "moweaqua": {
+    "latitude": 39.625792,
+    "longitude": -89.021418,
+    "name": "Moweaqua village"
+  },
+  "muddy": {
+    "latitude": 37.766811,
+    "longitude": -88.513894,
+    "name": "Muddy village"
+  },
+  "mulberrygrove": {
+    "latitude": 38.925269,
+    "longitude": -89.261955,
+    "name": "Mulberry Grove village"
+  },
+  "mulkeytown": {
+    "latitude": 37.973869,
+    "longitude": -89.108467,
+    "name": "Mulkeytown CDP"
+  },
+  "muncie": {
+    "latitude": 40.116053,
+    "longitude": -87.842964,
+    "name": "Muncie village"
+  },
+  "mundelein": {
+    "latitude": 42.273352,
+    "longitude": -88.016174,
+    "name": "Mundelein village"
+  },
+  "murphysboro": {
+    "latitude": 37.767183,
+    "longitude": -89.33241,
+    "name": "Murphysboro city"
+  },
+  "murrayville": {
+    "latitude": 39.581771,
+    "longitude": -90.25176,
+    "name": "Murrayville village"
+  },
+  "nachusa": {
+    "latitude": 41.833936,
+    "longitude": -89.385764,
+    "name": "Nachusa CDP"
+  },
+  "naperville": {
+    "latitude": 41.749173,
+    "longitude": -88.162019,
+    "name": "Naperville city"
+  },
+  "naplate": {
+    "latitude": 41.331529,
+    "longitude": -88.880205,
+    "name": "Naplate village"
+  },
+  "naples": {
+    "latitude": 39.753456,
+    "longitude": -90.606908,
+    "name": "Naples town"
+  },
+  "nashville": {
+    "latitude": 38.344542,
+    "longitude": -89.390983,
+    "name": "Nashville city"
+  },
+  "nason": {
+    "latitude": 38.176022,
+    "longitude": -88.966263,
+    "name": "Nason city"
+  },
+  "nauvoo": {
+    "latitude": 40.544534,
+    "longitude": -91.382815,
+    "name": "Nauvoo city"
+  },
+  "nebo": {
+    "latitude": 39.442062,
+    "longitude": -90.788169,
+    "name": "Nebo village"
+  },
+  "nekoma": {
+    "latitude": 41.171901,
+    "longitude": -90.191047,
+    "name": "Nekoma CDP"
+  },
+  "nelson": {
+    "latitude": 41.796268,
+    "longitude": -89.60748,
+    "name": "Nelson village"
+  },
+  "neoga": {
+    "latitude": 39.321642,
+    "longitude": -88.450295,
+    "name": "Neoga city"
+  },
+  "neponset": {
+    "latitude": 41.29674,
+    "longitude": -89.789552,
+    "name": "Neponset village"
+  },
+  "newark": {
+    "latitude": 41.536594,
+    "longitude": -88.580562,
+    "name": "Newark village"
+  },
+  "newathens": {
+    "latitude": 38.318935,
+    "longitude": -89.873618,
+    "name": "New Athens village"
+  },
+  "newbaden": {
+    "latitude": 38.536765,
+    "longitude": -89.707193,
+    "name": "New Baden village"
+  },
+  "newbedford": {
+    "latitude": 41.511512,
+    "longitude": -89.718194,
+    "name": "New Bedford village"
+  },
+  "newberlin": {
+    "latitude": 39.726059,
+    "longitude": -89.914353,
+    "name": "New Berlin village"
+  },
+  "newboston": {
+    "latitude": 41.17036,
+    "longitude": -90.9998,
+    "name": "New Boston city"
+  },
+  "newburnside": {
+    "latitude": 37.578216,
+    "longitude": -88.773281,
+    "name": "New Burnside village"
+  },
+  "newcanton": {
+    "latitude": 39.637079,
+    "longitude": -91.098323,
+    "name": "New Canton town"
+  },
+  "newdouglas": {
+    "latitude": 38.968795,
+    "longitude": -89.667872,
+    "name": "New Douglas village"
+  },
+  "newgrandchain": {
+    "latitude": 37.256384,
+    "longitude": -89.018628,
+    "name": "New Grand Chain village"
+  },
+  "newhaven": {
+    "latitude": 37.898433,
+    "longitude": -88.126763,
+    "name": "New Haven village"
+  },
+  "newholland": {
+    "latitude": 40.183471,
+    "longitude": -89.582412,
+    "name": "New Holland village"
+  },
+  "newlenox": {
+    "latitude": 41.510022,
+    "longitude": -87.970002,
+    "name": "New Lenox village"
+  },
+  "newman": {
+    "latitude": 39.796957,
+    "longitude": -87.987728,
+    "name": "Newman city"
+  },
+  "newmilford": {
+    "latitude": 42.168499,
+    "longitude": -89.045487,
+    "name": "New Milford village"
+  },
+  "newminden": {
+    "latitude": 38.438033,
+    "longitude": -89.370419,
+    "name": "New Minden village"
+  },
+  "newsalem": {
+    "latitude": 39.707644,
+    "longitude": -90.847859,
+    "name": "New Salem village"
+  },
+  "newton": {
+    "latitude": 38.987278,
+    "longitude": -88.164515,
+    "name": "Newton city"
+  },
+  "niantic": {
+    "latitude": 39.854066,
+    "longitude": -89.165261,
+    "name": "Niantic village"
+  },
+  "niles": {
+    "latitude": 42.027862,
+    "longitude": -87.809973,
+    "name": "Niles village"
+  },
+  "nilwood": {
+    "latitude": 39.399506,
+    "longitude": -89.807736,
+    "name": "Nilwood town"
+  },
+  "niota": {
+    "latitude": 40.614409,
+    "longitude": -91.287715,
+    "name": "Niota CDP"
+  },
+  "noble": {
+    "latitude": 38.698126,
+    "longitude": -88.218784,
+    "name": "Noble village"
+  },
+  "nokomis": {
+    "latitude": 39.300286,
+    "longitude": -89.28515,
+    "name": "Nokomis city"
+  },
+  "nora": {
+    "latitude": 42.456483,
+    "longitude": -89.94591,
+    "name": "Nora village"
+  },
+  "normal": {
+    "latitude": 40.52014,
+    "longitude": -88.992234,
+    "name": "Normal town"
+  },
+  "norridge": {
+    "latitude": 41.963726,
+    "longitude": -87.823192,
+    "name": "Norridge village"
+  },
+  "norris": {
+    "latitude": 40.625778,
+    "longitude": -90.031987,
+    "name": "Norris village"
+  },
+  "north": {
+    "latitude": 37.991159,
+    "longitude": -89.063935,
+    "name": "North City village"
+  },
+  "northaurora": {
+    "latitude": 41.808736,
+    "longitude": -88.341981,
+    "name": "North Aurora village"
+  },
+  "northbarrington": {
+    "latitude": 42.206923,
+    "longitude": -88.128884,
+    "name": "North Barrington village"
+  },
+  "northbrook": {
+    "latitude": 42.128745,
+    "longitude": -87.835162,
+    "name": "Northbrook village"
+  },
+  "northchicago": {
+    "latitude": 42.316696,
+    "longitude": -87.859201,
+    "name": "North Chicago city"
+  },
+  "northfield": {
+    "latitude": 42.102968,
+    "longitude": -87.777376,
+    "name": "Northfield village"
+  },
+  "northhenderson": {
+    "latitude": 41.090378,
+    "longitude": -90.474821,
+    "name": "North Henderson village"
+  },
+  "northlake": {
+    "latitude": 41.914317,
+    "longitude": -87.905483,
+    "name": "Northlake city"
+  },
+  "northpekin": {
+    "latitude": 40.613618,
+    "longitude": -89.625377,
+    "name": "North Pekin village"
+  },
+  "northriverside": {
+    "latitude": 41.846142,
+    "longitude": -87.826283,
+    "name": "North Riverside village"
+  },
+  "northutica": {
+    "latitude": 41.353621,
+    "longitude": -89.019605,
+    "name": "North Utica village"
+  },
+  "norwood": {
+    "latitude": 40.707809,
+    "longitude": -89.699548,
+    "name": "Norwood village"
+  },
+  "oakbrook": {
+    "latitude": 41.836395,
+    "longitude": -87.953173,
+    "name": "Oak Brook village"
+  },
+  "oakbrookterrace": {
+    "latitude": 41.85356,
+    "longitude": -87.969023,
+    "name": "Oakbrook Terrace city"
+  },
+  "oakdale": {
+    "latitude": 38.264832,
+    "longitude": -89.503487,
+    "name": "Oakdale village"
+  },
+  "oakford": {
+    "latitude": 40.100906,
+    "longitude": -89.96526,
+    "name": "Oakford village"
+  },
+  "oakforest": {
+    "latitude": 41.60668,
+    "longitude": -87.753299,
+    "name": "Oak Forest city"
+  },
+  "oakgrove": {
+    "latitude": 41.411933,
+    "longitude": -90.574166,
+    "name": "Oak Grove village"
+  },
+  "oakland": {
+    "latitude": 39.65782,
+    "longitude": -88.027858,
+    "name": "Oakland city"
+  },
+  "oaklawn": {
+    "latitude": 41.713885,
+    "longitude": -87.752777,
+    "name": "Oak Lawn village"
+  },
+  "oakpark": {
+    "latitude": 41.887164,
+    "longitude": -87.78994,
+    "name": "Oak Park village"
+  },
+  "oakrun": {
+    "latitude": 40.95988,
+    "longitude": -90.130113,
+    "name": "Oak Run CDP"
+  },
+  "oakwood": {
+    "latitude": 40.110126,
+    "longitude": -87.776925,
+    "name": "Oakwood village"
+  },
+  "oakwoodhills": {
+    "latitude": 42.248087,
+    "longitude": -88.240012,
+    "name": "Oakwood Hills village"
+  },
+  "oblong": {
+    "latitude": 39.002301,
+    "longitude": -87.910526,
+    "name": "Oblong village"
+  },
+  "oconee": {
+    "latitude": 39.286306,
+    "longitude": -89.10661,
+    "name": "Oconee village"
+  },
+  "odell": {
+    "latitude": 41.002333,
+    "longitude": -88.523494,
+    "name": "Odell village"
+  },
+  "odin": {
+    "latitude": 38.615868,
+    "longitude": -89.054077,
+    "name": "Odin village"
+  },
+  "ofallon": {
+    "latitude": 38.600006,
+    "longitude": -89.915402,
+    "name": "O'Fallon city"
+  },
+  "ogden": {
+    "latitude": 40.115078,
+    "longitude": -87.956327,
+    "name": "Ogden village"
+  },
+  "oglesby": {
+    "latitude": 41.29321,
+    "longitude": -89.071036,
+    "name": "Oglesby city"
+  },
+  "ohio": {
+    "latitude": 41.554988,
+    "longitude": -89.460335,
+    "name": "Ohio village"
+  },
+  "ohlman": {
+    "latitude": 39.343388,
+    "longitude": -89.218534,
+    "name": "Ohlman village"
+  },
+  "okawville": {
+    "latitude": 38.434417,
+    "longitude": -89.547978,
+    "name": "Okawville village"
+  },
+  "oldmillcreek": {
+    "latitude": 42.433133,
+    "longitude": -87.9822,
+    "name": "Old Mill Creek village"
+  },
+  "oldripley": {
+    "latitude": 38.892744,
+    "longitude": -89.572087,
+    "name": "Old Ripley village"
+  },
+  "oldshawneetown": {
+    "latitude": 37.697103,
+    "longitude": -88.138934,
+    "name": "Old Shawneetown village"
+  },
+  "olivebranch": {
+    "latitude": 37.183658,
+    "longitude": -89.349516,
+    "name": "Olive Branch CDP"
+  },
+  "olivet": {
+    "latitude": 39.946076,
+    "longitude": -87.639636,
+    "name": "Olivet CDP"
+  },
+  "olmsted": {
+    "latitude": 37.182358,
+    "longitude": -89.083976,
+    "name": "Olmsted village"
+  },
+  "olney": {
+    "latitude": 38.728108,
+    "longitude": -88.084219,
+    "name": "Olney city"
+  },
+  "olympiafields": {
+    "latitude": 41.521996,
+    "longitude": -87.691648,
+    "name": "Olympia Fields village"
+  },
+  "omaha": {
+    "latitude": 37.889747,
+    "longitude": -88.306413,
+    "name": "Omaha village"
+  },
+  "onarga": {
+    "latitude": 40.715308,
+    "longitude": -88.010822,
+    "name": "Onarga village"
+  },
+  "oneida": {
+    "latitude": 41.07217,
+    "longitude": -90.224705,
+    "name": "Oneida city"
+  },
+  "opdyke": {
+    "latitude": 38.258245,
+    "longitude": -88.78981,
+    "name": "Opdyke CDP"
+  },
+  "ophiem": {
+    "latitude": 41.253767,
+    "longitude": -90.3827,
+    "name": "Ophiem CDP"
+  },
+  "oquawka": {
+    "latitude": 40.937519,
+    "longitude": -90.949509,
+    "name": "Oquawka village"
+  },
+  "orangeville": {
+    "latitude": 42.465789,
+    "longitude": -89.646857,
+    "name": "Orangeville village"
+  },
+  "oreana": {
+    "latitude": 39.937822,
+    "longitude": -88.868489,
+    "name": "Oreana village"
+  },
+  "oregon": {
+    "latitude": 42.012703,
+    "longitude": -89.335773,
+    "name": "Oregon city"
+  },
+  "orient": {
+    "latitude": 37.917551,
+    "longitude": -88.978331,
+    "name": "Orient city"
+  },
+  "orion": {
+    "latitude": 41.351475,
+    "longitude": -90.376295,
+    "name": "Orion village"
+  },
+  "orlandhills": {
+    "latitude": 41.590654,
+    "longitude": -87.842141,
+    "name": "Orland Hills village"
+  },
+  "orlandpark": {
+    "latitude": 41.608145,
+    "longitude": -87.85929,
+    "name": "Orland Park village"
+  },
+  "osco": {
+    "latitude": 41.346566,
+    "longitude": -90.282802,
+    "name": "Osco CDP"
+  },
+  "oswego": {
+    "latitude": 41.68322,
+    "longitude": -88.338849,
+    "name": "Oswego village"
+  },
+  "ottawa": {
+    "latitude": 41.354046,
+    "longitude": -88.823408,
+    "name": "Ottawa city"
+  },
+  "otterville": {
+    "latitude": 39.050781,
+    "longitude": -90.398433,
+    "name": "Otterville town"
+  },
+  "owaneco": {
+    "latitude": 39.481426,
+    "longitude": -89.194865,
+    "name": "Owaneco village"
+  },
+  "oxville": {
+    "latitude": 39.705388,
+    "longitude": -90.560395,
+    "name": "Oxville CDP"
+  },
+  "paderborn": {
+    "latitude": 38.35943,
+    "longitude": -90.046929,
+    "name": "Paderborn CDP"
+  },
+  "palatine": {
+    "latitude": 42.116467,
+    "longitude": -88.044361,
+    "name": "Palatine village"
+  },
+  "palestine": {
+    "latitude": 39.001621,
+    "longitude": -87.612584,
+    "name": "Palestine village"
+  },
+  "palmer": {
+    "latitude": 39.458677,
+    "longitude": -89.407923,
+    "name": "Palmer village"
+  },
+  "palmyra": {
+    "latitude": 39.434497,
+    "longitude": -89.995913,
+    "name": "Palmyra village"
+  },
+  "paloma": {
+    "latitude": 40.023707,
+    "longitude": -91.198609,
+    "name": "Paloma CDP"
+  },
+  "palosheights": {
+    "latitude": 41.663439,
+    "longitude": -87.796044,
+    "name": "Palos Heights city"
+  },
+  "paloshills": {
+    "latitude": 41.700681,
+    "longitude": -87.825297,
+    "name": "Palos Hills city"
+  },
+  "palospark": {
+    "latitude": 41.666163,
+    "longitude": -87.829602,
+    "name": "Palos Park village"
+  },
+  "pana": {
+    "latitude": 39.394604,
+    "longitude": -89.090809,
+    "name": "Pana city"
+  },
+  "panama": {
+    "latitude": 39.029261,
+    "longitude": -89.52441,
+    "name": "Panama village"
+  },
+  "panola": {
+    "latitude": 40.782841,
+    "longitude": -89.020247,
+    "name": "Panola village"
+  },
+  "papineau": {
+    "latitude": 40.967705,
+    "longitude": -87.716265,
+    "name": "Papineau village"
+  },
+  "paris": {
+    "latitude": 39.615081,
+    "longitude": -87.689095,
+    "name": "Paris city"
+  },
+  "park": {
+    "latitude": 42.353666,
+    "longitude": -87.892381,
+    "name": "Park City city"
+  },
+  "parkersburg": {
+    "latitude": 38.589127,
+    "longitude": -88.056828,
+    "name": "Parkersburg village"
+  },
+  "parkforest": {
+    "latitude": 41.481679,
+    "longitude": -87.686797,
+    "name": "Park Forest village"
+  },
+  "parkridge": {
+    "latitude": 42.011762,
+    "longitude": -87.843434,
+    "name": "Park Ridge city"
+  },
+  "patoka": {
+    "latitude": 38.754069,
+    "longitude": -89.095818,
+    "name": "Patoka village"
+  },
+  "pawnee": {
+    "latitude": 39.593652,
+    "longitude": -89.584623,
+    "name": "Pawnee village"
+  },
+  "pawpaw": {
+    "latitude": 41.688243,
+    "longitude": -88.979805,
+    "name": "Paw Paw village"
+  },
+  "paxton": {
+    "latitude": 40.456293,
+    "longitude": -88.103399,
+    "name": "Paxton city"
+  },
+  "payson": {
+    "latitude": 39.816941,
+    "longitude": -91.244322,
+    "name": "Payson village"
+  },
+  "pearl": {
+    "latitude": 39.462673,
+    "longitude": -90.619677,
+    "name": "Pearl village"
+  },
+  "pecatonica": {
+    "latitude": 42.308977,
+    "longitude": -89.357243,
+    "name": "Pecatonica village"
+  },
+  "pekin": {
+    "latitude": 40.568783,
+    "longitude": -89.624017,
+    "name": "Pekin city"
+  },
+  "penfield": {
+    "latitude": 40.3047,
+    "longitude": -87.944307,
+    "name": "Penfield CDP"
+  },
+  "peoria": {
+    "latitude": 40.751641,
+    "longitude": -89.617198,
+    "name": "Peoria city"
+  },
+  "peoriaheights": {
+    "latitude": 40.746696,
+    "longitude": -89.570031,
+    "name": "Peoria Heights village"
+  },
+  "peotone": {
+    "latitude": 41.330733,
+    "longitude": -87.796345,
+    "name": "Peotone village"
+  },
+  "percy": {
+    "latitude": 38.014674,
+    "longitude": -89.618105,
+    "name": "Percy village"
+  },
+  "perry": {
+    "latitude": 39.782195,
+    "longitude": -90.747296,
+    "name": "Perry village"
+  },
+  "peru": {
+    "latitude": 41.357929,
+    "longitude": -89.13939,
+    "name": "Peru city"
+  },
+  "pesotum": {
+    "latitude": 39.911242,
+    "longitude": -88.276883,
+    "name": "Pesotum village"
+  },
+  "petersburg": {
+    "latitude": 40.014288,
+    "longitude": -89.845331,
+    "name": "Petersburg city"
+  },
+  "phillipstown": {
+    "latitude": 38.142881,
+    "longitude": -88.018108,
+    "name": "Phillipstown village"
+  },
+  "philo": {
+    "latitude": 40.003333,
+    "longitude": -88.156388,
+    "name": "Philo village"
+  },
+  "phoenix": {
+    "latitude": 41.611781,
+    "longitude": -87.630852,
+    "name": "Phoenix village"
+  },
+  "pierron": {
+    "latitude": 38.779156,
+    "longitude": -89.591824,
+    "name": "Pierron village"
+  },
+  "pinckneyville": {
+    "latitude": 38.086072,
+    "longitude": -89.327036,
+    "name": "Pinckneyville city"
+  },
+  "pingreegrove": {
+    "latitude": 42.086647,
+    "longitude": -88.432448,
+    "name": "Pingree Grove village"
+  },
+  "piper": {
+    "latitude": 40.756139,
+    "longitude": -88.188933,
+    "name": "Piper City village"
+  },
+  "pistakeehighlands": {
+    "latitude": 42.403037,
+    "longitude": -88.210887,
+    "name": "Pistakee Highlands CDP"
+  },
+  "pittsburg": {
+    "latitude": 37.776593,
+    "longitude": -88.850213,
+    "name": "Pittsburg village"
+  },
+  "pittsfield": {
+    "latitude": 39.600547,
+    "longitude": -90.81014,
+    "name": "Pittsfield city"
+  },
+  "plainfield": {
+    "latitude": 41.619669,
+    "longitude": -88.226924,
+    "name": "Plainfield village"
+  },
+  "plainville": {
+    "latitude": 39.784765,
+    "longitude": -91.181649,
+    "name": "Plainville village"
+  },
+  "plano": {
+    "latitude": 41.680691,
+    "longitude": -88.536225,
+    "name": "Plano city"
+  },
+  "plattville": {
+    "latitude": 41.534259,
+    "longitude": -88.383592,
+    "name": "Plattville village"
+  },
+  "pleasanthill": {
+    "latitude": 39.44323,
+    "longitude": -90.872883,
+    "name": "Pleasant Hill village"
+  },
+  "pleasantplains": {
+    "latitude": 39.874771,
+    "longitude": -89.918832,
+    "name": "Pleasant Plains village"
+  },
+  "plumvalley": {
+    "latitude": 41.461075,
+    "longitude": -87.544237,
+    "name": "Plum Valley CDP"
+  },
+  "plymouth": {
+    "latitude": 40.292148,
+    "longitude": -90.91626,
+    "name": "Plymouth village"
+  },
+  "pocahontas": {
+    "latitude": 38.824391,
+    "longitude": -89.538758,
+    "name": "Pocahontas village"
+  },
+  "polo": {
+    "latitude": 41.984849,
+    "longitude": -89.580431,
+    "name": "Polo city"
+  },
+  "pontiac": {
+    "latitude": 40.889246,
+    "longitude": -88.641397,
+    "name": "Pontiac city"
+  },
+  "pontoonbeach": {
+    "latitude": 38.720957,
+    "longitude": -90.057466,
+    "name": "Pontoon Beach village"
+  },
+  "pontoosuc": {
+    "latitude": 40.628606,
+    "longitude": -91.210663,
+    "name": "Pontoosuc village"
+  },
+  "poplargrove": {
+    "latitude": 42.351097,
+    "longitude": -88.843783,
+    "name": "Poplar Grove village"
+  },
+  "portbarrington": {
+    "latitude": 42.244208,
+    "longitude": -88.195134,
+    "name": "Port Barrington village"
+  },
+  "portbyron": {
+    "latitude": 41.624301,
+    "longitude": -90.330179,
+    "name": "Port Byron village"
+  },
+  "posen": {
+    "latitude": 41.629067,
+    "longitude": -87.685842,
+    "name": "Posen village"
+  },
+  "potomac": {
+    "latitude": 40.306741,
+    "longitude": -87.797601,
+    "name": "Potomac village"
+  },
+  "prairie": {
+    "latitude": 40.620987,
+    "longitude": -90.464884,
+    "name": "Prairie City village"
+  },
+  "prairiedurocher": {
+    "latitude": 38.081708,
+    "longitude": -90.097565,
+    "name": "Prairie du Rocher village"
+  },
+  "prairiegrove": {
+    "latitude": 42.27386,
+    "longitude": -88.269882,
+    "name": "Prairie Grove village"
+  },
+  "prairietown": {
+    "latitude": 38.966485,
+    "longitude": -89.92345,
+    "name": "Prairietown CDP"
+  },
+  "preemption": {
+    "latitude": 41.313094,
+    "longitude": -90.578726,
+    "name": "Preemption CDP"
+  },
+  "prestbury": {
+    "latitude": 41.785962,
+    "longitude": -88.423989,
+    "name": "Prestbury CDP"
+  },
+  "prestonheights": {
+    "latitude": 41.495313,
+    "longitude": -88.080865,
+    "name": "Preston Heights CDP"
+  },
+  "princeton": {
+    "latitude": 41.380554,
+    "longitude": -89.464081,
+    "name": "Princeton city"
+  },
+  "princeville": {
+    "latitude": 40.93475,
+    "longitude": -89.754709,
+    "name": "Princeville village"
+  },
+  "prophetstown": {
+    "latitude": 41.669656,
+    "longitude": -89.934681,
+    "name": "Prophetstown city"
+  },
+  "prospectheights": {
+    "latitude": 42.103663,
+    "longitude": -87.928972,
+    "name": "Prospect Heights city"
+  },
+  "pulaski": {
+    "latitude": 37.220853,
+    "longitude": -89.206564,
+    "name": "Pulaski village"
+  },
+  "quincy": {
+    "latitude": 39.933675,
+    "longitude": -91.379304,
+    "name": "Quincy city"
+  },
+  "radom": {
+    "latitude": 38.27984,
+    "longitude": -89.192113,
+    "name": "Radom village"
+  },
+  "raleigh": {
+    "latitude": 37.824446,
+    "longitude": -88.531196,
+    "name": "Raleigh village"
+  },
+  "ramsey": {
+    "latitude": 39.145659,
+    "longitude": -89.110269,
+    "name": "Ramsey village"
+  },
+  "rankin": {
+    "latitude": 40.464391,
+    "longitude": -87.895913,
+    "name": "Rankin village"
+  },
+  "ransom": {
+    "latitude": 41.158562,
+    "longitude": -88.654186,
+    "name": "Ransom village"
+  },
+  "rantoul": {
+    "latitude": 40.30256,
+    "longitude": -88.15488,
+    "name": "Rantoul village"
+  },
+  "rapids": {
+    "latitude": 41.578608,
+    "longitude": -90.339848,
+    "name": "Rapids City village"
+  },
+  "raritan": {
+    "latitude": 40.695781,
+    "longitude": -90.825065,
+    "name": "Raritan village"
+  },
+  "raymond": {
+    "latitude": 39.31976,
+    "longitude": -89.574547,
+    "name": "Raymond village"
+  },
+  "redbud": {
+    "latitude": 38.207482,
+    "longitude": -90.002389,
+    "name": "Red Bud city"
+  },
+  "reddick": {
+    "latitude": 41.098399,
+    "longitude": -88.248545,
+    "name": "Reddick village"
+  },
+  "redmon": {
+    "latitude": 39.644787,
+    "longitude": -87.861524,
+    "name": "Redmon village"
+  },
+  "rentchler": {
+    "latitude": 38.49252,
+    "longitude": -89.868677,
+    "name": "Rentchler CDP"
+  },
+  "resthaven": {
+    "latitude": 41.258285,
+    "longitude": -88.12973,
+    "name": "Rest Haven CDP"
+  },
+  "reynolds": {
+    "latitude": 41.33181,
+    "longitude": -90.67222,
+    "name": "Reynolds village"
+  },
+  "richfield": {
+    "latitude": 39.814073,
+    "longitude": -91.115765,
+    "name": "Richfield CDP"
+  },
+  "richmond": {
+    "latitude": 42.463803,
+    "longitude": -88.309399,
+    "name": "Richmond village"
+  },
+  "richtonpark": {
+    "latitude": 41.480183,
+    "longitude": -87.742531,
+    "name": "Richton Park village"
+  },
+  "richview": {
+    "latitude": 38.375878,
+    "longitude": -89.180262,
+    "name": "Richview village"
+  },
+  "ridgefarm": {
+    "latitude": 39.895722,
+    "longitude": -87.651961,
+    "name": "Ridge Farm village"
+  },
+  "ridgefield": {
+    "latitude": 42.270708,
+    "longitude": -88.362004,
+    "name": "Ridgefield CDP"
+  },
+  "ridgewood": {
+    "latitude": 41.53409,
+    "longitude": -88.043436,
+    "name": "Ridgewood CDP"
+  },
+  "ridgway": {
+    "latitude": 37.797884,
+    "longitude": -88.260616,
+    "name": "Ridgway village"
+  },
+  "ridott": {
+    "latitude": 42.296844,
+    "longitude": -89.477148,
+    "name": "Ridott village"
+  },
+  "riggston": {
+    "latitude": 39.694609,
+    "longitude": -90.423292,
+    "name": "Riggston CDP"
+  },
+  "riley": {
+    "latitude": 42.192927,
+    "longitude": -88.628705,
+    "name": "Riley CDP"
+  },
+  "ringwood": {
+    "latitude": 42.397282,
+    "longitude": -88.304086,
+    "name": "Ringwood village"
+  },
+  "rio": {
+    "latitude": 41.109306,
+    "longitude": -90.398837,
+    "name": "Rio village"
+  },
+  "ripley": {
+    "latitude": 40.025188,
+    "longitude": -90.637957,
+    "name": "Ripley village"
+  },
+  "ritchie": {
+    "latitude": 41.255694,
+    "longitude": -88.115808,
+    "name": "Ritchie CDP"
+  },
+  "riverdale": {
+    "latitude": 41.642695,
+    "longitude": -87.63564,
+    "name": "Riverdale village"
+  },
+  "riverforest": {
+    "latitude": 41.894875,
+    "longitude": -87.819064,
+    "name": "River Forest village"
+  },
+  "rivergrove": {
+    "latitude": 41.924277,
+    "longitude": -87.837934,
+    "name": "River Grove village"
+  },
+  "riverside": {
+    "latitude": 41.830956,
+    "longitude": -87.815854,
+    "name": "Riverside village"
+  },
+  "riverton": {
+    "latitude": 39.846145,
+    "longitude": -89.536367,
+    "name": "Riverton village"
+  },
+  "riverwoods": {
+    "latitude": 42.172903,
+    "longitude": -87.894862,
+    "name": "Riverwoods village"
+  },
+  "roanoke": {
+    "latitude": 40.798515,
+    "longitude": -89.201287,
+    "name": "Roanoke village"
+  },
+  "robbins": {
+    "latitude": 41.643125,
+    "longitude": -87.708103,
+    "name": "Robbins village"
+  },
+  "roberts": {
+    "latitude": 40.614823,
+    "longitude": -88.18421,
+    "name": "Roberts village"
+  },
+  "robinson": {
+    "latitude": 39.008567,
+    "longitude": -87.73344,
+    "name": "Robinson city"
+  },
+  "rochelle": {
+    "latitude": 41.919149,
+    "longitude": -89.063661,
+    "name": "Rochelle city"
+  },
+  "rochester": {
+    "latitude": 39.742786,
+    "longitude": -89.521702,
+    "name": "Rochester village"
+  },
+  "rock": {
+    "latitude": 42.412956,
+    "longitude": -89.471014,
+    "name": "Rock City village"
+  },
+  "rockbridge": {
+    "latitude": 39.269275,
+    "longitude": -90.206552,
+    "name": "Rockbridge village"
+  },
+  "rockdale": {
+    "latitude": 41.504881,
+    "longitude": -88.124765,
+    "name": "Rockdale village"
+  },
+  "rockfalls": {
+    "latitude": 41.772066,
+    "longitude": -89.694213,
+    "name": "Rock Falls city"
+  },
+  "rockford": {
+    "latitude": 42.2593,
+    "longitude": -89.063478,
+    "name": "Rockford city"
+  },
+  "rockisland": {
+    "latitude": 41.469444,
+    "longitude": -90.585307,
+    "name": "Rock Island city"
+  },
+  "rockislandarsenal": {
+    "latitude": 41.517038,
+    "longitude": -90.539689,
+    "name": "Rock Island Arsenal CDP"
+  },
+  "rockport": {
+    "latitude": 39.539101,
+    "longitude": -91.012697,
+    "name": "Rockport CDP"
+  },
+  "rockton": {
+    "latitude": 42.447061,
+    "longitude": -89.063088,
+    "name": "Rockton village"
+  },
+  "rockwood": {
+    "latitude": 37.837063,
+    "longitude": -89.691776,
+    "name": "Rockwood village"
+  },
+  "rollingmeadows": {
+    "latitude": 42.074909,
+    "longitude": -88.025363,
+    "name": "Rolling Meadows city"
+  },
+  "rome": {
+    "latitude": 40.877433,
+    "longitude": -89.513241,
+    "name": "Rome CDP"
+  },
+  "romeoville": {
+    "latitude": 41.627924,
+    "longitude": -88.101182,
+    "name": "Romeoville village"
+  },
+  "roodhouse": {
+    "latitude": 39.484053,
+    "longitude": -90.374035,
+    "name": "Roodhouse city"
+  },
+  "roscoe": {
+    "latitude": 42.425559,
+    "longitude": -89.009455,
+    "name": "Roscoe village"
+  },
+  "rosehill": {
+    "latitude": 39.104302,
+    "longitude": -88.149888,
+    "name": "Rose Hill village"
+  },
+  "roselle": {
+    "latitude": 41.980249,
+    "longitude": -88.08591,
+    "name": "Roselle village"
+  },
+  "rosemont": {
+    "latitude": 41.988978,
+    "longitude": -87.871739,
+    "name": "Rosemont village"
+  },
+  "roseville": {
+    "latitude": 40.730702,
+    "longitude": -90.663803,
+    "name": "Roseville village"
+  },
+  "rosewoodheights": {
+    "latitude": 38.887788,
+    "longitude": -90.073246,
+    "name": "Rosewood Heights CDP"
+  },
+  "rosiclare": {
+    "latitude": 37.425633,
+    "longitude": -88.352263,
+    "name": "Rosiclare city"
+  },
+  "rossville": {
+    "latitude": 40.381482,
+    "longitude": -87.669923,
+    "name": "Rossville village"
+  },
+  "roundlake": {
+    "latitude": 42.343181,
+    "longitude": -88.102099,
+    "name": "Round Lake village"
+  },
+  "roundlakebeach": {
+    "latitude": 42.382409,
+    "longitude": -88.080689,
+    "name": "Round Lake Beach village"
+  },
+  "roundlakeheights": {
+    "latitude": 42.38461,
+    "longitude": -88.105893,
+    "name": "Round Lake Heights village"
+  },
+  "roundlakepark": {
+    "latitude": 42.340665,
+    "longitude": -88.081179,
+    "name": "Round Lake Park village"
+  },
+  "roxana": {
+    "latitude": 38.82159,
+    "longitude": -90.04585,
+    "name": "Roxana village"
+  },
+  "royal": {
+    "latitude": 40.193129,
+    "longitude": -87.971874,
+    "name": "Royal village"
+  },
+  "royallakes": {
+    "latitude": 39.113283,
+    "longitude": -89.95853,
+    "name": "Royal Lakes village"
+  },
+  "royalton": {
+    "latitude": 37.877644,
+    "longitude": -89.113572,
+    "name": "Royalton village"
+  },
+  "ruma": {
+    "latitude": 38.130604,
+    "longitude": -90.000327,
+    "name": "Ruma village"
+  },
+  "rushville": {
+    "latitude": 40.119966,
+    "longitude": -90.566548,
+    "name": "Rushville city"
+  },
+  "russellville": {
+    "latitude": 38.818609,
+    "longitude": -87.53012,
+    "name": "Russellville village"
+  },
+  "rutland": {
+    "latitude": 40.983794,
+    "longitude": -89.041327,
+    "name": "Rutland village"
+  },
+  "sadorus": {
+    "latitude": 39.966891,
+    "longitude": -88.345145,
+    "name": "Sadorus village"
+  },
+  "sailorsprings": {
+    "latitude": 38.764462,
+    "longitude": -88.360228,
+    "name": "Sailor Springs village"
+  },
+  "salem": {
+    "latitude": 38.627537,
+    "longitude": -88.959448,
+    "name": "Salem city"
+  },
+  "sammonspoint": {
+    "latitude": 41.032362,
+    "longitude": -87.858252,
+    "name": "Sammons Point village"
+  },
+  "sandoval": {
+    "latitude": 38.612368,
+    "longitude": -89.11974,
+    "name": "Sandoval village"
+  },
+  "sandwich": {
+    "latitude": 41.650067,
+    "longitude": -88.619021,
+    "name": "Sandwich city"
+  },
+  "sanjose": {
+    "latitude": 40.30515,
+    "longitude": -89.604761,
+    "name": "San Jose village"
+  },
+  "sauget": {
+    "latitude": 38.585865,
+    "longitude": -90.153131,
+    "name": "Sauget village"
+  },
+  "sauk": {
+    "latitude": 41.490094,
+    "longitude": -87.570624,
+    "name": "Sauk Village village"
+  },
+  "saunemin": {
+    "latitude": 40.892186,
+    "longitude": -88.405325,
+    "name": "Saunemin village"
+  },
+  "savanna": {
+    "latitude": 42.093844,
+    "longitude": -90.139061,
+    "name": "Savanna city"
+  },
+  "savoy": {
+    "latitude": 40.059135,
+    "longitude": -88.254497,
+    "name": "Savoy village"
+  },
+  "sawyerville": {
+    "latitude": 39.0819,
+    "longitude": -89.804504,
+    "name": "Sawyerville village"
+  },
+  "saybrook": {
+    "latitude": 40.428122,
+    "longitude": -88.526162,
+    "name": "Saybrook village"
+  },
+  "scalesmound": {
+    "latitude": 42.474823,
+    "longitude": -90.252615,
+    "name": "Scales Mound village"
+  },
+  "schaumburg": {
+    "latitude": 42.0289,
+    "longitude": -88.083773,
+    "name": "Schaumburg village"
+  },
+  "schillerpark": {
+    "latitude": 41.958626,
+    "longitude": -87.869317,
+    "name": "Schiller Park village"
+  },
+  "schram": {
+    "latitude": 39.159815,
+    "longitude": -89.466783,
+    "name": "Schram City village"
+  },
+  "sciota": {
+    "latitude": 40.562619,
+    "longitude": -90.748029,
+    "name": "Sciota village"
+  },
+  "scottafb": {
+    "latitude": 38.542974,
+    "longitude": -89.852127,
+    "name": "Scott AFB CDP"
+  },
+  "scottville": {
+    "latitude": 39.477713,
+    "longitude": -90.103786,
+    "name": "Scottville village"
+  },
+  "seaton": {
+    "latitude": 41.102323,
+    "longitude": -90.799113,
+    "name": "Seaton village"
+  },
+  "seatonville": {
+    "latitude": 41.367116,
+    "longitude": -89.274824,
+    "name": "Seatonville village"
+  },
+  "secor": {
+    "latitude": 40.741785,
+    "longitude": -89.135007,
+    "name": "Secor village"
+  },
+  "seneca": {
+    "latitude": 41.302634,
+    "longitude": -88.614667,
+    "name": "Seneca village"
+  },
+  "serena": {
+    "latitude": 41.487169,
+    "longitude": -88.731881,
+    "name": "Serena CDP"
+  },
+  "sesser": {
+    "latitude": 38.090336,
+    "longitude": -89.050813,
+    "name": "Sesser city"
+  },
+  "seymour": {
+    "latitude": 40.106809,
+    "longitude": -88.427071,
+    "name": "Seymour CDP"
+  },
+  "shabbona": {
+    "latitude": 41.764305,
+    "longitude": -88.882179,
+    "name": "Shabbona village"
+  },
+  "shannon": {
+    "latitude": 42.152447,
+    "longitude": -89.740174,
+    "name": "Shannon village"
+  },
+  "shawneetown": {
+    "latitude": 37.715906,
+    "longitude": -88.18671,
+    "name": "Shawneetown city"
+  },
+  "sheffield": {
+    "latitude": 41.357972,
+    "longitude": -89.739174,
+    "name": "Sheffield village"
+  },
+  "shelbyville": {
+    "latitude": 39.410305,
+    "longitude": -88.799666,
+    "name": "Shelbyville city"
+  },
+  "sheldon": {
+    "latitude": 40.77102,
+    "longitude": -87.565758,
+    "name": "Sheldon village"
+  },
+  "sheridan": {
+    "latitude": 41.529521,
+    "longitude": -88.6807,
+    "name": "Sheridan village"
+  },
+  "sherman": {
+    "latitude": 39.890304,
+    "longitude": -89.604463,
+    "name": "Sherman village"
+  },
+  "sherrard": {
+    "latitude": 41.314204,
+    "longitude": -90.497216,
+    "name": "Sherrard village"
+  },
+  "shiloh": {
+    "latitude": 38.552025,
+    "longitude": -89.915139,
+    "name": "Shiloh village"
+  },
+  "shipman": {
+    "latitude": 39.119488,
+    "longitude": -90.045189,
+    "name": "Shipman town"
+  },
+  "shirley": {
+    "latitude": 40.407464,
+    "longitude": -89.064271,
+    "name": "Shirley CDP"
+  },
+  "shorewood": {
+    "latitude": 41.517527,
+    "longitude": -88.215155,
+    "name": "Shorewood village"
+  },
+  "shumway": {
+    "latitude": 39.183431,
+    "longitude": -88.653209,
+    "name": "Shumway village"
+  },
+  "sibley": {
+    "latitude": 40.587623,
+    "longitude": -88.378217,
+    "name": "Sibley village"
+  },
+  "sidell": {
+    "latitude": 39.909721,
+    "longitude": -87.823604,
+    "name": "Sidell village"
+  },
+  "sidney": {
+    "latitude": 40.0254,
+    "longitude": -88.072196,
+    "name": "Sidney village"
+  },
+  "sigel": {
+    "latitude": 39.225473,
+    "longitude": -88.494659,
+    "name": "Sigel town"
+  },
+  "silvis": {
+    "latitude": 41.497646,
+    "longitude": -90.41014,
+    "name": "Silvis city"
+  },
+  "simpson": {
+    "latitude": 37.467445,
+    "longitude": -88.757879,
+    "name": "Simpson village"
+  },
+  "sims": {
+    "latitude": 38.361844,
+    "longitude": -88.535465,
+    "name": "Sims village"
+  },
+  "skokie": {
+    "latitude": 42.03597,
+    "longitude": -87.739994,
+    "name": "Skokie village"
+  },
+  "sleepyhollow": {
+    "latitude": 42.090287,
+    "longitude": -88.313712,
+    "name": "Sleepy Hollow village"
+  },
+  "smithboro": {
+    "latitude": 38.894558,
+    "longitude": -89.339902,
+    "name": "Smithboro village"
+  },
+  "smithfield": {
+    "latitude": 40.474427,
+    "longitude": -90.29488,
+    "name": "Smithfield village"
+  },
+  "smithton": {
+    "latitude": 38.414342,
+    "longitude": -89.990095,
+    "name": "Smithton village"
+  },
+  "smithville": {
+    "latitude": 40.658954,
+    "longitude": -89.803114,
+    "name": "Smithville CDP"
+  },
+  "solonmills": {
+    "latitude": 42.442125,
+    "longitude": -88.27641,
+    "name": "Solon Mills CDP"
+  },
+  "somonauk": {
+    "latitude": 41.634747,
+    "longitude": -88.687476,
+    "name": "Somonauk village"
+  },
+  "sorento": {
+    "latitude": 39.00079,
+    "longitude": -89.574839,
+    "name": "Sorento village"
+  },
+  "southbarrington": {
+    "latitude": 42.088992,
+    "longitude": -88.157184,
+    "name": "South Barrington village"
+  },
+  "southbeloit": {
+    "latitude": 42.484842,
+    "longitude": -89.027433,
+    "name": "South Beloit city"
+  },
+  "southchicagoheights": {
+    "latitude": 41.483406,
+    "longitude": -87.637201,
+    "name": "South Chicago Heights village"
+  },
+  "southelgin": {
+    "latitude": 41.990254,
+    "longitude": -88.314285,
+    "name": "South Elgin village"
+  },
+  "southernview": {
+    "latitude": 39.754617,
+    "longitude": -89.651724,
+    "name": "Southern View village"
+  },
+  "southholland": {
+    "latitude": 41.598372,
+    "longitude": -87.602736,
+    "name": "South Holland village"
+  },
+  "southjacksonville": {
+    "latitude": 39.69936,
+    "longitude": -90.224034,
+    "name": "South Jacksonville village"
+  },
+  "southpekin": {
+    "latitude": 40.495497,
+    "longitude": -89.652382,
+    "name": "South Pekin village"
+  },
+  "southroxana": {
+    "latitude": 38.810614,
+    "longitude": -90.059939,
+    "name": "South Roxana village"
+  },
+  "southwilmington": {
+    "latitude": 41.174495,
+    "longitude": -88.279455,
+    "name": "South Wilmington village"
+  },
+  "sparland": {
+    "latitude": 41.029609,
+    "longitude": -89.44118,
+    "name": "Sparland village"
+  },
+  "sparta": {
+    "latitude": 38.139419,
+    "longitude": -89.730509,
+    "name": "Sparta city"
+  },
+  "spaulding": {
+    "latitude": 39.866192,
+    "longitude": -89.545053,
+    "name": "Spaulding village"
+  },
+  "spillertown": {
+    "latitude": 37.767536,
+    "longitude": -88.923801,
+    "name": "Spillertown village"
+  },
+  "springbay": {
+    "latitude": 40.821249,
+    "longitude": -89.531131,
+    "name": "Spring Bay village"
+  },
+  "springerton": {
+    "latitude": 38.178556,
+    "longitude": -88.355249,
+    "name": "Springerton village"
+  },
+  "springfield": {
+    "latitude": 39.791063,
+    "longitude": -89.644572,
+    "name": "Springfield city"
+  },
+  "springgrove": {
+    "latitude": 42.450749,
+    "longitude": -88.240232,
+    "name": "Spring Grove village"
+  },
+  "springvalley": {
+    "latitude": 41.323258,
+    "longitude": -89.183013,
+    "name": "Spring Valley city"
+  },
+  "standard": {
+    "latitude": 41.255767,
+    "longitude": -89.181734,
+    "name": "Standard village"
+  },
+  "stanford": {
+    "latitude": 40.432182,
+    "longitude": -89.220763,
+    "name": "Stanford village"
+  },
+  "stanne": {
+    "latitude": 41.023469,
+    "longitude": -87.716988,
+    "name": "St. Anne village"
+  },
+  "staugustine": {
+    "latitude": 40.721273,
+    "longitude": -90.406927,
+    "name": "St. Augustine village"
+  },
+  "staunton": {
+    "latitude": 39.011668,
+    "longitude": -89.790737,
+    "name": "Staunton city"
+  },
+  "stcharles": {
+    "latitude": 41.919447,
+    "longitude": -88.310743,
+    "name": "St. Charles city"
+  },
+  "stdavid": {
+    "latitude": 40.491985,
+    "longitude": -90.052463,
+    "name": "St. David village"
+  },
+  "steeleville": {
+    "latitude": 38.008405,
+    "longitude": -89.662406,
+    "name": "Steeleville village"
+  },
+  "steger": {
+    "latitude": 41.472322,
+    "longitude": -87.617732,
+    "name": "Steger village"
+  },
+  "stelmo": {
+    "latitude": 39.021775,
+    "longitude": -88.851406,
+    "name": "St. Elmo city"
+  },
+  "stemarie": {
+    "latitude": 38.930045,
+    "longitude": -88.027748,
+    "name": "Ste. Marie village"
+  },
+  "sterling": {
+    "latitude": 41.799688,
+    "longitude": -89.695933,
+    "name": "Sterling city"
+  },
+  "steward": {
+    "latitude": 41.848323,
+    "longitude": -89.020004,
+    "name": "Steward village"
+  },
+  "stewardson": {
+    "latitude": 39.263828,
+    "longitude": -88.630085,
+    "name": "Stewardson village"
+  },
+  "stfrancisville": {
+    "latitude": 38.591913,
+    "longitude": -87.647546,
+    "name": "St. Francisville city"
+  },
+  "stickney": {
+    "latitude": 41.817025,
+    "longitude": -87.7737,
+    "name": "Stickney village"
+  },
+  "stillmanvalley": {
+    "latitude": 42.105427,
+    "longitude": -89.178989,
+    "name": "Stillman Valley village"
+  },
+  "stjacob": {
+    "latitude": 38.718016,
+    "longitude": -89.763258,
+    "name": "St. Jacob village"
+  },
+  "stjohns": {
+    "latitude": 38.034854,
+    "longitude": -89.238563,
+    "name": "St. Johns village"
+  },
+  "stjoseph": {
+    "latitude": 40.114713,
+    "longitude": -88.03562,
+    "name": "St. Joseph village"
+  },
+  "stlibory": {
+    "latitude": 38.363067,
+    "longitude": -89.718104,
+    "name": "St. Libory village"
+  },
+  "stockton": {
+    "latitude": 42.352509,
+    "longitude": -90.001933,
+    "name": "Stockton village"
+  },
+  "stonefort": {
+    "latitude": 37.621542,
+    "longitude": -88.704066,
+    "name": "Stonefort village"
+  },
+  "stonepark": {
+    "latitude": 41.903226,
+    "longitude": -87.880695,
+    "name": "Stone Park village"
+  },
+  "stonington": {
+    "latitude": 39.638517,
+    "longitude": -89.192044,
+    "name": "Stonington village"
+  },
+  "stoy": {
+    "latitude": 38.996791,
+    "longitude": -87.833559,
+    "name": "Stoy village"
+  },
+  "stpeter": {
+    "latitude": 38.867553,
+    "longitude": -88.850392,
+    "name": "St. Peter village"
+  },
+  "strasburg": {
+    "latitude": 39.349737,
+    "longitude": -88.621813,
+    "name": "Strasburg village"
+  },
+  "strawn": {
+    "latitude": 40.652689,
+    "longitude": -88.39908,
+    "name": "Strawn village"
+  },
+  "streamwood": {
+    "latitude": 42.020586,
+    "longitude": -88.177771,
+    "name": "Streamwood village"
+  },
+  "streator": {
+    "latitude": 41.124979,
+    "longitude": -88.829592,
+    "name": "Streator city"
+  },
+  "stronghurst": {
+    "latitude": 40.746222,
+    "longitude": -90.909395,
+    "name": "Stronghurst village"
+  },
+  "strose": {
+    "latitude": 38.682616,
+    "longitude": -89.553607,
+    "name": "St. Rose village"
+  },
+  "sublette": {
+    "latitude": 41.643046,
+    "longitude": -89.228943,
+    "name": "Sublette village"
+  },
+  "sugargrove": {
+    "latitude": 41.777407,
+    "longitude": -88.446525,
+    "name": "Sugar Grove village"
+  },
+  "sullivan": {
+    "latitude": 39.595166,
+    "longitude": -88.608949,
+    "name": "Sullivan city"
+  },
+  "summerfield": {
+    "latitude": 38.595711,
+    "longitude": -89.749749,
+    "name": "Summerfield village"
+  },
+  "summit": {
+    "latitude": 41.788452,
+    "longitude": -87.813921,
+    "name": "Summit village"
+  },
+  "sumner": {
+    "latitude": 38.715378,
+    "longitude": -87.866692,
+    "name": "Sumner city"
+  },
+  "sunnyland": {
+    "latitude": 41.571968,
+    "longitude": -88.144854,
+    "name": "Sunnyland CDP"
+  },
+  "sunriverterrace": {
+    "latitude": 41.123409,
+    "longitude": -87.733299,
+    "name": "Sun River Terrace village"
+  },
+  "swansea": {
+    "latitude": 38.551779,
+    "longitude": -89.987506,
+    "name": "Swansea village"
+  },
+  "swedona": {
+    "latitude": 41.280094,
+    "longitude": -90.443386,
+    "name": "Swedona CDP"
+  },
+  "sycamore": {
+    "latitude": 41.996728,
+    "longitude": -88.677644,
+    "name": "Sycamore city"
+  },
+  "symerton": {
+    "latitude": 41.325604,
+    "longitude": -88.053083,
+    "name": "Symerton village"
+  },
+  "tablegrove": {
+    "latitude": 40.365034,
+    "longitude": -90.425239,
+    "name": "Table Grove village"
+  },
+  "tallula": {
+    "latitude": 39.945725,
+    "longitude": -89.93661,
+    "name": "Tallula village"
+  },
+  "tamaroa": {
+    "latitude": 38.136342,
+    "longitude": -89.229266,
+    "name": "Tamaroa village"
+  },
+  "tamms": {
+    "latitude": 37.241541,
+    "longitude": -89.271329,
+    "name": "Tamms village"
+  },
+  "tampico": {
+    "latitude": 41.630755,
+    "longitude": -89.785127,
+    "name": "Tampico village"
+  },
+  "taylorridge": {
+    "latitude": 41.389188,
+    "longitude": -90.670504,
+    "name": "Taylor Ridge CDP"
+  },
+  "taylorsprings": {
+    "latitude": 39.131886,
+    "longitude": -89.494971,
+    "name": "Taylor Springs village"
+  },
+  "taylorville": {
+    "latitude": 39.562729,
+    "longitude": -89.308259,
+    "name": "Taylorville city"
+  },
+  "tennessee": {
+    "latitude": 40.41143,
+    "longitude": -90.836233,
+    "name": "Tennessee village"
+  },
+  "teutopolis": {
+    "latitude": 39.131998,
+    "longitude": -88.479564,
+    "name": "Teutopolis village"
+  },
+  "thawville": {
+    "latitude": 40.673121,
+    "longitude": -88.113651,
+    "name": "Thawville village"
+  },
+  "thayer": {
+    "latitude": 39.540378,
+    "longitude": -89.758042,
+    "name": "Thayer village"
+  },
+  "thebes": {
+    "latitude": 37.212421,
+    "longitude": -89.45067,
+    "name": "Thebes village"
+  },
+  "thegalenaterritory": {
+    "latitude": 42.39373,
+    "longitude": -90.324986,
+    "name": "The Galena Territory CDP"
+  },
+  "thirdlake": {
+    "latitude": 42.369763,
+    "longitude": -88.009092,
+    "name": "Third Lake village"
+  },
+  "thomasboro": {
+    "latitude": 40.243895,
+    "longitude": -88.187664,
+    "name": "Thomasboro village"
+  },
+  "thompsonville": {
+    "latitude": 37.911304,
+    "longitude": -88.765018,
+    "name": "Thompsonville village"
+  },
+  "thomson": {
+    "latitude": 41.974701,
+    "longitude": -90.112224,
+    "name": "Thomson village"
+  },
+  "thornton": {
+    "latitude": 41.574149,
+    "longitude": -87.6193,
+    "name": "Thornton village"
+  },
+  "tilden": {
+    "latitude": 38.212024,
+    "longitude": -89.683675,
+    "name": "Tilden village"
+  },
+  "tilton": {
+    "latitude": 40.094978,
+    "longitude": -87.642148,
+    "name": "Tilton village"
+  },
+  "timberlane": {
+    "latitude": 42.335726,
+    "longitude": -88.866109,
+    "name": "Timberlane village"
+  },
+  "tinleypark": {
+    "latitude": 41.568579,
+    "longitude": -87.804217,
+    "name": "Tinley Park village"
+  },
+  "tiskilwa": {
+    "latitude": 41.292414,
+    "longitude": -89.506591,
+    "name": "Tiskilwa village"
+  },
+  "toledo": {
+    "latitude": 39.272782,
+    "longitude": -88.242187,
+    "name": "Toledo village"
+  },
+  "tolono": {
+    "latitude": 39.991253,
+    "longitude": -88.262482,
+    "name": "Tolono village"
+  },
+  "toluca": {
+    "latitude": 41.004431,
+    "longitude": -89.133879,
+    "name": "Toluca city"
+  },
+  "tonica": {
+    "latitude": 41.21587,
+    "longitude": -89.069956,
+    "name": "Tonica village"
+  },
+  "topeka": {
+    "latitude": 40.330362,
+    "longitude": -89.930612,
+    "name": "Topeka village"
+  },
+  "toulon": {
+    "latitude": 41.093372,
+    "longitude": -89.863178,
+    "name": "Toulon city"
+  },
+  "tovey": {
+    "latitude": 39.588251,
+    "longitude": -89.448554,
+    "name": "Tovey village"
+  },
+  "towanda": {
+    "latitude": 40.563352,
+    "longitude": -88.900731,
+    "name": "Towanda village"
+  },
+  "towerhill": {
+    "latitude": 39.386774,
+    "longitude": -88.959249,
+    "name": "Tower Hill village"
+  },
+  "towerlakes": {
+    "latitude": 42.227844,
+    "longitude": -88.15524,
+    "name": "Tower Lakes village"
+  },
+  "tremont": {
+    "latitude": 40.52502,
+    "longitude": -89.489066,
+    "name": "Tremont village"
+  },
+  "trenton": {
+    "latitude": 38.608299,
+    "longitude": -89.685242,
+    "name": "Trenton city"
+  },
+  "trilla": {
+    "latitude": 39.375124,
+    "longitude": -88.350713,
+    "name": "Trilla CDP"
+  },
+  "triumph": {
+    "latitude": 41.499321,
+    "longitude": -89.019862,
+    "name": "Triumph CDP"
+  },
+  "trivoli": {
+    "latitude": 40.697528,
+    "longitude": -89.889067,
+    "name": "Trivoli CDP"
+  },
+  "troutvalley": {
+    "latitude": 42.195703,
+    "longitude": -88.250688,
+    "name": "Trout Valley village"
+  },
+  "troy": {
+    "latitude": 38.726219,
+    "longitude": -89.89347,
+    "name": "Troy city"
+  },
+  "troygrove": {
+    "latitude": 41.465701,
+    "longitude": -89.081542,
+    "name": "Troy Grove village"
+  },
+  "tuscola": {
+    "latitude": 39.795912,
+    "longitude": -88.275483,
+    "name": "Tuscola city"
+  },
+  "twingrove": {
+    "latitude": 40.479324,
+    "longitude": -89.101516,
+    "name": "Twin Grove CDP"
+  },
+  "ullin": {
+    "latitude": 37.280226,
+    "longitude": -89.175797,
+    "name": "Ullin village"
+  },
+  "union": {
+    "latitude": 42.231567,
+    "longitude": -88.54478,
+    "name": "Union village"
+  },
+  "unionhill": {
+    "latitude": 41.107783,
+    "longitude": -88.146033,
+    "name": "Union Hill village"
+  },
+  "unity": {
+    "latitude": 37.152059,
+    "longitude": -89.27302,
+    "name": "Unity CDP"
+  },
+  "universitypark": {
+    "latitude": 41.446894,
+    "longitude": -87.712969,
+    "name": "University Park village"
+  },
+  "urbana": {
+    "latitude": 40.110126,
+    "longitude": -88.197323,
+    "name": "Urbana city"
+  },
+  "ursa": {
+    "latitude": 40.074171,
+    "longitude": -91.37238,
+    "name": "Ursa village"
+  },
+  "valier": {
+    "latitude": 38.017971,
+    "longitude": -89.043689,
+    "name": "Valier village"
+  },
+  "valley": {
+    "latitude": 39.70721,
+    "longitude": -90.649398,
+    "name": "Valley City village"
+  },
+  "valmeyer": {
+    "latitude": 38.305841,
+    "longitude": -90.298324,
+    "name": "Valmeyer village"
+  },
+  "vandalia": {
+    "latitude": 38.974564,
+    "longitude": -89.110695,
+    "name": "Vandalia city"
+  },
+  "varna": {
+    "latitude": 41.035246,
+    "longitude": -89.224316,
+    "name": "Varna village"
+  },
+  "venedy": {
+    "latitude": 38.396607,
+    "longitude": -89.645643,
+    "name": "Venedy village"
+  },
+  "venetian": {
+    "latitude": 42.406072,
+    "longitude": -88.045525,
+    "name": "Venetian Village CDP"
+  },
+  "venice": {
+    "latitude": 38.671997,
+    "longitude": -90.169316,
+    "name": "Venice city"
+  },
+  "vergennes": {
+    "latitude": 37.901933,
+    "longitude": -89.340158,
+    "name": "Vergennes village"
+  },
+  "vermilion": {
+    "latitude": 39.580177,
+    "longitude": -87.58795,
+    "name": "Vermilion village"
+  },
+  "vermont": {
+    "latitude": 40.295715,
+    "longitude": -90.429018,
+    "name": "Vermont village"
+  },
+  "vernon": {
+    "latitude": 38.801392,
+    "longitude": -89.087548,
+    "name": "Vernon village"
+  },
+  "vernonhills": {
+    "latitude": 42.234407,
+    "longitude": -87.961064,
+    "name": "Vernon Hills village"
+  },
+  "verona": {
+    "latitude": 41.215724,
+    "longitude": -88.504913,
+    "name": "Verona village"
+  },
+  "versailles": {
+    "latitude": 39.88385,
+    "longitude": -90.658982,
+    "name": "Versailles village"
+  },
+  "victoria": {
+    "latitude": 41.033649,
+    "longitude": -90.087306,
+    "name": "Victoria village"
+  },
+  "vienna": {
+    "latitude": 37.413624,
+    "longitude": -88.886577,
+    "name": "Vienna city"
+  },
+  "villagrove": {
+    "latitude": 39.864477,
+    "longitude": -88.159729,
+    "name": "Villa Grove city"
+  },
+  "villapark": {
+    "latitude": 41.885612,
+    "longitude": -87.978235,
+    "name": "Villa Park village"
+  },
+  "viola": {
+    "latitude": 41.205323,
+    "longitude": -90.586188,
+    "name": "Viola village"
+  },
+  "virden": {
+    "latitude": 39.506061,
+    "longitude": -89.771102,
+    "name": "Virden city"
+  },
+  "virgil": {
+    "latitude": 41.955732,
+    "longitude": -88.528977,
+    "name": "Virgil village"
+  },
+  "virginia": {
+    "latitude": 39.952942,
+    "longitude": -90.210446,
+    "name": "Virginia city"
+  },
+  "volo": {
+    "latitude": 42.330324,
+    "longitude": -88.158743,
+    "name": "Volo village"
+  },
+  "wadsworth": {
+    "latitude": 42.450687,
+    "longitude": -87.925147,
+    "name": "Wadsworth village"
+  },
+  "waggoner": {
+    "latitude": 39.377529,
+    "longitude": -89.65258,
+    "name": "Waggoner village"
+  },
+  "walnut": {
+    "latitude": 41.557051,
+    "longitude": -89.591338,
+    "name": "Walnut village"
+  },
+  "walnuthill": {
+    "latitude": 38.477947,
+    "longitude": -89.044393,
+    "name": "Walnut Hill village"
+  },
+  "walshville": {
+    "latitude": 39.068997,
+    "longitude": -89.618962,
+    "name": "Walshville village"
+  },
+  "waltonville": {
+    "latitude": 38.216133,
+    "longitude": -89.038197,
+    "name": "Waltonville village"
+  },
+  "wamac": {
+    "latitude": 38.490941,
+    "longitude": -89.14786,
+    "name": "Wamac city"
+  },
+  "wapella": {
+    "latitude": 40.221614,
+    "longitude": -88.961253,
+    "name": "Wapella village"
+  },
+  "warren": {
+    "latitude": 42.494827,
+    "longitude": -89.991229,
+    "name": "Warren village"
+  },
+  "warrensburg": {
+    "latitude": 39.931953,
+    "longitude": -89.062761,
+    "name": "Warrensburg village"
+  },
+  "warrenville": {
+    "latitude": 41.820977,
+    "longitude": -88.187454,
+    "name": "Warrenville city"
+  },
+  "warsaw": {
+    "latitude": 40.351045,
+    "longitude": -91.428019,
+    "name": "Warsaw city"
+  },
+  "washburn": {
+    "latitude": 40.920299,
+    "longitude": -89.291757,
+    "name": "Washburn village"
+  },
+  "washington": {
+    "latitude": 40.706396,
+    "longitude": -89.433463,
+    "name": "Washington city"
+  },
+  "washingtonpark": {
+    "latitude": 38.628459,
+    "longitude": -90.092563,
+    "name": "Washington Park village"
+  },
+  "wataga": {
+    "latitude": 41.02523,
+    "longitude": -90.275446,
+    "name": "Wataga village"
+  },
+  "waterloo": {
+    "latitude": 38.341214,
+    "longitude": -90.152716,
+    "name": "Waterloo city"
+  },
+  "waterman": {
+    "latitude": 41.765591,
+    "longitude": -88.763066,
+    "name": "Waterman village"
+  },
+  "watseka": {
+    "latitude": 40.775105,
+    "longitude": -87.730374,
+    "name": "Watseka city"
+  },
+  "watson": {
+    "latitude": 39.026137,
+    "longitude": -88.56856,
+    "name": "Watson village"
+  },
+  "wauconda": {
+    "latitude": 42.277005,
+    "longitude": -88.135272,
+    "name": "Wauconda village"
+  },
+  "waukegan": {
+    "latitude": 42.369447,
+    "longitude": -87.870898,
+    "name": "Waukegan city"
+  },
+  "waverly": {
+    "latitude": 39.59257,
+    "longitude": -89.95276,
+    "name": "Waverly city"
+  },
+  "wayne": {
+    "latitude": 41.947255,
+    "longitude": -88.253231,
+    "name": "Wayne village"
+  },
+  "waynesville": {
+    "latitude": 40.241253,
+    "longitude": -89.124478,
+    "name": "Waynesville village"
+  },
+  "wedron": {
+    "latitude": 41.438306,
+    "longitude": -88.774891,
+    "name": "Wedron CDP"
+  },
+  "weldon": {
+    "latitude": 40.12163,
+    "longitude": -88.749742,
+    "name": "Weldon village"
+  },
+  "wellington": {
+    "latitude": 40.541093,
+    "longitude": -87.679896,
+    "name": "Wellington village"
+  },
+  "wenona": {
+    "latitude": 41.048655,
+    "longitude": -89.052258,
+    "name": "Wenona city"
+  },
+  "wenonah": {
+    "latitude": 39.319997,
+    "longitude": -89.28798,
+    "name": "Wenonah village"
+  },
+  "west": {
+    "latitude": 37.996016,
+    "longitude": -88.948894,
+    "name": "West City village"
+  },
+  "westbrooklyn": {
+    "latitude": 41.693462,
+    "longitude": -89.147491,
+    "name": "West Brooklyn village"
+  },
+  "westchester": {
+    "latitude": 41.849196,
+    "longitude": -87.890619,
+    "name": "Westchester village"
+  },
+  "westchicago": {
+    "latitude": 41.894469,
+    "longitude": -88.221121,
+    "name": "West Chicago city"
+  },
+  "westdundee": {
+    "latitude": 42.1044,
+    "longitude": -88.333451,
+    "name": "West Dundee village"
+  },
+  "westernsprings": {
+    "latitude": 41.802278,
+    "longitude": -87.900556,
+    "name": "Western Springs village"
+  },
+  "westervelt": {
+    "latitude": 39.479058,
+    "longitude": -88.861198,
+    "name": "Westervelt CDP"
+  },
+  "westfield": {
+    "latitude": 39.455534,
+    "longitude": -87.996449,
+    "name": "Westfield village"
+  },
+  "westfrankfort": {
+    "latitude": 37.899495,
+    "longitude": -88.930814,
+    "name": "West Frankfort city"
+  },
+  "westlake": {
+    "latitude": 42.309838,
+    "longitude": -89.292479,
+    "name": "Westlake Village CDP"
+  },
+  "westliberty": {
+    "latitude": 38.852381,
+    "longitude": -88.085242,
+    "name": "West Liberty CDP"
+  },
+  "westmont": {
+    "latitude": 41.794371,
+    "longitude": -87.97286,
+    "name": "Westmont village"
+  },
+  "westpeoria": {
+    "latitude": 40.696977,
+    "longitude": -89.639908,
+    "name": "West Peoria city"
+  },
+  "westpoint": {
+    "latitude": 40.255576,
+    "longitude": -91.183307,
+    "name": "West Point village"
+  },
+  "westsalem": {
+    "latitude": 38.520096,
+    "longitude": -88.0093,
+    "name": "West Salem village"
+  },
+  "westunion": {
+    "latitude": 39.213674,
+    "longitude": -87.666558,
+    "name": "West Union CDP"
+  },
+  "westville": {
+    "latitude": 40.044014,
+    "longitude": -87.638906,
+    "name": "Westville village"
+  },
+  "westyork": {
+    "latitude": 39.168841,
+    "longitude": -87.67304,
+    "name": "West York CDP"
+  },
+  "wheaton": {
+    "latitude": 41.856833,
+    "longitude": -88.108126,
+    "name": "Wheaton city"
+  },
+  "wheeler": {
+    "latitude": 39.043042,
+    "longitude": -88.318765,
+    "name": "Wheeler village"
+  },
+  "wheeling": {
+    "latitude": 42.129614,
+    "longitude": -87.921503,
+    "name": "Wheeling village"
+  },
+  "white": {
+    "latitude": 39.070641,
+    "longitude": -89.769652,
+    "name": "White City village"
+  },
+  "whiteash": {
+    "latitude": 37.783799,
+    "longitude": -88.93068,
+    "name": "Whiteash CDP"
+  },
+  "whitehall": {
+    "latitude": 39.438554,
+    "longitude": -90.401075,
+    "name": "White Hall city"
+  },
+  "whiteheath": {
+    "latitude": 40.086811,
+    "longitude": -88.511649,
+    "name": "White Heath CDP"
+  },
+  "williamsfield": {
+    "latitude": 40.926379,
+    "longitude": -90.018168,
+    "name": "Williamsfield village"
+  },
+  "williamson": {
+    "latitude": 38.98453,
+    "longitude": -89.762536,
+    "name": "Williamson village"
+  },
+  "williamsville": {
+    "latitude": 39.956112,
+    "longitude": -89.543628,
+    "name": "Williamsville village"
+  },
+  "willisville": {
+    "latitude": 37.982804,
+    "longitude": -89.589787,
+    "name": "Willisville village"
+  },
+  "willowbrook": {
+    "latitude": 41.767315,
+    "longitude": -87.94215,
+    "name": "Willowbrook village"
+  },
+  "willowhill": {
+    "latitude": 38.995838,
+    "longitude": -88.021817,
+    "name": "Willow Hill village"
+  },
+  "willowlake": {
+    "latitude": 42.33422,
+    "longitude": -89.635349,
+    "name": "Willow Lake CDP"
+  },
+  "willowsprings": {
+    "latitude": 41.734137,
+    "longitude": -87.88401,
+    "name": "Willow Springs village"
+  },
+  "wilmette": {
+    "latitude": 42.077323,
+    "longitude": -87.728621,
+    "name": "Wilmette village"
+  },
+  "wilmington": {
+    "latitude": 39.480683,
+    "longitude": -90.486766,
+    "name": "Wilmington village"
+  },
+  "wilsonville": {
+    "latitude": 39.068983,
+    "longitude": -89.855065,
+    "name": "Wilsonville village"
+  },
+  "wiltoncenter": {
+    "latitude": 41.351699,
+    "longitude": -87.95673,
+    "name": "Wilton Center CDP"
+  },
+  "winchester": {
+    "latitude": 39.629778,
+    "longitude": -90.455964,
+    "name": "Winchester city"
+  },
+  "windsor": {
+    "latitude": 41.201826,
+    "longitude": -90.444349,
+    "name": "Windsor village"
+  },
+  "winfield": {
+    "latitude": 41.878435,
+    "longitude": -88.153033,
+    "name": "Winfield village"
+  },
+  "winnebago": {
+    "latitude": 42.267088,
+    "longitude": -89.23397,
+    "name": "Winnebago village"
+  },
+  "winnetka": {
+    "latitude": 42.10621,
+    "longitude": -87.742764,
+    "name": "Winnetka village"
+  },
+  "winslow": {
+    "latitude": 42.492999,
+    "longitude": -89.794872,
+    "name": "Winslow village"
+  },
+  "winthropharbor": {
+    "latitude": 42.480614,
+    "longitude": -87.829557,
+    "name": "Winthrop Harbor village"
+  },
+  "witt": {
+    "latitude": 39.253844,
+    "longitude": -89.348795,
+    "name": "Witt city"
+  },
+  "wonderlake": {
+    "latitude": 42.374854,
+    "longitude": -88.348318,
+    "name": "Wonder Lake village"
+  },
+  "wooddale": {
+    "latitude": 41.966405,
+    "longitude": -87.980953,
+    "name": "Wood Dale city"
+  },
+  "woodhull": {
+    "latitude": 41.178433,
+    "longitude": -90.322179,
+    "name": "Woodhull village"
+  },
+  "woodland": {
+    "latitude": 40.71511,
+    "longitude": -87.73111,
+    "name": "Woodland village"
+  },
+  "woodlawn": {
+    "latitude": 38.328065,
+    "longitude": -89.034227,
+    "name": "Woodlawn village"
+  },
+  "woodridge": {
+    "latitude": 41.737392,
+    "longitude": -88.04413,
+    "name": "Woodridge village"
+  },
+  "woodriver": {
+    "latitude": 38.86327,
+    "longitude": -90.077644,
+    "name": "Wood River city"
+  },
+  "woodson": {
+    "latitude": 39.62741,
+    "longitude": -90.225635,
+    "name": "Woodson village"
+  },
+  "woodstock": {
+    "latitude": 42.30946,
+    "longitude": -88.435291,
+    "name": "Woodstock city"
+  },
+  "worden": {
+    "latitude": 38.931113,
+    "longitude": -89.840233,
+    "name": "Worden village"
+  },
+  "worth": {
+    "latitude": 41.688211,
+    "longitude": -87.792577,
+    "name": "Worth village"
+  },
+  "wyanet": {
+    "latitude": 41.360913,
+    "longitude": -89.582726,
+    "name": "Wyanet village"
+  },
+  "wyoming": {
+    "latitude": 41.063799,
+    "longitude": -89.772852,
+    "name": "Wyoming city"
+  },
+  "xenia": {
+    "latitude": 38.637264,
+    "longitude": -88.637515,
+    "name": "Xenia village"
+  },
+  "yale": {
+    "latitude": 39.120294,
+    "longitude": -88.024559,
+    "name": "Yale village"
+  },
+  "yates": {
+    "latitude": 40.777647,
+    "longitude": -90.013897,
+    "name": "Yates City village"
+  },
+  "yorkville": {
+    "latitude": 41.661736,
+    "longitude": -88.428596,
+    "name": "Yorkville city"
+  },
+  "zeigler": {
+    "latitude": 37.905695,
+    "longitude": -89.053251,
+    "name": "Zeigler city"
+  },
+  "zion": {
+    "latitude": 42.459909,
+    "longitude": -87.851121,
+    "name": "Zion city"
+  }
+}

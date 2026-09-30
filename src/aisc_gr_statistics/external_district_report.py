@@ -1,6 +1,7 @@
 """One-page, externally shareable Illinois congressional reports."""
 
 import csv
+import math
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfgen.canvas import Canvas
 
 from .census_boundaries import load_boundary_snapshot
+from .census_map_references import MapPoint, load_map_references, point_for_company
 from .districts import (
     DistrictAggregateRow,
     read_districts_csv,
@@ -29,6 +31,7 @@ class ExternalCompany:
     name: str
     city: str
     county: str
+    point: MapPoint | None = None
 
 
 def read_aggregates_csv(path: Path | str) -> list[DistrictAggregateRow]:
@@ -55,7 +58,7 @@ def senate_filename() -> str:
     return "illinois-senate-delegation-external.pdf"
 
 
-def render_house_report(district, districts_csv, aggregates_csv, output, house_members, *, boundary_paths=None, as_of=""):
+def render_house_report(district, districts_csv, aggregates_csv, output, house_members, *, boundary_paths=None, map_reference_paths=None, as_of=""):
     district = str(int(str(district)))
     member = next((m for m in members_for_state(tuple(house_members), "IL") if m.district == district), None)
     if member is None:
@@ -78,10 +81,11 @@ def render_house_report(district, districts_csv, aggregates_csv, output, house_m
     if str(metadata.get("congressional_session")) not in _sessions(rows):
         raise DistrictReportError("Census boundary session is incompatible with the district snapshot.")
     identity = "Vacant" if member.vacant else member.name
-    return _render(output, f"Illinois Congressional District {district}", identity, selected, district_aggregate, national, shapes, district_aggregate.congressional_district_geoid, metadata, as_of)
+    references = load_map_references(*(map_reference_paths or ())) if map_reference_paths else load_map_references()
+    return _render(output, f"Illinois Congressional District {district}", identity, _external_companies(selected, references), district_aggregate, national, shapes, district_aggregate.congressional_district_geoid, metadata, as_of)
 
 
-def render_senate_report(districts_csv, aggregates_csv, output, senators, *, boundary_paths=None, as_of=""):
+def render_senate_report(districts_csv, aggregates_csv, output, senators, *, boundary_paths=None, map_reference_paths=None, as_of=""):
     _validate_inputs(districts_csv, aggregates_csv)
     rows = [row for row in read_districts_csv(districts_csv) if row.state == "IL"]
     aggregates = read_aggregates_csv(aggregates_csv)
@@ -94,7 +98,8 @@ def render_senate_report(districts_csv, aggregates_csv, output, senators, *, bou
     if str(metadata.get("congressional_session")) not in _sessions(rows):
         raise DistrictReportError("Census boundary session is incompatible with the district snapshot.")
     names = " / ".join(s.name for s in senators_for_state(tuple(senators), "IL"))
-    return _render(output, "Illinois U.S. Senate Delegation", names, rows, state, national, shapes, "", metadata, as_of)
+    references = load_map_references(*(map_reference_paths or ())) if map_reference_paths else load_map_references()
+    return _render(output, "Illinois U.S. Senate Delegation", names, _external_companies(rows, references), state, national, shapes, "", metadata, as_of)
 
 
 def _sessions(rows):
@@ -123,8 +128,16 @@ def _match_count(rows, aggregate):
         raise DistrictReportError("company list does not match its aggregate snapshot")
 
 
+def _external_companies(rows, references):
+    """Create the only company objects permitted into the external renderer."""
+    return [
+        ExternalCompany(row.company_name, row.city, row.county, point_for_company(row.city, row.county_fips, references))
+        for row in rows
+    ]
+
+
 def _render(output, title, identity, rows, local, national, shapes, highlighted, metadata, as_of):
-    companies = sorted((ExternalCompany(r.company_name, r.city, r.county) for r in rows), key=lambda c: c.name.casefold())
+    companies = sorted((_company(r) for r in rows), key=lambda c: c.name.casefold())
     _preflight(companies)
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -144,7 +157,7 @@ def _render(output, title, identity, rows, local, national, shapes, highlighted,
     canvas.setFont("Helvetica", 8)
     canvas.drawString(36, height - 102, _jobs("District/state", local))
     canvas.drawString(36, height - 114, _jobs("National", national))
-    _draw_map(canvas, shapes, highlighted, 380, height - 230, 180, 105)
+    _draw_map(canvas, shapes, highlighted, 380, height - 230, 180, 105, [c.point for c in companies if c.point])
     canvas.setFont("Helvetica-Bold", 9)
     canvas.drawString(36, height - 140, "Companies")
     _draw_companies(canvas, companies, 36, height - 154)
@@ -167,21 +180,103 @@ def _draw_photo_placeholder(canvas, x, y, label):
     canvas.drawCentredString(x + 34, y + 25, label)
 
 
-def _draw_map(canvas, shapes, highlighted, x, y, width, height):
-    points = [point for rings in shapes.values() for ring in rings for point in ring]
-    min_x, max_x = min(p[0] for p in points), max(p[0] for p in points)
-    min_y, max_y = min(p[1] for p in points), max(p[1] for p in points)
-    scale = min(width / (max_x - min_x), height / (max_y - min_y))
+def _company(row):
+    if isinstance(row, ExternalCompany):
+        return row
+    return ExternalCompany(row.company_name, row.city, row.county)
+
+
+def _draw_map(canvas, shapes, highlighted, x, y, width, height, marker_points=()):
+    """Draw a printable local House map or an Illinois-wide Senate map."""
+    extent = _map_extent(shapes, highlighted, marker_points, width / height)
+    def project(point):
+        return _project_point(point, extent, x, y, width, height)
     for geoid, rings in shapes.items():
-        canvas.setFillColor(colors.HexColor("#c43d36") if geoid == highlighted else colors.white)
-        canvas.setStrokeColor(colors.HexColor("#777777"))
+        # Senate intentionally retains the statewide view. House maps only draw
+        # boundaries near the selected district/marker extent.
+        if highlighted and not _intersects(_ring_bounds(rings), extent):
+            continue
+        selected = geoid == highlighted
+        canvas.setFillColor(colors.HexColor("#c43d36") if selected else colors.white)
+        canvas.setStrokeColor(colors.HexColor("#9b2d28") if selected else colors.HexColor("#aaaaaa"))
+        if hasattr(canvas, "setLineWidth"):
+            canvas.setLineWidth(1.2 if selected else 0.25)
         for ring in rings:
             path = canvas.beginPath()
             for index, (longitude, latitude) in enumerate(ring):
-                px, py = x + (longitude - min_x) * scale, y + (latitude - min_y) * scale
+                px, py = project((longitude, latitude))
                 (path.moveTo if index == 0 else path.lineTo)(px, py)
             path.close()
             canvas.drawPath(path, fill=1, stroke=1)
+    _draw_markers(canvas, [project(point) for point in marker_points])
+
+
+def _map_extent(shapes, highlighted, marker_points, aspect_ratio):
+    """Return lon/lat bounds expanded to the final printable map aspect ratio."""
+    if highlighted:
+        source = [point for rings in [shapes[highlighted]] for ring in rings for point in ring]
+        source.extend(marker_points)
+    else:
+        source = [point for rings in shapes.values() for ring in rings for point in ring]
+    min_lon, max_lon = min(point[0] for point in source), max(point[0] for point in source)
+    min_lat, max_lat = min(point[1] for point in source), max(point[1] for point in source)
+    lon_pad, lat_pad = max((max_lon - min_lon) * 0.08, 0.04), max((max_lat - min_lat) * 0.08, 0.04)
+    min_lon, max_lon, min_lat, max_lat = min_lon - lon_pad, max_lon + lon_pad, min_lat - lat_pad, max_lat + lat_pad
+    mid_lat = (min_lat + max_lat) / 2
+    projected_width, projected_height = (max_lon - min_lon) * math.cos(math.radians(mid_lat)), max_lat - min_lat
+    if projected_width / projected_height < aspect_ratio:
+        grow = (projected_height * aspect_ratio / math.cos(math.radians(mid_lat)) - (max_lon - min_lon)) / 2
+        min_lon, max_lon = min_lon - grow, max_lon + grow
+    else:
+        grow = (projected_width / aspect_ratio - (max_lat - min_lat)) / 2
+        min_lat, max_lat = min_lat - grow, max_lat + grow
+    return min_lon, max_lon, min_lat, max_lat
+
+
+def _project_point(point, extent, x, y, width, height):
+    min_lon, max_lon, min_lat, max_lat = extent
+    mid_lat = (min_lat + max_lat) / 2
+    lon_scale = math.cos(math.radians(mid_lat))
+    return (x + ((point[0] - min_lon) * lon_scale) / ((max_lon - min_lon) * lon_scale) * width, y + (point[1] - min_lat) / (max_lat - min_lat) * height)
+
+
+def _ring_bounds(rings):
+    points = [point for ring in rings for point in ring]
+    return min(p[0] for p in points), max(p[0] for p in points), min(p[1] for p in points), max(p[1] for p in points)
+
+
+def _intersects(bounds, extent):
+    return not (bounds[1] < extent[0] or bounds[0] > extent[1] or bounds[3] < extent[2] or bounds[2] > extent[3])
+
+
+def _cluster_markers(points, distance=7):
+    """Cluster final PDF positions deterministically, not raw geographic points."""
+    clusters = []
+    for point in sorted(points):
+        for cluster in clusters:
+            if math.dist(point, cluster[0]) <= distance:
+                cluster.append(point)
+                break
+        else:
+            clusters.append([point])
+    return clusters
+
+
+def _draw_markers(canvas, points):
+    if not hasattr(canvas, "circle"):
+        return
+    canvas.setFillColor(colors.HexColor("#174ea6"))
+    canvas.setStrokeColor(colors.white)
+    canvas.setLineWidth(0.5)
+    for cluster in _cluster_markers(points):
+        x, y = cluster[0]
+        radius = 3.5 if len(cluster) == 1 else 5
+        canvas.circle(x, y, radius, fill=1, stroke=1)
+        if len(cluster) > 1:
+            canvas.setFillColor(colors.white)
+            canvas.setFont("Helvetica-Bold", 6)
+            canvas.drawCentredString(x, y - 2, str(len(cluster)))
+            canvas.setFillColor(colors.HexColor("#174ea6"))
 
 
 def _preflight(companies):

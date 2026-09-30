@@ -58,7 +58,7 @@ data and source-wide iMIS code and tonnage review scans are unchanged.
 ### External district and Senate PDFs
 
 Create the saved district and aggregate snapshots first, then create a
-one-page external PDF without making any network calls:
+one- or two-page external PDF without making any network calls:
 
 ```bash
 uv run aisc_gr_statistics district-report \
@@ -76,9 +76,16 @@ employee-data coverage, a compact district map, and source dates. It never
 receives addresses, individual employee counts, tonnage, classifications, or
 certification data.
 
+Company entries use a minimum 8-point font and wrap long names at measured
+word boundaries. Each complete entry stays in one column. Reports use the
+existing full first-page layout and, when needed, one compact continuation
+page with the company list and source footer.
+
 Each CSV has a checksum sidecar written beside it. The report rejects a missing
-or changed sidecar, missing aggregate row, incompatible Census map, or a list
-that cannot fit in readable type; in those cases it writes no PDF. A Senate
+or changed sidecar, missing aggregate row, incompatible Census map, an
+unbreakable word wider than a column, or a complete list that cannot fit in at
+most two pages at 8 points; in those cases it writes no new PDF and never
+truncates company details. A Senate
 report additionally requires every included Illinois company to have confirmed
 district geography. Resolve `address-district-review.csv` and rerun enrichment
 when that check fails.

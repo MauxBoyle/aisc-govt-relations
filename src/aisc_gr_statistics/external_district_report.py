@@ -1,4 +1,4 @@
-"""One-page, externally shareable Illinois congressional reports."""
+"""One- or two-page, externally shareable Illinois congressional reports."""
 
 import csv
 import math
@@ -25,6 +25,19 @@ class DistrictReportError(ValueError):
     """Required report inputs are inconsistent or cannot fit legibly."""
 
 
+COMPANY_LIST_FONT = "Helvetica"
+COMPANY_LIST_FONT_SIZE = 8
+COMPANY_LIST_WIDTH = 170
+COMPANY_LIST_LINE_HEIGHT = 10
+COMPANY_LIST_ENTRY_GAP = 3
+COMPANY_LIST_COLUMNS = 3
+COMPANY_LIST_COLUMN_GAP = 10
+COMPANY_LIST_FIRST_PAGE_TOP = letter[1] - 154
+COMPANY_LIST_CONTINUATION_TOP = letter[1] - 68
+COMPANY_LIST_FOOTER_TOP = 38
+MAX_REPORT_PAGES = 2
+
+
 @dataclass(frozen=True)
 class ExternalCompany:
     """The deliberately small data model permitted to reach this renderer."""
@@ -32,6 +45,35 @@ class ExternalCompany:
     city: str
     county: str
     point: MapPoint | None = None
+
+
+@dataclass(frozen=True)
+class CompanyLinePlacement:
+    """One wrapped line and its final PDF position."""
+
+    text: str
+    page: int
+    x: float
+    y: float
+
+
+@dataclass(frozen=True)
+class CompanyPlacement:
+    """All wrapped lines for one company, kept in one column and page."""
+
+    company: ExternalCompany
+    page: int
+    column: int
+    line_placements: tuple[CompanyLinePlacement, ...]
+    footer_top: float = COMPANY_LIST_FOOTER_TOP
+
+    @property
+    def lines(self):
+        return tuple(line.text for line in self.line_placements)
+
+    @property
+    def bottom(self):
+        return self.line_placements[-1].y
 
 
 def read_aggregates_csv(path: Path | str) -> list[DistrictAggregateRow]:
@@ -138,7 +180,7 @@ def _external_companies(rows, references):
 
 def _render(output, title, identity, rows, local, national, shapes, highlighted, metadata, as_of):
     companies = sorted((_company(r) for r in rows), key=lambda c: c.name.casefold())
-    _preflight(companies)
+    placements = _plan_company_layout(companies)
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.with_suffix(output.suffix + ".tmp")
@@ -160,10 +202,18 @@ def _render(output, title, identity, rows, local, national, shapes, highlighted,
     _draw_map(canvas, shapes, highlighted, 380, height - 230, 180, 105, [c.point for c in companies if c.point])
     canvas.setFont("Helvetica-Bold", 9)
     canvas.drawString(36, height - 140, "Companies")
-    _draw_companies(canvas, companies, 36, height - 154)
-    canvas.setFont("Helvetica", 7)
     source_date = str(metadata["retrieved_at"])[:10]
-    canvas.drawString(36, 26, f"Census boundaries as of {source_date}; district data as of {as_of or 'saved snapshot'}.")
+    footer = f"Census boundaries as of {source_date}; district data as of {as_of or 'saved snapshot'}."
+    _draw_company_page(canvas, placements, 1, footer)
+    if any(item.page == 2 for item in placements):
+        canvas.showPage()
+        # ReportLab resets font, colors, and other graphics state on showPage().
+        canvas.setTitle(title)
+        canvas.setFillColor(colors.black)
+        canvas.setStrokeColor(colors.black)
+        canvas.setFont("Helvetica-Bold", 11)
+        canvas.drawString(36, height - 42, f"{title} — Companies continued")
+        _draw_company_page(canvas, placements, 2, footer)
     canvas.save()
     temporary.replace(output)
     return output
@@ -279,18 +329,91 @@ def _draw_markers(canvas, points):
             canvas.setFillColor(colors.HexColor("#174ea6"))
 
 
-def _preflight(companies):
-    columns, rows_per_column = 3, 42
-    if len(companies) > columns * rows_per_column:
-        raise DistrictReportError("company list cannot fit on one readable page; split the report or reduce the list.")
+def _company_text(company):
+    return f"{company.name} — {company.city}, {company.county}"
+
+
+def _wrap_company_text(text):
+    """Wrap at word boundaries using ReportLab's actual font measurements."""
+    words = text.split()
+    if not words:
+        return ("",)
+    for word in words:
+        if stringWidth(word, COMPANY_LIST_FONT, COMPANY_LIST_FONT_SIZE) > COMPANY_LIST_WIDTH:
+            raise DistrictReportError(
+                "company list contains an unbreakable word wider than a column"
+            )
+    lines = []
+    current = words[0]
+    for word in words[1:]:
+        candidate = f"{current} {word}"
+        if stringWidth(candidate, COMPANY_LIST_FONT, COMPANY_LIST_FONT_SIZE) <= COMPANY_LIST_WIDTH:
+            current = candidate
+        else:
+            lines.append(current)
+            current = word
+    lines.append(current)
+    return tuple(lines)
+
+
+def _plan_company_layout(companies):
+    """Measure and pack complete company entries across columns and pages."""
+    placements = []
+    page = 1
+    column = 0
+    y = COMPANY_LIST_FIRST_PAGE_TOP
     for company in companies:
-        text = f"{company.name} — {company.city}, {company.county}"
-        if stringWidth(text, "Helvetica", 7) > 170 or "\n" in text:
-            raise DistrictReportError("company list contains text that cannot fit legibly on one page.")
+        lines = _wrap_company_text(_company_text(company))
+        entry_bottom = y - (len(lines) - 1) * COMPANY_LIST_LINE_HEIGHT
+        if entry_bottom < COMPANY_LIST_FOOTER_TOP:
+            column += 1
+            if column == COMPANY_LIST_COLUMNS:
+                page += 1
+                column = 0
+            if page > MAX_REPORT_PAGES:
+                raise DistrictReportError(
+                    "company list cannot fit within two pages at the 8-point minimum"
+                )
+            y = (
+                COMPANY_LIST_FIRST_PAGE_TOP
+                if page == 1
+                else COMPANY_LIST_CONTINUATION_TOP
+            )
+            entry_bottom = y - (len(lines) - 1) * COMPANY_LIST_LINE_HEIGHT
+            if entry_bottom < COMPANY_LIST_FOOTER_TOP:
+                raise DistrictReportError(
+                    "a complete company entry cannot fit within one report column"
+                )
+        x = 36 + column * (COMPANY_LIST_WIDTH + COMPANY_LIST_COLUMN_GAP)
+        line_placements = tuple(
+            CompanyLinePlacement(line, page, x, y - index * COMPANY_LIST_LINE_HEIGHT)
+            for index, line in enumerate(lines)
+        )
+        placements.append(
+            CompanyPlacement(company, page, column, line_placements)
+        )
+        y -= len(lines) * COMPANY_LIST_LINE_HEIGHT + COMPANY_LIST_ENTRY_GAP
+    return tuple(placements)
 
 
-def _draw_companies(canvas, companies, x, y):
-    for index, company in enumerate(companies):
-        column, row = divmod(index, 42)
-        canvas.setFont("Helvetica", 7)
-        canvas.drawString(x + column * 180, y - row * 10, f"{company.name} — {company.city}, {company.county}")
+def _preflight(companies):
+    """Backward-compatible entry point for callers that only need validation."""
+    return _plan_company_layout(companies)
+
+
+def _draw_company_page(canvas, placements, page, footer):
+    canvas.setFillColor(colors.black)
+    canvas.setFont(COMPANY_LIST_FONT, COMPANY_LIST_FONT_SIZE)
+    for placement in placements:
+        if placement.page != page:
+            continue
+        for line in placement.line_placements:
+            canvas.drawString(line.x, line.y, line.text)
+    canvas.setFont("Helvetica", 7)
+    canvas.drawString(36, 26, footer)
+
+
+def _draw_companies(canvas, companies, x=36, y=COMPANY_LIST_FIRST_PAGE_TOP):
+    """Draw a first-page list for compatibility with older focused tests."""
+    del x, y
+    _draw_company_page(canvas, _plan_company_layout(companies), 1, "")

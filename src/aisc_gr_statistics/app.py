@@ -264,7 +264,8 @@ def _build_parser():
         help="Destination CSV for national and district aggregates.",
     )
     district_report = subcommands.add_parser(
-        "district-report", help="Create one-page external Illinois district PDFs offline."
+        "district-report",
+        help="Create one- or two-page external Illinois district PDFs offline.",
     )
     district_report.add_argument("--district", action="append", type=int, help="Illinois House district; repeat to select several.")
     district_report.add_argument("--all-districts", action="store_true", help="Create all 17 Illinois House reports.")

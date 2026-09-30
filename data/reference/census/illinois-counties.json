@@ -1,0 +1,512 @@
+{
+  "001": {
+    "latitude": 39.986052,
+    "longitude": -91.194961,
+    "name": "Adams County"
+  },
+  "003": {
+    "latitude": 37.183658,
+    "longitude": -89.349516,
+    "name": "Alexander County"
+  },
+  "005": {
+    "latitude": 38.885924,
+    "longitude": -89.436592,
+    "name": "Bond County"
+  },
+  "007": {
+    "latitude": 42.318983,
+    "longitude": -88.824295,
+    "name": "Boone County"
+  },
+  "009": {
+    "latitude": 39.962069,
+    "longitude": -90.750309,
+    "name": "Brown County"
+  },
+  "011": {
+    "latitude": 41.401304,
+    "longitude": -89.528377,
+    "name": "Bureau County"
+  },
+  "013": {
+    "latitude": 39.164262,
+    "longitude": -90.666295,
+    "name": "Calhoun County"
+  },
+  "015": {
+    "latitude": 42.0709,
+    "longitude": -89.92419,
+    "name": "Carroll County"
+  },
+  "017": {
+    "latitude": 39.969202,
+    "longitude": -90.245704,
+    "name": "Cass County"
+  },
+  "019": {
+    "latitude": 40.138985,
+    "longitude": -88.196975,
+    "name": "Champaign County"
+  },
+  "021": {
+    "latitude": 39.545524,
+    "longitude": -89.279593,
+    "name": "Christian County"
+  },
+  "023": {
+    "latitude": 39.332334,
+    "longitude": -87.791683,
+    "name": "Clark County"
+  },
+  "025": {
+    "latitude": 38.746819,
+    "longitude": -88.482325,
+    "name": "Clay County"
+  },
+  "027": {
+    "latitude": 38.606295,
+    "longitude": -89.426228,
+    "name": "Clinton County"
+  },
+  "029": {
+    "latitude": 39.51368,
+    "longitude": -88.220782,
+    "name": "Coles County"
+  },
+  "031": {
+    "latitude": 41.894294,
+    "longitude": -87.645455,
+    "name": "Cook County"
+  },
+  "033": {
+    "latitude": 39.002787,
+    "longitude": -87.760619,
+    "name": "Crawford County"
+  },
+  "035": {
+    "latitude": 39.273121,
+    "longitude": -88.240619,
+    "name": "Cumberland County"
+  },
+  "037": {
+    "latitude": 41.894615,
+    "longitude": -88.768922,
+    "name": "DeKalb County"
+  },
+  "039": {
+    "latitude": 40.181499,
+    "longitude": -88.901853,
+    "name": "De Witt County"
+  },
+  "041": {
+    "latitude": 39.766078,
+    "longitude": -88.222867,
+    "name": "Douglas County"
+  },
+  "043": {
+    "latitude": 41.852058,
+    "longitude": -88.086039,
+    "name": "DuPage County"
+  },
+  "045": {
+    "latitude": 39.679037,
+    "longitude": -87.74711,
+    "name": "Edgar County"
+  },
+  "047": {
+    "latitude": 38.417095,
+    "longitude": -88.047941,
+    "name": "Edwards County"
+  },
+  "049": {
+    "latitude": 39.047945,
+    "longitude": -88.592849,
+    "name": "Effingham County"
+  },
+  "051": {
+    "latitude": 39.001125,
+    "longitude": -89.017923,
+    "name": "Fayette County"
+  },
+  "053": {
+    "latitude": 40.596539,
+    "longitude": -88.224588,
+    "name": "Ford County"
+  },
+  "055": {
+    "latitude": 37.991852,
+    "longitude": -88.926321,
+    "name": "Franklin County"
+  },
+  "057": {
+    "latitude": 40.46524,
+    "longitude": -90.202269,
+    "name": "Fulton County"
+  },
+  "059": {
+    "latitude": 37.768677,
+    "longitude": -88.227964,
+    "name": "Gallatin County"
+  },
+  "061": {
+    "latitude": 39.355439,
+    "longitude": -90.387682,
+    "name": "Greene County"
+  },
+  "063": {
+    "latitude": 41.29241,
+    "longitude": -88.401054,
+    "name": "Grundy County"
+  },
+  "065": {
+    "latitude": 38.085227,
+    "longitude": -88.539009,
+    "name": "Hamilton County"
+  },
+  "067": {
+    "latitude": 40.401318,
+    "longitude": -91.168801,
+    "name": "Hancock County"
+  },
+  "069": {
+    "latitude": 37.517852,
+    "longitude": -88.266148,
+    "name": "Hardin County"
+  },
+  "071": {
+    "latitude": 40.814471,
+    "longitude": -90.941246,
+    "name": "Henderson County"
+  },
+  "073": {
+    "latitude": 41.350021,
+    "longitude": -90.130838,
+    "name": "Henry County"
+  },
+  "075": {
+    "latitude": 40.748867,
+    "longitude": -87.833601,
+    "name": "Iroquois County"
+  },
+  "077": {
+    "latitude": 37.786096,
+    "longitude": -89.381212,
+    "name": "Jackson County"
+  },
+  "079": {
+    "latitude": 39.004886,
+    "longitude": -88.150725,
+    "name": "Jasper County"
+  },
+  "081": {
+    "latitude": 38.30078,
+    "longitude": -88.92421,
+    "name": "Jefferson County"
+  },
+  "083": {
+    "latitude": 39.080195,
+    "longitude": -90.361385,
+    "name": "Jersey County"
+  },
+  "085": {
+    "latitude": 42.362391,
+    "longitude": -90.21147,
+    "name": "Jo Daviess County"
+  },
+  "087": {
+    "latitude": 37.460709,
+    "longitude": -88.882131,
+    "name": "Johnson County"
+  },
+  "089": {
+    "latitude": 41.939594,
+    "longitude": -88.42804,
+    "name": "Kane County"
+  },
+  "091": {
+    "latitude": 41.13951,
+    "longitude": -87.861117,
+    "name": "Kankakee County"
+  },
+  "093": {
+    "latitude": 41.58814,
+    "longitude": -88.430626,
+    "name": "Kendall County"
+  },
+  "095": {
+    "latitude": 40.930945,
+    "longitude": -90.213792,
+    "name": "Knox County"
+  },
+  "097": {
+    "latitude": 42.185968,
+    "longitude": -87.805939,
+    "name": "Lake County"
+  },
+  "099": {
+    "latitude": 41.343341,
+    "longitude": -88.885931,
+    "name": "LaSalle County"
+  },
+  "101": {
+    "latitude": 38.718954,
+    "longitude": -87.730221,
+    "name": "Lawrence County"
+  },
+  "103": {
+    "latitude": 41.747447,
+    "longitude": -89.299362,
+    "name": "Lee County"
+  },
+  "105": {
+    "latitude": 40.894376,
+    "longitude": -88.552852,
+    "name": "Livingston County"
+  },
+  "107": {
+    "latitude": 40.129277,
+    "longitude": -89.365309,
+    "name": "Logan County"
+  },
+  "109": {
+    "latitude": 40.455808,
+    "longitude": -90.678954,
+    "name": "McDonough County"
+  },
+  "111": {
+    "latitude": 42.324298,
+    "longitude": -88.452245,
+    "name": "McHenry County"
+  },
+  "113": {
+    "latitude": 40.494559,
+    "longitude": -88.844539,
+    "name": "McLean County"
+  },
+  "115": {
+    "latitude": 39.860237,
+    "longitude": -88.961529,
+    "name": "Macon County"
+  },
+  "117": {
+    "latitude": 39.265914,
+    "longitude": -89.92633,
+    "name": "Macoupin County"
+  },
+  "119": {
+    "latitude": 38.82712,
+    "longitude": -89.900227,
+    "name": "Madison County"
+  },
+  "121": {
+    "latitude": 38.648236,
+    "longitude": -88.920362,
+    "name": "Marion County"
+  },
+  "123": {
+    "latitude": 41.031119,
+    "longitude": -89.342371,
+    "name": "Marshall County"
+  },
+  "125": {
+    "latitude": 40.236993,
+    "longitude": -89.913575,
+    "name": "Mason County"
+  },
+  "127": {
+    "latitude": 37.216119,
+    "longitude": -88.705658,
+    "name": "Massac County"
+  },
+  "129": {
+    "latitude": 40.022569,
+    "longitude": -89.794133,
+    "name": "Menard County"
+  },
+  "131": {
+    "latitude": 41.205605,
+    "longitude": -90.74177,
+    "name": "Mercer County"
+  },
+  "133": {
+    "latitude": 38.277983,
+    "longitude": -90.179078,
+    "name": "Monroe County"
+  },
+  "135": {
+    "latitude": 39.228068,
+    "longitude": -89.478141,
+    "name": "Montgomery County"
+  },
+  "137": {
+    "latitude": 39.717657,
+    "longitude": -90.204993,
+    "name": "Morgan County"
+  },
+  "139": {
+    "latitude": 39.636896,
+    "longitude": -88.625726,
+    "name": "Moultrie County"
+  },
+  "141": {
+    "latitude": 42.041884,
+    "longitude": -89.320176,
+    "name": "Ogle County"
+  },
+  "143": {
+    "latitude": 40.785972,
+    "longitude": -89.766993,
+    "name": "Peoria County"
+  },
+  "145": {
+    "latitude": 38.084381,
+    "longitude": -89.368525,
+    "name": "Perry County"
+  },
+  "147": {
+    "latitude": 40.009033,
+    "longitude": -88.592355,
+    "name": "Piatt County"
+  },
+  "149": {
+    "latitude": 39.625106,
+    "longitude": -90.889034,
+    "name": "Pike County"
+  },
+  "151": {
+    "latitude": 37.417169,
+    "longitude": -88.542374,
+    "name": "Pope County"
+  },
+  "153": {
+    "latitude": 37.215615,
+    "longitude": -89.127755,
+    "name": "Pulaski County"
+  },
+  "155": {
+    "latitude": 41.198961,
+    "longitude": -89.298347,
+    "name": "Putnam County"
+  },
+  "157": {
+    "latitude": 38.056515,
+    "longitude": -89.82121,
+    "name": "Randolph County"
+  },
+  "159": {
+    "latitude": 38.712187,
+    "longitude": -88.085452,
+    "name": "Richland County"
+  },
+  "161": {
+    "latitude": 41.468421,
+    "longitude": -90.572125,
+    "name": "Rock Island County"
+  },
+  "163": {
+    "latitude": 38.470198,
+    "longitude": -89.928546,
+    "name": "St. Clair County"
+  },
+  "165": {
+    "latitude": 37.751508,
+    "longitude": -88.545024,
+    "name": "Saline County"
+  },
+  "167": {
+    "latitude": 39.756886,
+    "longitude": -89.662435,
+    "name": "Sangamon County"
+  },
+  "169": {
+    "latitude": 40.156905,
+    "longitude": -90.613464,
+    "name": "Schuyler County"
+  },
+  "171": {
+    "latitude": 39.637002,
+    "longitude": -90.477771,
+    "name": "Scott County"
+  },
+  "173": {
+    "latitude": 39.384916,
+    "longitude": -88.798865,
+    "name": "Shelby County"
+  },
+  "175": {
+    "latitude": 41.096908,
+    "longitude": -89.797411,
+    "name": "Stark County"
+  },
+  "177": {
+    "latitude": 42.349726,
+    "longitude": -89.665994,
+    "name": "Stephenson County"
+  },
+  "179": {
+    "latitude": 40.508074,
+    "longitude": -89.51626,
+    "name": "Tazewell County"
+  },
+  "181": {
+    "latitude": 37.485652,
+    "longitude": -89.244639,
+    "name": "Union County"
+  },
+  "183": {
+    "latitude": 40.186755,
+    "longitude": -87.726778,
+    "name": "Vermilion County"
+  },
+  "185": {
+    "latitude": 38.445821,
+    "longitude": -87.839167,
+    "name": "Wabash County"
+  },
+  "187": {
+    "latitude": 40.850441,
+    "longitude": -90.620223,
+    "name": "Warren County"
+  },
+  "189": {
+    "latitude": 38.35314,
+    "longitude": -89.417187,
+    "name": "Washington County"
+  },
+  "191": {
+    "latitude": 38.431857,
+    "longitude": -88.43243,
+    "name": "Wayne County"
+  },
+  "193": {
+    "latitude": 38.087307,
+    "longitude": -88.17862,
+    "name": "White County"
+  },
+  "195": {
+    "latitude": 41.750675,
+    "longitude": -89.911005,
+    "name": "Whiteside County"
+  },
+  "197": {
+    "latitude": 41.448474,
+    "longitude": -87.978456,
+    "name": "Will County"
+  },
+  "199": {
+    "latitude": 37.730353,
+    "longitude": -88.930018,
+    "name": "Williamson County"
+  },
+  "201": {
+    "latitude": 42.337396,
+    "longitude": -89.161205,
+    "name": "Winnebago County"
+  },
+  "203": {
+    "latitude": 40.789789,
+    "longitude": -89.210588,
+    "name": "Woodford County"
+  }
+}

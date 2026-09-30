@@ -8,6 +8,7 @@ from pathlib import Path
 
 from loguru import logger
 
+from .census_map_references import MapReferenceError, refresh_map_references
 from .districts import (
     DistrictSnapshotError,
     aggregate_districts,
@@ -100,6 +101,9 @@ def main(argv=()):
         return
     if arguments.command == "refresh-district-boundaries":
         _run_refresh_district_boundaries(arguments)
+        return
+    if arguments.command == "refresh-map-references":
+        _run_refresh_map_references(arguments)
         return
     logger.info("Hello from aisc_gr_statistics!")
 
@@ -282,6 +286,9 @@ def _build_parser():
     boundaries = subcommands.add_parser("refresh-district-boundaries", help="Refresh the reviewed Census KML boundary snapshot.")
     boundaries.add_argument("--source-url", help="Optional official Census KML ZIP URL override.")
     boundaries.add_argument("--congressional-session", type=int, help="Optional Congress number override.")
+    map_references = subcommands.add_parser("refresh-map-references", help="Refresh reviewed Census place and county map-reference snapshots.")
+    map_references.add_argument("--places-source-url", help="Optional official Census place Gazetteer ZIP URL override.")
+    map_references.add_argument("--counties-source-url", help="Optional official Census county Gazetteer ZIP URL override.")
     return parser
 
 
@@ -429,7 +436,7 @@ def _run_district_report(arguments):
                 arguments.districts_csv, arguments.aggregates_csv,
                 arguments.output_dir / senate_filename(), senate.senators, as_of=arguments.as_of,
             ))
-    except (DistrictReportError, DistrictSnapshotError, HouseDataError, SenateDataError, ValueError) as error:
+    except (DistrictReportError, DistrictSnapshotError, HouseDataError, SenateDataError, MapReferenceError, ValueError) as error:
         logger.error("District report was not created: {}", error)
         raise SystemExit(1) from error
     logger.info("Created external district report(s): {}", ", ".join(map(str, output_paths)))
@@ -449,6 +456,19 @@ def _run_refresh_district_boundaries(arguments):
         refresh_boundary_snapshot(**options)
     except BoundarySnapshotError as error:
         logger.error("Census boundary snapshot was not refreshed: {}", error)
+        raise SystemExit(1) from error
+
+
+def _run_refresh_map_references(arguments):
+    """Refresh map points explicitly; normal PDF rendering remains offline."""
+    try:
+        options = {name: value for name, value in {
+            "places_source_url": arguments.places_source_url,
+            "counties_source_url": arguments.counties_source_url,
+        }.items() if value is not None}
+        refresh_map_references(**options)
+    except MapReferenceError as error:
+        logger.error("Census map references were not refreshed: {}", error)
         raise SystemExit(1) from error
 
 

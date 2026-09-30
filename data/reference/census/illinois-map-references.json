@@ -1,0 +1,8 @@
+{
+  "counties_sha256": "9312e474e4cb72d1f6923d6b0c870006acf3b81e4677854d690771a09f7d2846",
+  "counties_source_url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_counties_national.zip",
+  "places_sha256": "da2a7c575feb1aae3196fd58acd4f8e1d249d78335a44d4fa15719683f0bd7b4",
+  "places_source_url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_place_national.zip",
+  "precision": "Census place internal point; county internal-point fallback",
+  "retrieved_at": "2026-09-30T17:51:10.884966Z"
+}

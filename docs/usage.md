@@ -81,6 +81,30 @@ JSON together. Maintainers may supply `--source-url` and
 `--congressional-session` only when reviewing a future official Census
 release.
 
+### Census map-marker reference data
+
+External company markers use only reviewed Census geography points. The report
+normalizes each saved city and matches it to the committed Illinois place
+snapshot; if there is no match, it uses the committed county point selected by
+the saved county FIPS. It never draws an address or the address-geocoder
+latitude/longitude stored in `company-districts.csv`.
+
+Refresh these version-controlled Census Gazetteer snapshots separately from
+normal offline PDF generation:
+
+```bash
+uv run aisc_gr_statistics refresh-map-references
+```
+
+The refresh validates Illinois place data, all 102 Illinois counties, metadata,
+and checksums before replacing the snapshots. Review and commit the two data
+files and metadata together. House maps frame the selected district plus marker
+locations and show nearby boundaries lightly; Senate maps stay Illinois-wide.
+Markers are clustered after projection into their final PDF positions, so a
+nearby/overlapping group has one deterministic dot labeled with its company
+count. PDF rendering uses no tiles, web-map library, runtime download, or
+interactive behavior.
+
 ## External congressional reports
 
 After `enrich-districts` and `aggregate-districts`, create offline external

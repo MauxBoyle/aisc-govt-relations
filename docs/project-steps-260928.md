@@ -396,3 +396,230 @@ Produce a tabular internal companion file when useful for staff review of:
 - other exceptions.
 
 This output is an internal quality-control tool and is not subject to the same presentation requirements as the external PDF.
+
+
+````
+### P7 — External Report Corrections and CLI Improvements
+
+#### AA. Define the external-report data contract
+
+Before changing the PDF layout, document and test the exact public fields and formatting rules.
+
+The external report may display:
+
+- representative identity and public contact information;
+- company name;
+- city and county;
+- a short AISC relationship summary;
+- aggregate known-job figures;
+- map and source dates.
+
+The external report must not display:
+
+- individual-company employee counts;
+- tonnage;
+- street addresses;
+- internal IDs;
+- Census lookup coordinates;
+- internal classifications or reconciliation fields.
+
+Use one shared formatting layer for House and statewide reports so labels and disclosure rules cannot drift apart.
+
+#### AB. Add a reliable representative-information source
+
+The external report currently renders blank or placeholder representative information even though House and Senate reference snapshots already contain public contact fields.
+
+Use the existing official snapshots as the offline report source:
+
+- House member data from the validated Clerk/directory snapshot;
+- Senate data from the validated Senate.gov snapshot;
+- official website, contact form, office address, phone, and photo URL when available.
+
+Update the external report layout to show a compact representative contact block. Do not make network requests while rendering a report.
+
+Use an explicit fallback such as `Public contact information unavailable` when a field is missing; never leave a visually blank field that appears broken.
+
+Refresh commands must continue to validate all required fields and record source URLs, retrieval dates, and checksums.
+
+Add tests that verify:
+
+- House reports show the selected representative’s public information;
+- statewide reports show both Illinois senators’ public information;
+- missing optional fields use the fallback text;
+- report generation remains offline after snapshots are refreshed.
+
+#### AC. Correct known-job labels and aggregation rules
+
+Replace the current labels with these report-specific labels:
+
+District report:
+
+- `District known jobs: ...`
+- `{State name} known jobs: ...`
+
+Statewide report:
+
+- `{State name} known jobs: ...`
+- `National known jobs: ...`
+
+Use lower-case `known jobs` consistently.
+
+For every summation level, count the number of companies contributing employee data. If that count is zero or one, do not publish the numeric employee total. Render exactly:
+
+`{label}: N/A (employee data not available)`
+
+This rule applies independently to district, state, and national aggregates. A single company’s employee count must never be exposed, even when an aggregate row contains a numeric value.
+
+When at least two companies contribute employee data, display the numeric total and the coverage information using lower-case wording.
+
+Update aggregate validation and PDF tests for:
+
+- district reports with one contributing company;
+- state reports with zero contributing companies;
+- national reports with one contributing company;
+- fully supported aggregates with two or more contributing companies;
+- exact label text and capitalization.
+
+#### AD. Add a short AISC relationship summary to each company
+
+Extend the external company data model with a safe public relationship field.
+
+Examples include:
+
+- `AISC Certified Erector`;
+- `AISC Certified Fabricator`;
+- `Member Fabricator`;
+- `Member Erector`;
+- another approved public relationship;
+- `AISC relationship unavailable` when no validated relationship exists.
+
+Derive this field from the existing cleaned membership and certification data rather than exposing raw internal classifications.
+
+Define precedence when a company has multiple valid relationships, for example:
+
+1. active certification;
+2. certified participant category;
+3. AISC membership category;
+4. unavailable fallback.
+
+Render the relationship beside or below the company name while retaining city and county.
+
+Add disclosure tests proving that:
+
+- approved relationship text appears;
+- raw internal codes do not appear;
+- certification wording is based only on validated active certifications;
+- missing relationships use the fallback text.
+
+#### AE. Add a reviewed fallback geography lookup
+
+Create a checked-in, versioned fallback lookup table for companies that cannot be assigned through the Census lookup.
+
+The fallback table should support a stable company key and the fields needed for reporting, such as:
+
+- company name;
+- iMIS or Salesforce identifier;
+- state;
+- county;
+- congressional district;
+- congressional district GEOID;
+- optional map-reference information;
+- reviewer/source note;
+- reviewed date.
+
+Use the fallback only after the normal Census lookup fails or produces an approved manual-review result. Validate the fallback rows before using them and record their provenance.
+
+The enrichment workflow should produce three clear populations:
+
+1. Census-confirmed companies;
+2. fallback-confirmed companies;
+3. unresolved companies.
+
+Unresolved companies must remain available in the review output but must not prevent report generation. Until they are resolved, exclude them from district and statewide report populations and display accurate aggregate counts based only on included companies.
+
+Do not silently guess a district. A fallback row must be explicit, reviewable, and auditable.
+
+Add tests for:
+
+- fallback assignment when Census lookup fails;
+- fallback validation and malformed-row rejection;
+- unresolved companies being excluded from reports;
+- Senate reports running with unresolved companies present;
+- aggregate counts matching only the included population;
+- map rendering using only safe, approved map references.
+
+#### AF. Update snapshot and aggregate semantics
+
+Ensure the district and aggregate CSV schemas clearly distinguish:
+
+- included companies;
+- unresolved companies;
+- companies with employee data;
+- companies missing employee data;
+- Census-confirmed assignments;
+- manually reviewed fallback assignments.
+
+Recompute aggregate rows after fallback and exclusion decisions. Validate that every displayed company appears in exactly one report population and that no excluded company contributes to the displayed totals.
+
+Document that `known_jobs` is a partial total and is withheld whenever fewer than two companies contribute employee data.
+
+#### AG. Make the command-line interface friendlier
+
+Support the user-facing command name:
+
+```bash
+uv run aisc-gr-statistics
+````
+
+Keep the existing explicit subcommands available for scripts and automation.
+
+When the command is run with no arguments in an interactive terminal:
+
+1. inspect local data and snapshot status;
+2. show whether required files, checksums, geography, representative snapshots, and aggregate data are current and usable;
+3. show unresolved-company counts and employee-data coverage;
+4. present menu options such as:
+   - create a statewide report;
+   - create a district report;
+   - refresh representative data;
+   - refresh Census boundaries or map references;
+   - run enrichment;
+   - run aggregate validation;
+   - exit.
+
+If no interactive terminal is available, print a concise status summary and usage instructions instead of waiting for input.
+
+The interactive menu must call the same functions as the existing explicit commands so behavior, validation, and output paths remain consistent.
+
+Add tests for:
+
+- the hyphenated executable name;
+- no-argument interactive behavior;
+- noninteractive no-argument behavior;
+- status output when snapshots are valid;
+- status output when data is missing or stale;
+- menu dispatch to the existing command handlers.
+
+#### AH. Review representative PDFs and update documentation
+
+Generate House and statewide sample PDFs after implementing the preceding changes.
+
+Confirm that:
+
+- representative information is populated or clearly marked unavailable;
+- labels use the correct report scope;
+- `known jobs` is lower case;
+- no one-company employee total is shown;
+- company relationship summaries are useful and accurate;
+- unresolved geography does not block report generation;
+- excluded companies do not affect displayed counts;
+- all public fields remain disclosure-safe.
+
+Update `README.md` and `docs/usage.md` with:
+
+- the representative-data source and refresh process;
+- known-job suppression rules;
+- relationship-summary rules;
+- fallback geography workflow;
+- unresolved-company behavior;
+- interactive CLI usage and noninteractive behavior.

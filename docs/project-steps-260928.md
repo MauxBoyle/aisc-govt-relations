@@ -2,7 +2,7 @@
 
   ### P0 — Reliable statewide company data
 
-  A. Identify and document the required Salesforce fields and relationships - Done
+  ~~A. Identify and document the required Salesforce fields and relationships~~ - Done
 
      Determine the exact Salesforce API fields for:
       - Imis_Id
@@ -17,7 +17,7 @@
 
      Done when Salesforce returns enough information to explain every Salesforce-derived value shown for those two examples.
 
-  B. Pull Salesforce Accounts and Active Certifications into the report - Done
+  ~~B. Pull Salesforce Accounts and Active Certifications into the report~~ - Done
 
      Extend the existing read-only Salesforce connection to retrieve Accounts plus their attached Active Certifications.
 
@@ -31,7 +31,7 @@
       - A. Lucas shows Building Fabricator and Highway Component Manufacturer.
       - A&H Steel appears even though it has no iMIS record.
 
-  C. Create one combined company data model - Done
+  ~~C. Create one combined company data model~~ - Done
 
      The current report starts with iMIS companies and merely enriches them from Salesforce. That means Salesforce-only companies cannot appear.
 
@@ -43,7 +43,7 @@
 
      This becomes the dependable input for PDF generation.
 
-  D. Match Salesforce and iMIS companies by their shared iMIS identifier - Done
+ ~~ D. Match Salesforce and iMIS companies by their shared iMIS identifier~~ - Done
 
      Replace normalized company-name matching as the primary rule with:
 
@@ -58,7 +58,7 @@
 
      Name matching should only produce a review suggestion—not silently combine records.
 
-  E. Create a reconciliation report for unmatched and questionable companies - Done
+  ~~E. Create a reconciliation report for unmatched and questionable companies~~ - Done
 
      Generate a CSV or log summary showing:
       - matched companies;
@@ -70,7 +70,7 @@
 
      This will make data problems visible before they become incorrect PDF content.
 
-  F. Define Membership Type and Category lookup dictionaries - Done
+  ~~F. Define Membership Type and Category lookup dictionaries~~ - Done
 
      Store the meanings of the iMIS codes in a central Python dictionary rather than scattering labels through the report code.
 
@@ -86,7 +86,7 @@
 
      The report can then combine them into “Full Member Fabricator.” Tests should cover known codes and clearly flag unknown ones.
 
-  G. Aggregate tonnage for the most recent completed calendar year - Done
+  ~~G. Aggregate tonnage for the most recent completed calendar year~~ - Done
 
      The current code adds Bridge, Building, and S C Tonnage within each input row, but it does not group historical records by company and year.
 
@@ -101,7 +101,7 @@
 
      Before implementation, verify whether there are always four quarterly entries and what field distinguishes the reporting year and period.
 
-  H. Apply confirmed business rules to report labels
+ ~~ H. Apply confirmed business rules to report labels~~ - Done
 
      Establish which system controls each field. My suggested initial rules are:
 
@@ -126,7 +126,7 @@
 
   ### P1 — Finish and validate the statewide report
 
-  I. Update the PDF to match the approved sample layout and terminology
+ ~~ I. Update the PDF to match the approved sample layout and terminology~~ - Done
 
      Render the combined data with:
       - company name and address;
@@ -138,14 +138,14 @@
 
      Long company names, addresses, and multiple certifications should wrap without overlapping other content.
 
-  J. Add current U.S. senators and contact information
+  ~~J. Add current U.S. senators and contact information~~ - Done
 
   For a statewide report, retrieve the two current senators by state. Senate.gov provides state pages, contact information, and an XML option, which
   is preferable to scraping visual HTML. Senate contact information
 
   Store the retrieval date and cache a snapshot so report generation remains reproducible if the site is temporarily unavailable.
 
-  K. Add automated data-quality and PDF regression tests
+  ~~K. Add automated data-quality and PDF regression tests~~ - Done
 
   Test the important examples directly:
 
@@ -158,7 +158,7 @@
   - unknown membership/category codes are flagged.
   - PDF text and page layout remain usable.
 
-  L. Show report provenance and “as of” dates
+ ~~ L. Show report provenance and “as of” dates~~ - Done
 
   Add a small footer or metadata section stating:
 
@@ -175,7 +175,7 @@ The report completed in P1 becomes the **Internal Government Relations Report**.
 
 Beginning with P2, create a separate **External Government Relations Report** intended for use with members of Congress and other outside audiences. Both reports should use the same cleaned underlying company data, but the external report must apply stricter disclosure rules.
 
-#### M. Define and enforce external-report disclosure rules
+#### ~~M. Define and enforce external-report disclosure rules~~ - Done
 
 Create an explicit set of rules governing which information can appear in externally distributed reports.
 
@@ -193,7 +193,7 @@ Implement these as report-generation rules rather than relying on someone to man
 
 Add automated tests that fail if prohibited company-level information appears in an external report.
 
-#### N. Convert company addresses to congressional districts
+#### ~~N. Convert company addresses to congressional districts~~ - Done
 
 Use company address information to assign each included company to its current congressional district.
 
@@ -211,7 +211,7 @@ Unmatched or ambiguous addresses should go into a review file rather than being 
 
 Preserve enough geographic information internally to support mapping and future updates, even though the external report will generally display only city and county.
 
-#### O. Calculate congressional-district and national aggregates
+#### ~~O. Calculate congressional-district and national aggregates~~ - Done
 
 For each congressional district, calculate:
 
@@ -226,7 +226,7 @@ Define how missing employee counts affect the displayed "jobs" figure so that th
 
 Validate district totals against the underlying company records.
 
-#### P. Retrieve current House-member information
+#### ~~P. Retrieve current House-member information~~ - Done
 
 For each congressional district, retrieve the current member of Congress and the information needed for the report.
 
@@ -244,7 +244,7 @@ Be careful to distinguish current representation from historical member records.
 
 ### P3 — Printable External Congressional District Report
 
-#### Q. Build the single-page external district report
+#### ~~Q. Build the single-page external district report~~ - Done
 
 Create a printable one-page PDF designed for Government Relations staff to take into meetings with members of Congress.
 
@@ -267,7 +267,7 @@ The external report must not contain:
 
 Long company lists and districts with unusual amounts of information should remain printable and readable without exposing prohibited information.
 
-#### R. Add district map features
+#### ~~R. Add district map features~~ - Done
 
 Create a map suitable for the single-page district report.
 
@@ -281,7 +281,7 @@ Explore whether company locations are best represented individually or through c
 
 The map should support the printable report first. Interactive behavior is a later enhancement and should not block delivery of the meeting-ready PDF.
 
-#### S. Add external-report validation and regression tests
+#### ~~S. Add external-report validation and regression tests~~ - Done
 
 Test both numerical accuracy and disclosure safety.
 
@@ -298,7 +298,7 @@ Tests should confirm that:
 - long company lists and names remain readable;
 - the output remains a usable printable single-page report where practical.
 
-#### T. Review sample external report with Government Relations
+#### T. Review sample external report with Government Relations - after P7
 
 Generate one or more sample district reports for stakeholder review.
 
@@ -396,3 +396,230 @@ Produce a tabular internal companion file when useful for staff review of:
 - other exceptions.
 
 This output is an internal quality-control tool and is not subject to the same presentation requirements as the external PDF.
+
+
+````
+### P7 — External Report Corrections and CLI Improvements
+
+#### AA. Define the external-report data contract
+
+Before changing the PDF layout, document and test the exact public fields and formatting rules.
+
+The external report may display:
+
+- representative identity and public contact information;
+- company name;
+- city and county;
+- a short AISC relationship summary;
+- aggregate known-job figures;
+- map and source dates.
+
+The external report must not display:
+
+- individual-company employee counts;
+- tonnage;
+- street addresses;
+- internal IDs;
+- Census lookup coordinates;
+- internal classifications or reconciliation fields.
+
+Use one shared formatting layer for House and statewide reports so labels and disclosure rules cannot drift apart.
+
+#### AB. Add a reliable representative-information source
+
+The external report currently renders blank or placeholder representative information even though House and Senate reference snapshots already contain public contact fields.
+
+Use the existing official snapshots as the offline report source:
+
+- House member data from the validated Clerk/directory snapshot;
+- Senate data from the validated Senate.gov snapshot;
+- official website, contact form, office address, phone, and photo URL when available.
+
+Update the external report layout to show a compact representative contact block. Do not make network requests while rendering a report.
+
+Use an explicit fallback such as `Public contact information unavailable` when a field is missing; never leave a visually blank field that appears broken.
+
+Refresh commands must continue to validate all required fields and record source URLs, retrieval dates, and checksums.
+
+Add tests that verify:
+
+- House reports show the selected representative’s public information;
+- statewide reports show both Illinois senators’ public information;
+- missing optional fields use the fallback text;
+- report generation remains offline after snapshots are refreshed.
+
+#### AC. Correct known-job labels and aggregation rules
+
+Replace the current labels with these report-specific labels:
+
+District report:
+
+- `District known jobs: ...`
+- `{State name} known jobs: ...`
+
+Statewide report:
+
+- `{State name} known jobs: ...`
+- `National known jobs: ...`
+
+Use lower-case `known jobs` consistently.
+
+For every summation level, count the number of companies contributing employee data. If that count is zero or one, do not publish the numeric employee total. Render exactly:
+
+`{label}: N/A (employee data not available)`
+
+This rule applies independently to district, state, and national aggregates. A single company’s employee count must never be exposed, even when an aggregate row contains a numeric value.
+
+When at least two companies contribute employee data, display the numeric total and the coverage information using lower-case wording.
+
+Update aggregate validation and PDF tests for:
+
+- district reports with one contributing company;
+- state reports with zero contributing companies;
+- national reports with one contributing company;
+- fully supported aggregates with two or more contributing companies;
+- exact label text and capitalization.
+
+#### AD. Add a short AISC relationship summary to each company
+
+Extend the external company data model with a safe public relationship field.
+
+Examples include:
+
+- `AISC Certified Erector`;
+- `AISC Certified Fabricator`;
+- `Member Fabricator`;
+- `Member Erector`;
+- another approved public relationship;
+- `AISC relationship unavailable` when no validated relationship exists.
+
+Derive this field from the existing cleaned membership and certification data rather than exposing raw internal classifications.
+
+Define precedence when a company has multiple valid relationships, for example:
+
+1. active certification;
+2. certified participant category;
+3. AISC membership category;
+4. unavailable fallback.
+
+Render the relationship beside or below the company name while retaining city and county.
+
+Add disclosure tests proving that:
+
+- approved relationship text appears;
+- raw internal codes do not appear;
+- certification wording is based only on validated active certifications;
+- missing relationships use the fallback text.
+
+#### AE. Add a reviewed fallback geography lookup
+
+Create a checked-in, versioned fallback lookup table for companies that cannot be assigned through the Census lookup.
+
+The fallback table should support a stable company key and the fields needed for reporting, such as:
+
+- company name;
+- iMIS or Salesforce identifier;
+- state;
+- county;
+- congressional district;
+- congressional district GEOID;
+- optional map-reference information;
+- reviewer/source note;
+- reviewed date.
+
+Use the fallback only after the normal Census lookup fails or produces an approved manual-review result. Validate the fallback rows before using them and record their provenance.
+
+The enrichment workflow should produce three clear populations:
+
+1. Census-confirmed companies;
+2. fallback-confirmed companies;
+3. unresolved companies.
+
+Unresolved companies must remain available in the review output but must not prevent report generation. Until they are resolved, exclude them from district and statewide report populations and display accurate aggregate counts based only on included companies.
+
+Do not silently guess a district. A fallback row must be explicit, reviewable, and auditable.
+
+Add tests for:
+
+- fallback assignment when Census lookup fails;
+- fallback validation and malformed-row rejection;
+- unresolved companies being excluded from reports;
+- Senate reports running with unresolved companies present;
+- aggregate counts matching only the included population;
+- map rendering using only safe, approved map references.
+
+#### AF. Update snapshot and aggregate semantics
+
+Ensure the district and aggregate CSV schemas clearly distinguish:
+
+- included companies;
+- unresolved companies;
+- companies with employee data;
+- companies missing employee data;
+- Census-confirmed assignments;
+- manually reviewed fallback assignments.
+
+Recompute aggregate rows after fallback and exclusion decisions. Validate that every displayed company appears in exactly one report population and that no excluded company contributes to the displayed totals.
+
+Document that `known_jobs` is a partial total and is withheld whenever fewer than two companies contribute employee data.
+
+#### AG. Make the command-line interface friendlier
+
+Support the user-facing command name:
+
+```bash
+uv run aisc-gr-statistics
+````
+
+Keep the existing explicit subcommands available for scripts and automation.
+
+When the command is run with no arguments in an interactive terminal:
+
+1. inspect local data and snapshot status;
+2. show whether required files, checksums, geography, representative snapshots, and aggregate data are current and usable;
+3. show unresolved-company counts and employee-data coverage;
+4. present menu options such as:
+   - create a statewide report;
+   - create a district report;
+   - refresh representative data;
+   - refresh Census boundaries or map references;
+   - run enrichment;
+   - run aggregate validation;
+   - exit.
+
+If no interactive terminal is available, print a concise status summary and usage instructions instead of waiting for input.
+
+The interactive menu must call the same functions as the existing explicit commands so behavior, validation, and output paths remain consistent.
+
+Add tests for:
+
+- the hyphenated executable name;
+- no-argument interactive behavior;
+- noninteractive no-argument behavior;
+- status output when snapshots are valid;
+- status output when data is missing or stale;
+- menu dispatch to the existing command handlers.
+
+#### AH. Review representative PDFs and update documentation
+
+Generate House and statewide sample PDFs after implementing the preceding changes.
+
+Confirm that:
+
+- representative information is populated or clearly marked unavailable;
+- labels use the correct report scope;
+- `known jobs` is lower case;
+- no one-company employee total is shown;
+- company relationship summaries are useful and accurate;
+- unresolved geography does not block report generation;
+- excluded companies do not affect displayed counts;
+- all public fields remain disclosure-safe.
+
+Update `README.md` and `docs/usage.md` with:
+
+- the representative-data source and refresh process;
+- known-job suppression rules;
+- relationship-summary rules;
+- fallback geography workflow;
+- unresolved-company behavior;
+- interactive CLI usage and noninteractive behavior.

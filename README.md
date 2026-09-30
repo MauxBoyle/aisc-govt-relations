@@ -83,7 +83,8 @@ report additionally requires every included Illinois company to have confirmed
 district geography. Resolve `address-district-review.csv` and rerun enrichment
 when that check fails.
 
-The checked-in Census KML/map metadata is used offline, so PDF creation stays
+The checked-in Census KML/map metadata and Census place/county reference
+snapshots are used offline, so PDF creation stays
 reproducible when a network connection is unavailable. Maintainers can refresh
 the official Census 2025 Illinois 119th-Congress KML archive, then review and
 commit both files:

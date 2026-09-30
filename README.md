@@ -97,8 +97,10 @@ File](https://www.census.gov/geographies/mapping-files/2025/geo/carto-boundary-f
 extracts its Illinois KML, verifies all 17 district GEOIDs and its geometry,
 and records the source URL, retrieval time, Congress, and KML checksum. A bad
 download, ZIP, XML document, or district set leaves the existing KML and
-metadata unchanged. `--source-url` and `--congressional-session` are optional
-overrides for a reviewed future Census release.
+metadata unchanged. Both files are staged before replacement; if either
+replacement fails, the command restores the prior KML and metadata as a pair.
+`--source-url` and `--congressional-session` are optional overrides for a
+reviewed future Census release.
 
 District lookup is intentionally separate, so PDF creation remains offline. It
 uses the public [U.S. Census Geocoding Services API](https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html)

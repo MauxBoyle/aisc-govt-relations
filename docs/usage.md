@@ -75,9 +75,11 @@ extracts and validates the KML ZIP, and records its source URL, UTC retrieval
 time, Congress, and SHA-256 checksum. It validates all 17 Illinois districts
 and their polygon geometry before atomically replacing each reference file;
 download, ZIP, XML, checksum, or validation failures preserve the prior
-snapshot. Review and commit the KML and JSON together. Maintainers may supply
-`--source-url` and `--congressional-session` only when reviewing a future
-official Census release.
+snapshot. Both files are staged first, and a failure while replacing either
+one rolls the pair back to its prior contents. Review and commit the KML and
+JSON together. Maintainers may supply `--source-url` and
+`--congressional-session` only when reviewing a future official Census
+release.
 
 ## External congressional reports
 

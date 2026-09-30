@@ -168,23 +168,68 @@ def _validate_metadata(metadata, kml_data):
 
 
 def _replace_snapshot_files(kml_path, metadata_path, kml_data, metadata):
-    """Write validated files beside their targets, then replace each atomically."""
+    """Stage both files, replacing them as one rollback-safe pair."""
     kml_path.parent.mkdir(parents=True, exist_ok=True)
     metadata_path.parent.mkdir(parents=True, exist_ok=True)
     temporary_paths = []
+    replacements = []
+    backups = {}
+    replaced_targets = []
     try:
         for target, content in (
             (kml_path, kml_data),
             (metadata_path, (json.dumps(metadata, indent=2) + "\n").encode()),
         ):
-            descriptor, temporary_name = tempfile.mkstemp(
-                dir=target.parent, prefix=f".{target.name}."
-            )
-            with os.fdopen(descriptor, "wb") as temporary:
-                temporary.write(content)
-            temporary_paths.append((Path(temporary_name), target))
-        for temporary, target in temporary_paths:
-            os.replace(temporary, target)
-    finally:
-        for temporary, _ in temporary_paths:
+            previous_content = target.read_bytes() if target.exists() else None
+            staged = _stage_bytes(target, content)
+            temporary_paths.append(staged)
+            replacements.append((staged, target))
+            if previous_content is not None:
+                backup = _stage_bytes(target, previous_content)
+                temporary_paths.append(backup)
+                backups[target] = backup
+            else:
+                backups[target] = None
+    except OSError as error:
+        for temporary in temporary_paths:
             temporary.unlink(missing_ok=True)
+        raise BoundarySnapshotError(
+            "Could not stage replacement Census boundary snapshot files."
+        ) from error
+
+    try:
+        for staged, target in replacements:
+            os.replace(staged, target)
+            replaced_targets.append(target)
+    except OSError as replacement_error:
+        try:
+            for target in reversed(replaced_targets):
+                backup = backups[target]
+                if backup is None:
+                    target.unlink(missing_ok=True)
+                else:
+                    os.replace(backup, target)
+        except OSError as rollback_error:
+            raise BoundarySnapshotError(
+                "Could not replace Census boundary snapshot files, and rollback failed."
+            ) from rollback_error
+        raise BoundarySnapshotError(
+            "Could not replace Census boundary snapshot files; the prior files were restored."
+        ) from replacement_error
+    finally:
+        for temporary in temporary_paths:
+            temporary.unlink(missing_ok=True)
+
+
+def _stage_bytes(target, content):
+    """Write bytes to a temporary file in the target's directory."""
+    descriptor, temporary_name = tempfile.mkstemp(
+        dir=target.parent, prefix=f".{target.name}."
+    )
+    try:
+        with os.fdopen(descriptor, "wb") as temporary:
+            temporary.write(content)
+    except OSError:
+        Path(temporary_name).unlink(missing_ok=True)
+        raise
+    return Path(temporary_name)

@@ -4,11 +4,13 @@ import hashlib
 import json
 from datetime import UTC, datetime
 from io import BytesIO
+from pathlib import Path
 from types import SimpleNamespace
 from zipfile import ZipFile
 
 import pytest
 import requests
+from pypdf import PdfReader
 from reportlab.lib import colors
 
 from aisc_gr_statistics import census_boundaries
@@ -67,6 +69,10 @@ class _Response:
         return None
 
 
+def _replace_in_kml(old, new):
+    return _kml().replace(old.encode(), new.encode(), 1)
+
+
 def test_refresh_extracts_valid_kml_zip_and_preserves_multipart_geometry(tmp_path):
     kml_path, metadata_path = tmp_path / "districts.kml", tmp_path / "districts.json"
     downloaded = _kml(multipart=True)
@@ -101,6 +107,22 @@ def test_refresh_extracts_valid_kml_zip_and_preserves_multipart_geometry(tmp_pat
         ),
         pytest.param(lambda: _zip(b"not XML"), id="xml-failure"),
         pytest.param(lambda: _zip(_kml(geoids={"1701"})), id="district-validation-failure"),
+        pytest.param(
+            lambda: _zip(_replace_in_kml("CDSESSN\">119", "CDSESSN\">118")),
+            id="session-validation-failure",
+        ),
+        pytest.param(
+            lambda: _zip(_replace_in_kml("-89,40", "nan,40")),
+            id="non-finite-coordinate",
+        ),
+        pytest.param(
+            lambda: _zip(_replace_in_kml("-89,40", "-189,40")),
+            id="out-of-range-coordinate",
+        ),
+        pytest.param(
+            lambda: _zip(_replace_in_kml("-89,40 -89,40", "-89,40 -89.5,40")),
+            id="open-ring",
+        ),
     ],
 )
 def test_failed_refresh_leaves_existing_snapshot_files_unchanged(tmp_path, download):
@@ -119,11 +141,43 @@ def test_failed_refresh_leaves_existing_snapshot_files_unchanged(tmp_path, downl
     assert metadata_path.read_text(encoding="utf-8") == "old metadata"
 
 
+@pytest.mark.parametrize("failed_target", ["districts.kml", "districts.json"])
+def test_replacement_failure_restores_both_existing_snapshot_files(
+    tmp_path, monkeypatch, failed_target
+):
+    kml_path, metadata_path = tmp_path / "districts.kml", tmp_path / "districts.json"
+    kml_path.write_bytes(b"old KML")
+    metadata_path.write_text("old metadata", encoding="utf-8")
+    real_replace = census_boundaries.os.replace
+    failed_once = False
+
+    def fail_one_replacement(source, target):
+        nonlocal failed_once
+        if Path(target).name == failed_target and not failed_once:
+            failed_once = True
+            raise OSError("simulated replacement failure")
+        real_replace(source, target)
+
+    monkeypatch.setattr(census_boundaries.os, "replace", fail_one_replacement)
+
+    with pytest.raises(BoundarySnapshotError, match="replace"):
+        refresh_boundary_snapshot(
+            kml_path,
+            metadata_path,
+            get=lambda url, timeout: _Response(_zip(_kml())),
+        )
+
+    assert kml_path.read_bytes() == b"old KML"
+    assert metadata_path.read_text(encoding="utf-8") == "old metadata"
+
+
 def test_committed_snapshot_has_all_illinois_districts_and_real_geometry():
     shapes, metadata = load_boundary_snapshot()
 
     assert set(shapes) == ILLINOIS_GEOIDS
     assert all(len(ring) > 4 for rings in shapes.values() for ring in rings)
+    assert sum(len(ring) for rings in shapes.values() for ring in rings) > 10_000
+    assert metadata["source_url"] == census_boundaries.SOURCE_URL
     assert metadata["congressional_session"] == "119"
 
 
@@ -228,3 +282,4 @@ def test_external_pdf_can_render_from_the_committed_boundary_snapshot(tmp_path):
     )
 
     assert output.read_bytes().startswith(b"%PDF")
+    assert len(PdfReader(output).pages) == 1

@@ -129,9 +129,17 @@ The command stops before producing a new PDF if a word is too wide for a
 column or if the complete list cannot fit safely within two pages. It does not
 shrink below 8 points, truncate details, or add a third page. The Senate
 version also stops until every Illinois company has confirmed geography.
-External reports intentionally disclose only
-company name, city, county, aggregate Known jobs/coverage, public official
-identity, map, and source dates.
+External reports intentionally disclose only company name, city, county, an
+optional future relationship summary, safe aggregate known jobs/coverage,
+public official identity, map, and source dates. They never disclose
+addresses, individual employee counts, tonnage, IDs, Census coordinates,
+classifications, or reconciliation data. Known jobs is shown only when at
+least two companies contribute employee data; otherwise it reads `N/A
+(employee data not available)`.
+
+House and Senate-delegation reports share this one public-display contract.
+Map coordinates remain private map-drawing data, separate from public company
+text.
 
 Keep Census lookups separate from the offline PDF command:
 

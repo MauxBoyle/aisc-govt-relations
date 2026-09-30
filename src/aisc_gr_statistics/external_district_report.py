@@ -17,6 +17,13 @@ from .districts import (
     read_districts_csv,
     validate_snapshot_metadata,
 )
+from .external_report_contract import (
+    PublicCompany,
+    PublicJobAggregate,
+    format_company_text,
+    format_known_jobs,
+    format_source_dates,
+)
 from .house import members_for_state
 from .senate import senators_for_state
 
@@ -46,13 +53,15 @@ MAP_WIDTH = letter[0] - (2 * MAP_X)
 MAP_HEIGHT = (letter[1] * 2 / 3) - MAP_Y
 
 
+ExternalCompany = PublicCompany
+
+
 @dataclass(frozen=True)
-class ExternalCompany:
-    """The deliberately small data model permitted to reach this renderer."""
-    name: str
-    city: str
-    county: str
-    point: MapPoint | None = None
+class _MapCompany:
+    """Private map input kept separate from public company display fields."""
+
+    company: PublicCompany
+    point: MapPoint | None
 
 
 @dataclass(frozen=True)
@@ -132,7 +141,8 @@ def render_house_report(district, districts_csv, aggregates_csv, output, house_m
         raise DistrictReportError("Census boundary session is incompatible with the district snapshot.")
     identity = "Vacant" if member.vacant else member.name
     references = load_map_references(*(map_reference_paths or ())) if map_reference_paths else load_map_references()
-    return _render(output, f"Illinois Congressional District {district}", identity, _external_companies(selected, references), district_aggregate, national, shapes, district_aggregate.congressional_district_geoid, metadata, as_of)
+    companies, marker_points = _external_companies(selected, references)
+    return _render(output, f"Illinois Congressional District {district}", identity, companies, district_aggregate, national, shapes, district_aggregate.congressional_district_geoid, metadata, as_of, "District", marker_points)
 
 
 def render_senate_report(districts_csv, aggregates_csv, output, senators, *, boundary_paths=None, map_reference_paths=None, as_of=""):
@@ -149,7 +159,8 @@ def render_senate_report(districts_csv, aggregates_csv, output, senators, *, bou
         raise DistrictReportError("Census boundary session is incompatible with the district snapshot.")
     names = " / ".join(s.name for s in senators_for_state(tuple(senators), "IL"))
     references = load_map_references(*(map_reference_paths or ())) if map_reference_paths else load_map_references()
-    return _render(output, "Illinois U.S. Senate Delegation", names, _external_companies(rows, references), state, national, shapes, "", metadata, as_of)
+    companies, marker_points = _external_companies(rows, references)
+    return _render(output, "Illinois U.S. Senate Delegation", names, companies, state, national, shapes, "", metadata, as_of, "Illinois", marker_points)
 
 
 def _sessions(rows):
@@ -179,14 +190,21 @@ def _match_count(rows, aggregate):
 
 
 def _external_companies(rows, references):
-    """Create the only company objects permitted into the external renderer."""
-    return [
-        ExternalCompany(row.company_name, row.city, row.county, point_for_company(row.city, row.county_fips, references))
+    """Separate allow-listed display objects from private map-drawing points."""
+    mapped = tuple(
+        _MapCompany(
+            PublicCompany(row.company_name, row.city, row.county),
+            point_for_company(row.city, row.county_fips, references),
+        )
         for row in rows
-    ]
+    )
+    return (
+        tuple(item.company for item in mapped),
+        tuple(item.point for item in mapped if item.point),
+    )
 
 
-def _render(output, title, identity, rows, local, national, shapes, highlighted, metadata, as_of):
+def _render(output, title, identity, rows, local, national, shapes, highlighted, metadata, as_of, local_label="District", marker_points=()):
     companies = sorted((_company(r) for r in rows), key=lambda c: c.name.casefold())
     placements = _plan_company_layout(companies)
     output = Path(output)
@@ -203,7 +221,7 @@ def _render(output, title, identity, rows, local, national, shapes, highlighted,
         MAP_Y,
         MAP_WIDTH,
         MAP_HEIGHT,
-        [company.point for company in companies if company.point],
+        marker_points,
     )
     canvas.setFont("Helvetica-Bold", 15)
     canvas.drawString(36, height - 42, title)
@@ -215,12 +233,11 @@ def _render(output, title, identity, rows, local, national, shapes, highlighted,
     canvas.setFont("Helvetica-Bold", 9)
     canvas.drawString(36, height - 88, f"Companies: {local.included_company_count}")
     canvas.setFont("Helvetica", 8)
-    canvas.drawString(36, height - 102, _jobs("District/state", local))
+    canvas.drawString(36, height - 102, _jobs(local_label, local))
     canvas.drawString(36, height - 114, _jobs("National", national))
     canvas.setFont("Helvetica-Bold", 9)
     canvas.drawString(36, height - 140, "Companies")
-    source_date = str(metadata["retrieved_at"])[:10]
-    footer = f"Census boundaries as of {source_date}; district data as of {as_of or 'saved snapshot'}."
+    footer = format_source_dates(metadata["retrieved_at"], as_of)
     _draw_company_page(canvas, placements, 1, footer)
     if any(item.page == 2 for item in placements):
         canvas.showPage()
@@ -237,7 +254,14 @@ def _render(output, title, identity, rows, local, national, shapes, highlighted,
 
 
 def _jobs(label, row):
-    return f"{label} Known jobs: {row.known_jobs:,} ({row.companies_with_employee_data} of {row.included_company_count} companies have employee data)"
+    return format_known_jobs(
+        label,
+        PublicJobAggregate(
+            row.included_company_count,
+            row.known_jobs,
+            row.companies_with_employee_data,
+        ),
+    )
 
 
 def _draw_photo_placeholder(canvas, x, y, label):
@@ -248,9 +272,9 @@ def _draw_photo_placeholder(canvas, x, y, label):
 
 
 def _company(row):
-    if isinstance(row, ExternalCompany):
+    if isinstance(row, PublicCompany):
         return row
-    return ExternalCompany(row.company_name, row.city, row.county)
+    return PublicCompany(row.company_name, row.city, row.county)
 
 
 def _draw_map(canvas, shapes, highlighted, x, y, width, height, marker_points=()):
@@ -367,7 +391,7 @@ def _draw_markers(canvas, points):
 
 
 def _company_text(company):
-    return f"{company.name} — {company.city}, {company.county}"
+    return format_company_text(company)
 
 
 def _wrap_company_text(text):

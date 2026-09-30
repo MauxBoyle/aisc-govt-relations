@@ -102,6 +102,24 @@ replacement fails, the command restores the prior KML and metadata as a pair.
 `--source-url` and `--congressional-session` are optional overrides for a
 reviewed future Census release.
 
+District-map company markers deliberately use city-level precision: a saved
+city name is normalized and matched to the checked-in Census place snapshot.
+If it does not match, its saved county FIPS selects the Census county reference
+point instead. The address-geocoder latitude and longitude in the saved CSV
+never reach the external PDF. Refresh and review the accompanying Census
+Gazetteer snapshots separately when needed:
+
+```bash
+uv run aisc_gr_statistics refresh-map-references
+```
+
+The command fetches the official Census place and county Gazetteer files,
+validates Illinois places and all 102 counties, then records checksums and
+provenance. House maps frame the selected district and nearby company points;
+Senate maps retain an Illinois-wide view. Markers that collide in final PDF
+positions become a single deterministic, labeled count marker. There are no
+web tiles, runtime downloads, or interactive map behavior during PDF creation.
+
 District lookup is intentionally separate, so PDF creation remains offline. It
 uses the public [U.S. Census Geocoding Services API](https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html)
 with Census's current address benchmark and congressional-geography vintage:

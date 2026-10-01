@@ -229,8 +229,9 @@ The official source is the [U.S. Senate contact-information XML](https://www.sen
 
 Both PDF versions include all 17 current Illinois U.S. House districts. Report
 creation remains offline: it reads the committed snapshot in
-`data/reference/house/members.xml`, `data/reference/house/contacts.json`, and
-`data/reference/house/metadata.json`. The metadata records UTC retrieval time,
+`data/reference/house/members.xml`, `data/reference/house/contacts.json`,
+`data/reference/house/metadata.json`, and the optional
+`data/reference/house/photos/` assets plus their `manifest.json`. The metadata records UTC retrieval time,
 the Clerk publication date when supplied, both government source URLs, and
 SHA-256 checksums for the saved data.
 
@@ -243,16 +244,20 @@ Any non-government source needs a documented justification before it can be
 used.
 
 Maintainers intentionally refresh the snapshot, review the XML, contacts JSON,
-and metadata together, and commit all three files together:
+metadata, photo manifest, and any downloaded photo assets together, and commit them together:
 
 ```bash
 uv run aisc_gr_statistics refresh-representatives
 ```
 
-Cards show an official photo URL only when a government source supplies one.
-The report never downloads, embeds, or stores image files. This separate
-refresh step makes an earlier report reproducible without network access; the
-final PDF Sources section identifies the House sources and snapshot date.
+When the official House directory supplies an image URL, the refresh command
+downloads it once, validates it as a JPEG or PNG, records its source URL,
+filename, media type, and SHA-256 checksum in the manifest, and stores it in
+the version-controlled `photos/` directory. A failed or invalid image aborts
+the refresh without replacing the prior snapshot. Rendering only embeds these
+validated local files and never makes a network request. This separate refresh
+step makes an earlier report reproducible without network access; the final PDF
+Sources section identifies the House sources and snapshot date.
 
 The source export and generated PDF/CSV files should stay in the ignored `data/raw/` and
 `data/processed/` folders. The report reads Salesforce only when both

@@ -4,9 +4,11 @@ import pytest
 
 from aisc_gr_statistics.external_report_contract import (
     PublicCompany,
+    PublicContact,
     PublicJobAggregate,
     format_company_text,
     format_known_jobs,
+    format_public_contact,
     format_source_dates,
 )
 
@@ -23,12 +25,18 @@ def test_public_company_has_only_allowlisted_display_fields():
 
 
 def test_optional_relationship_summary_has_a_safe_fallback():
-    assert format_company_text(
-        PublicCompany("Example Steel", "Chicago", "Cook County", "Member")
-    ) == "Example Steel — Chicago, Cook County — Member"
-    assert format_company_text(
-        PublicCompany("Example Steel", "Chicago", "Cook County", "")
-    ) == "Example Steel — Chicago, Cook County"
+    assert (
+        format_company_text(
+            PublicCompany("Example Steel", "Chicago", "Cook County", "Member")
+        )
+        == "Example Steel — Chicago, Cook County — Member"
+    )
+    assert (
+        format_company_text(
+            PublicCompany("Example Steel", "Chicago", "Cook County", "")
+        )
+        == "Example Steel — Chicago, Cook County"
+    )
 
 
 @pytest.mark.parametrize(
@@ -39,7 +47,9 @@ def test_optional_relationship_summary_has_a_safe_fallback():
         (2, "District known jobs: 1,234 (2 of 3 companies have employee data)"),
     ],
 )
-def test_known_jobs_requires_at_least_two_employee_data_contributors(contributors, expected):
+def test_known_jobs_requires_at_least_two_employee_data_contributors(
+    contributors, expected
+):
     aggregate = PublicJobAggregate(3, 1_234, contributors)
     assert format_known_jobs("District", aggregate) == expected
 
@@ -57,4 +67,13 @@ def test_known_jobs_labels_are_report_specific_and_lower_case():
 def test_source_date_wording_is_shared():
     assert format_source_dates("2026-09-30T00:00:00Z", "2026-09-29") == (
         "Census boundaries as of 2026-09-30; district data as of 2026-09-29."
+    )
+
+
+def test_public_contact_omits_blank_optional_fields_and_has_one_fallback():
+    assert format_public_contact(PublicContact("Example", phone="(202) 555-0100")) == (
+        ("Phone", "(202) 555-0100"),
+    )
+    assert format_public_contact(PublicContact("Vacant")) == (
+        ("", "Public contact information unavailable"),
     )

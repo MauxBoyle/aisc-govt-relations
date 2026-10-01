@@ -267,9 +267,22 @@ def _build_parser():
         "district-report",
         help="Create one- or two-page external Illinois district PDFs offline.",
     )
-    district_report.add_argument("--district", action="append", type=int, help="Illinois House district; repeat to select several.")
-    district_report.add_argument("--all-districts", action="store_true", help="Create all 17 Illinois House reports.")
-    district_report.add_argument("--senate", action="store_true", help="Also create the Illinois Senate delegation report.")
+    district_report.add_argument(
+        "--district",
+        action="append",
+        type=int,
+        help="Illinois House district; repeat to select several.",
+    )
+    district_report.add_argument(
+        "--all-districts",
+        action="store_true",
+        help="Create all 17 Illinois House reports.",
+    )
+    district_report.add_argument(
+        "--senate",
+        action="store_true",
+        help="Also create the Illinois Senate delegation report.",
+    )
     district_report.add_argument(
         "--districts-csv",
         type=Path,
@@ -282,14 +295,34 @@ def _build_parser():
         default=Path("data/processed/district-aggregates.csv"),
         help="Saved aggregate snapshot (default: data/processed/district-aggregates.csv).",
     )
-    district_report.add_argument("--output-dir", type=Path, default=Path("data/processed"))
-    district_report.add_argument("--as-of", default="", help="Optional YYYY-MM-DD saved district-data date.")
-    boundaries = subcommands.add_parser("refresh-district-boundaries", help="Refresh the reviewed Census KML boundary snapshot.")
-    boundaries.add_argument("--source-url", help="Optional official Census KML ZIP URL override.")
-    boundaries.add_argument("--congressional-session", type=int, help="Optional Congress number override.")
-    map_references = subcommands.add_parser("refresh-map-references", help="Refresh reviewed Census place and county map-reference snapshots.")
-    map_references.add_argument("--places-source-url", help="Optional official Census place Gazetteer ZIP URL override.")
-    map_references.add_argument("--counties-source-url", help="Optional official Census county Gazetteer ZIP URL override.")
+    district_report.add_argument(
+        "--output-dir", type=Path, default=Path("data/processed")
+    )
+    district_report.add_argument(
+        "--as-of", default="", help="Optional YYYY-MM-DD saved district-data date."
+    )
+    boundaries = subcommands.add_parser(
+        "refresh-district-boundaries",
+        help="Refresh the reviewed Census KML boundary snapshot.",
+    )
+    boundaries.add_argument(
+        "--source-url", help="Optional official Census KML ZIP URL override."
+    )
+    boundaries.add_argument(
+        "--congressional-session", type=int, help="Optional Congress number override."
+    )
+    map_references = subcommands.add_parser(
+        "refresh-map-references",
+        help="Refresh reviewed Census place and county map-reference snapshots.",
+    )
+    map_references.add_argument(
+        "--places-source-url",
+        help="Optional official Census place Gazetteer ZIP URL override.",
+    )
+    map_references.add_argument(
+        "--counties-source-url",
+        help="Optional official Census county Gazetteer ZIP URL override.",
+    )
     return parser
 
 
@@ -418,33 +451,67 @@ def _run_aggregate_districts(arguments):
 def _run_district_report(arguments):
     """Render selected PDFs from local snapshots only; no network calls occur."""
     try:
-        if not arguments.district and not arguments.all_districts and not arguments.senate:
-            raise DistrictReportError("select --district, --all-districts, and/or --senate")
+        if (
+            not arguments.district
+            and not arguments.all_districts
+            and not arguments.senate
+        ):
+            raise DistrictReportError(
+                "select --district, --all-districts, and/or --senate"
+            )
         house = load_house_snapshot()
         senate = load_snapshot()
-        districts = sorted(set((list(range(1, 18)) if arguments.all_districts else []) + (arguments.district or [])))
+        districts = sorted(
+            set(
+                (list(range(1, 18)) if arguments.all_districts else [])
+                + (arguments.district or [])
+            )
+        )
         output_paths = []
         for district in districts:
             if district < 1 or district > 17:
-                raise DistrictReportError("Illinois House districts must be between 1 and 17.")
-            output_paths.append(render_house_report(
-                district, arguments.districts_csv, arguments.aggregates_csv,
-                arguments.output_dir / district_filename(str(district)), house.members,
-                as_of=arguments.as_of,
-            ))
+                raise DistrictReportError(
+                    "Illinois House districts must be between 1 and 17."
+                )
+            output_paths.append(
+                render_house_report(
+                    district,
+                    arguments.districts_csv,
+                    arguments.aggregates_csv,
+                    arguments.output_dir / district_filename(str(district)),
+                    house.members,
+                    house_photos=house.photos,
+                    as_of=arguments.as_of,
+                )
+            )
         if arguments.senate:
-            output_paths.append(render_senate_report(
-                arguments.districts_csv, arguments.aggregates_csv,
-                arguments.output_dir / senate_filename(), senate.senators, as_of=arguments.as_of,
-            ))
-    except (DistrictReportError, DistrictSnapshotError, HouseDataError, SenateDataError, MapReferenceError, ValueError) as error:
+            output_paths.append(
+                render_senate_report(
+                    arguments.districts_csv,
+                    arguments.aggregates_csv,
+                    arguments.output_dir / senate_filename(),
+                    senate.senators,
+                    as_of=arguments.as_of,
+                )
+            )
+    except (
+        DistrictReportError,
+        DistrictSnapshotError,
+        HouseDataError,
+        SenateDataError,
+        MapReferenceError,
+        ValueError,
+    ) as error:
         logger.error("District report was not created: {}", error)
         raise SystemExit(1) from error
-    logger.info("Created external district report(s): {}", ", ".join(map(str, output_paths)))
+    logger.info(
+        "Created external district report(s): {}", ", ".join(map(str, output_paths))
+    )
 
 
 def _run_refresh_district_boundaries(arguments):
     from .census_boundaries import BoundarySnapshotError, refresh_boundary_snapshot
+
     try:
         options = {
             name: value
@@ -463,10 +530,14 @@ def _run_refresh_district_boundaries(arguments):
 def _run_refresh_map_references(arguments):
     """Refresh map points explicitly; normal PDF rendering remains offline."""
     try:
-        options = {name: value for name, value in {
-            "places_source_url": arguments.places_source_url,
-            "counties_source_url": arguments.counties_source_url,
-        }.items() if value is not None}
+        options = {
+            name: value
+            for name, value in {
+                "places_source_url": arguments.places_source_url,
+                "counties_source_url": arguments.counties_source_url,
+            }.items()
+            if value is not None
+        }
         refresh_map_references(**options)
     except MapReferenceError as error:
         logger.error("Census map references were not refreshed: {}", error)

@@ -1,0 +1,18 @@
+[
+  {
+    "state": "IL",
+    "district": "7",
+    "source_url": "https://davis.house.gov/sites/evo-subsites/davis.house.gov/files/styles/evo_image_portrait_480/public/evo-media-image/Rep.%20Davis%20Portrait.jpg?itok=X_maBDwx",
+    "filename": "IL-7.jpg",
+    "media_type": "image/jpeg",
+    "sha256": "21d377ed475cc91f79084cc65b2203514bc193abe33f17718eb57c80f968c2c6"
+  },
+  {
+    "state": "WI",
+    "district": "7",
+    "source_url": "https://tiffany.house.gov/sites/evo-subsites/tiffany-evo.house.gov/files/styles/large/public/evo-media-image/Tom_Tiffany_official_headshot.jpg?itok=p-5HfvqS",
+    "filename": "WI-7.jpg",
+    "media_type": "image/jpeg",
+    "sha256": "89fb7cb8c3f462ddb5c48af4cd82e2dc6798dbf727cf7b1fb43425f3a9ed6873"
+  }
+]

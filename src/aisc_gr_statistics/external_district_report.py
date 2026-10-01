@@ -7,6 +7,7 @@ from pathlib import Path
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfgen.canvas import Canvas
 
@@ -19,9 +20,11 @@ from .districts import (
 )
 from .external_report_contract import (
     PublicCompany,
+    PublicContact,
     PublicJobAggregate,
     format_company_text,
     format_known_jobs,
+    format_public_contact,
     format_source_dates,
 )
 from .house import members_for_state
@@ -51,6 +54,8 @@ MAP_X = 36
 MAP_Y = 36
 MAP_WIDTH = letter[0] - (2 * MAP_X)
 MAP_HEIGHT = (letter[1] * 2 / 3) - MAP_Y
+REPRESENTATIVE_PHOTO_WIDTH = 102
+REPRESENTATIVE_PHOTO_HEIGHT = 81
 
 
 ExternalCompany = PublicCompany
@@ -100,9 +105,21 @@ def read_aggregates_csv(path: Path | str) -> list[DistrictAggregateRow]:
         if reader.fieldnames is None or set(fields) - set(reader.fieldnames):
             raise DistrictReportError("aggregate snapshot is missing required columns")
         try:
-            return [DistrictAggregateRow(**{key: _number(row.get(key, "")) if key.endswith(("count", "jobs", "data")) else (row.get(key) or "").strip() for key in fields}) for row in reader]
+            return [
+                DistrictAggregateRow(
+                    **{
+                        key: _number(row.get(key, ""))
+                        if key.endswith(("count", "jobs", "data"))
+                        else (row.get(key) or "").strip()
+                        for key in fields
+                    }
+                )
+                for row in reader
+            ]
         except ValueError as error:
-            raise DistrictReportError("aggregate snapshot contains invalid numbers") from error
+            raise DistrictReportError(
+                "aggregate snapshot contains invalid numbers"
+            ) from error
 
 
 def _number(value):
@@ -117,50 +134,148 @@ def senate_filename() -> str:
     return "illinois-senate-delegation-external.pdf"
 
 
-def render_house_report(district, districts_csv, aggregates_csv, output, house_members, *, boundary_paths=None, map_reference_paths=None, as_of=""):
+def render_house_report(
+    district,
+    districts_csv,
+    aggregates_csv,
+    output,
+    house_members,
+    *,
+    house_photos=(),
+    boundary_paths=None,
+    map_reference_paths=None,
+    as_of="",
+):
     district = str(int(str(district)))
-    member = next((m for m in members_for_state(tuple(house_members), "IL") if m.district == district), None)
+    member = next(
+        (
+            m
+            for m in members_for_state(tuple(house_members), "IL")
+            if m.district == district
+        ),
+        None,
+    )
     if member is None:
-        raise DistrictReportError(f"Illinois district {district} is not in the House snapshot.")
+        raise DistrictReportError(
+            f"Illinois district {district} is not in the House snapshot."
+        )
     _validate_inputs(districts_csv, aggregates_csv)
     rows = read_districts_csv(districts_csv)
-    selected = [row for row in rows if row.state == "IL" and row.congressional_district == district]
+    selected = [
+        row
+        for row in rows
+        if row.state == "IL" and row.congressional_district == district
+    ]
     if not selected:
-        raise DistrictReportError(f"No saved companies exist for Illinois district {district}.")
+        raise DistrictReportError(
+            f"No saved companies exist for Illinois district {district}."
+        )
     aggregates = read_aggregates_csv(aggregates_csv)
     geoids = {row.congressional_district_geoid for row in selected}
     if len(geoids) != 1:
         raise DistrictReportError("district snapshot has conflicting district GEOIDs.")
-    district_aggregate = _aggregate(aggregates, "district", "IL", district, geoids.pop())
+    district_aggregate = _aggregate(
+        aggregates, "district", "IL", district, geoids.pop()
+    )
     national = _aggregate(aggregates, "national", "", "", "")
     _match_count(selected, district_aggregate)
-    shapes, metadata = load_boundary_snapshot(*(boundary_paths or ())) if boundary_paths else load_boundary_snapshot()
+    shapes, metadata = (
+        load_boundary_snapshot(*(boundary_paths or ()))
+        if boundary_paths
+        else load_boundary_snapshot()
+    )
     if district_aggregate.congressional_district_geoid not in shapes:
-        raise DistrictReportError("selected district is absent from the Census boundary snapshot.")
+        raise DistrictReportError(
+            "selected district is absent from the Census boundary snapshot."
+        )
     if str(metadata.get("congressional_session")) not in _sessions(rows):
-        raise DistrictReportError("Census boundary session is incompatible with the district snapshot.")
-    identity = "Vacant" if member.vacant else member.name
-    references = load_map_references(*(map_reference_paths or ())) if map_reference_paths else load_map_references()
+        raise DistrictReportError(
+            "Census boundary session is incompatible with the district snapshot."
+        )
+    contact = _house_contact(member)
+    photo_path = next(
+        (
+            photo.path
+            for photo in house_photos
+            if (photo.state, photo.district) == (member.state, member.district)
+        ),
+        None,
+    )
+    references = (
+        load_map_references(*(map_reference_paths or ()))
+        if map_reference_paths
+        else load_map_references()
+    )
     companies, marker_points = _external_companies(selected, references)
-    return _render(output, f"Illinois Congressional District {district}", identity, companies, district_aggregate, national, shapes, district_aggregate.congressional_district_geoid, metadata, as_of, "District", marker_points)
+    return _render(
+        output,
+        f"Illinois Congressional District {district}",
+        contact,
+        companies,
+        district_aggregate,
+        national,
+        shapes,
+        district_aggregate.congressional_district_geoid,
+        metadata,
+        as_of,
+        "District",
+        marker_points,
+        photo_path=photo_path,
+    )
 
 
-def render_senate_report(districts_csv, aggregates_csv, output, senators, *, boundary_paths=None, map_reference_paths=None, as_of=""):
+def render_senate_report(
+    districts_csv,
+    aggregates_csv,
+    output,
+    senators,
+    *,
+    boundary_paths=None,
+    map_reference_paths=None,
+    as_of="",
+):
     _validate_inputs(districts_csv, aggregates_csv)
     rows = [row for row in read_districts_csv(districts_csv) if row.state == "IL"]
     aggregates = read_aggregates_csv(aggregates_csv)
     state = _aggregate(aggregates, "state", "IL", "", "")
     national = _aggregate(aggregates, "national", "", "", "")
     if len(rows) != state.included_company_count:
-        raise DistrictReportError("Senate report requires complete confirmed Illinois geography; resolve address-review data first.")
+        raise DistrictReportError(
+            "Senate report requires complete confirmed Illinois geography; resolve address-review data first."
+        )
     _match_count(rows, state)
-    shapes, metadata = load_boundary_snapshot(*(boundary_paths or ())) if boundary_paths else load_boundary_snapshot()
+    shapes, metadata = (
+        load_boundary_snapshot(*(boundary_paths or ()))
+        if boundary_paths
+        else load_boundary_snapshot()
+    )
     if str(metadata.get("congressional_session")) not in _sessions(rows):
-        raise DistrictReportError("Census boundary session is incompatible with the district snapshot.")
-    names = " / ".join(s.name for s in senators_for_state(tuple(senators), "IL"))
-    references = load_map_references(*(map_reference_paths or ())) if map_reference_paths else load_map_references()
+        raise DistrictReportError(
+            "Census boundary session is incompatible with the district snapshot."
+        )
+    contacts = tuple(
+        _senate_contact(s) for s in senators_for_state(tuple(senators), "IL")
+    )
+    references = (
+        load_map_references(*(map_reference_paths or ()))
+        if map_reference_paths
+        else load_map_references()
+    )
     companies, marker_points = _external_companies(rows, references)
-    return _render(output, "Illinois U.S. Senate Delegation", names, companies, state, national, shapes, "", metadata, as_of, "Illinois", marker_points)
+    return _render(
+        output,
+        "Illinois U.S. Senate Delegation",
+        contacts,
+        companies,
+        state,
+        national,
+        shapes,
+        "",
+        metadata,
+        as_of,
+        "Illinois",
+        marker_points,
+    )
 
 
 def _sessions(rows):
@@ -178,9 +293,16 @@ def _validate_inputs(districts_csv, aggregates_csv):
 
 
 def _aggregate(rows, scope, state, district, geoid):
-    found = [r for r in rows if (r.scope, r.state, r.congressional_district, r.congressional_district_geoid) == (scope, state, district, geoid)]
+    found = [
+        r
+        for r in rows
+        if (r.scope, r.state, r.congressional_district, r.congressional_district_geoid)
+        == (scope, state, district, geoid)
+    ]
     if len(found) != 1:
-        raise DistrictReportError(f"required {scope} aggregate row is missing or duplicated")
+        raise DistrictReportError(
+            f"required {scope} aggregate row is missing or duplicated"
+        )
     return found[0]
 
 
@@ -204,9 +326,25 @@ def _external_companies(rows, references):
     )
 
 
-def _render(output, title, identity, rows, local, national, shapes, highlighted, metadata, as_of, local_label="District", marker_points=()):
+def _render(
+    output,
+    title,
+    contacts,
+    rows,
+    local,
+    national,
+    shapes,
+    highlighted,
+    metadata,
+    as_of,
+    local_label="District",
+    marker_points=(),
+    photo_path=None,
+):
     companies = sorted((_company(r) for r in rows), key=lambda c: c.name.casefold())
-    placements = _plan_company_layout(companies)
+    contact_blocks = _contacts(contacts)
+    company_top = _company_top(contact_blocks)
+    placements = _plan_company_layout(companies, first_page_top=company_top)
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.with_suffix(output.suffix + ".tmp")
@@ -225,18 +363,16 @@ def _render(output, title, identity, rows, local, national, shapes, highlighted,
     )
     canvas.setFont("Helvetica-Bold", 15)
     canvas.drawString(36, height - 42, title)
-    canvas.setFont("Helvetica-Bold", 12)
-    canvas.drawString(36, height - 62, identity)
-    canvas.setFont("Helvetica", 8)
-    canvas.drawRightString(width - 36, height - 42, "External information")
-    _draw_photo_placeholder(canvas, width - 104, height - 105, "Official photo unavailable")
+    contact_bottom = _draw_contact_blocks(
+        canvas, contact_blocks, height - 58, photo_path
+    )
     canvas.setFont("Helvetica-Bold", 9)
-    canvas.drawString(36, height - 88, f"Companies: {local.included_company_count}")
+    canvas.drawString(
+        36, contact_bottom - 14, f"Companies: {local.included_company_count}"
+    )
     canvas.setFont("Helvetica", 8)
-    canvas.drawString(36, height - 102, _jobs(local_label, local))
-    canvas.drawString(36, height - 114, _jobs("National", national))
-    canvas.setFont("Helvetica-Bold", 9)
-    canvas.drawString(36, height - 140, "Companies")
+    canvas.drawString(36, contact_bottom - 28, _jobs(local_label, local))
+    canvas.drawString(36, contact_bottom - 40, _jobs("National", national))
     footer = format_source_dates(metadata["retrieved_at"], as_of)
     _draw_company_page(canvas, placements, 1, footer)
     if any(item.page == 2 for item in placements):
@@ -264,11 +400,107 @@ def _jobs(label, row):
     )
 
 
-def _draw_photo_placeholder(canvas, x, y, label):
-    canvas.setStrokeColor(colors.grey)
-    canvas.rect(x, y, 68, 54)
-    canvas.setFont("Helvetica", 6)
-    canvas.drawCentredString(x + 34, y + 25, label)
+def _house_contact(member):
+    if member.vacant:
+        return PublicContact("Vacant")
+    return PublicContact(
+        member.name,
+        f"{member.party} — District {member.district}",
+        member.address,
+        member.phone,
+        member.website_url,
+        member.contact_form_url,
+    )
+
+
+def _senate_contact(senator):
+    return PublicContact(
+        senator.name,
+        "U.S. Senator",
+        senator.address,
+        senator.phone,
+        "",
+        senator.contact_form_url,
+    )
+
+
+def _contacts(value):
+    if isinstance(value, PublicContact):
+        return (value,)
+    if isinstance(value, str):
+        return (PublicContact(value),)
+    return tuple(value)
+
+
+def _company_top(contacts):
+    """Reserve the card, three aggregate lines, and a clear gap above companies."""
+    heights = []
+    for contact in contacts:
+        height = 11 + (10 if contact.affiliation else 0)
+        for label, value in format_public_contact(contact):
+            height += 10
+            if label == "Address":
+                height += max(0, len(value.splitlines()) - 1) * 9
+        heights.append(height)
+    return letter[1] - 58 - max(heights) - 54
+
+
+def _draw_contact_blocks(canvas, contacts, top, photo_path):
+    width, _ = letter
+    columns = len(contacts)
+    card_width = (width - 72 - (10 if columns == 2 else 0)) / columns
+    bottoms = []
+    for index, contact in enumerate(contacts):
+        x = 36 + index * (card_width + 10)
+        canvas.setFont("Helvetica-Bold", 10)
+        canvas.drawString(x, top, contact.name)
+        y = top - 11
+        if contact.affiliation:
+            canvas.setFont("Helvetica", 8)
+            canvas.drawString(x, y, contact.affiliation)
+            y -= 10
+        canvas.setFont("Helvetica", 7.5)
+        for label, value in format_public_contact(contact):
+            if label == "Address":
+                lines = value.splitlines()
+                canvas.drawString(x, y, f"Address: {lines[0]}")
+                for line in lines[1:]:
+                    y -= 9
+                    canvas.drawString(x + 28, y, line)
+            else:
+                text = f"{label}: {value}" if label else value
+                canvas.drawString(x, y, text)
+                if label in {"Website", "Contact form"}:
+                    canvas.linkURL(
+                        value,
+                        (
+                            x,
+                            y - 2,
+                            min(
+                                x + stringWidth(text, "Helvetica", 7.5), x + card_width
+                            ),
+                            y + 8,
+                        ),
+                        relative=0,
+                    )
+            y -= 10
+        bottoms.append(y)
+    if photo_path and len(contacts) == 1:
+        try:
+            canvas.drawImage(
+                ImageReader(str(photo_path)),
+                width - 36 - REPRESENTATIVE_PHOTO_WIDTH,
+                top - REPRESENTATIVE_PHOTO_HEIGHT,
+                REPRESENTATIVE_PHOTO_WIDTH,
+                REPRESENTATIVE_PHOTO_HEIGHT,
+                preserveAspectRatio=True,
+                anchor="c",
+                mask="auto",
+            )
+        except (OSError, ValueError):
+            # Snapshot validation catches corruption; rendering still never falls back to a network image.
+            pass
+    return min(bottoms)
 
 
 def _company(row):
@@ -305,8 +537,12 @@ def _draw_map(canvas, shapes, highlighted, x, y, width, height, marker_points=()
             if highlighted and not _intersects(_ring_bounds(rings), extent):
                 continue
             selected = geoid == highlighted
-            canvas.setFillColor(colors.HexColor("#c43d36") if selected else colors.white)
-            canvas.setStrokeColor(colors.HexColor("#9b2d28") if selected else colors.HexColor("#aaaaaa"))
+            canvas.setFillColor(
+                colors.HexColor("#c43d36") if selected else colors.white
+            )
+            canvas.setStrokeColor(
+                colors.HexColor("#9b2d28") if selected else colors.HexColor("#aaaaaa")
+            )
             if hasattr(canvas, "setLineWidth"):
                 canvas.setLineWidth(1.2 if selected else 0.25)
             for ring in rings:
@@ -325,18 +561,42 @@ def _draw_map(canvas, shapes, highlighted, x, y, width, height, marker_points=()
 def _map_extent(shapes, highlighted, marker_points, aspect_ratio):
     """Return lon/lat bounds expanded to the final printable map aspect ratio."""
     if highlighted:
-        source = [point for rings in [shapes[highlighted]] for ring in rings for point in ring]
+        source = [
+            point for rings in [shapes[highlighted]] for ring in rings for point in ring
+        ]
         source.extend(marker_points)
     else:
-        source = [point for rings in shapes.values() for ring in rings for point in ring]
-    min_lon, max_lon = min(point[0] for point in source), max(point[0] for point in source)
-    min_lat, max_lat = min(point[1] for point in source), max(point[1] for point in source)
-    lon_pad, lat_pad = max((max_lon - min_lon) * 0.08, 0.04), max((max_lat - min_lat) * 0.08, 0.04)
-    min_lon, max_lon, min_lat, max_lat = min_lon - lon_pad, max_lon + lon_pad, min_lat - lat_pad, max_lat + lat_pad
+        source = [
+            point for rings in shapes.values() for ring in rings for point in ring
+        ]
+    min_lon, max_lon = (
+        min(point[0] for point in source),
+        max(point[0] for point in source),
+    )
+    min_lat, max_lat = (
+        min(point[1] for point in source),
+        max(point[1] for point in source),
+    )
+    lon_pad, lat_pad = (
+        max((max_lon - min_lon) * 0.08, 0.04),
+        max((max_lat - min_lat) * 0.08, 0.04),
+    )
+    min_lon, max_lon, min_lat, max_lat = (
+        min_lon - lon_pad,
+        max_lon + lon_pad,
+        min_lat - lat_pad,
+        max_lat + lat_pad,
+    )
     mid_lat = (min_lat + max_lat) / 2
-    projected_width, projected_height = (max_lon - min_lon) * math.cos(math.radians(mid_lat)), max_lat - min_lat
+    projected_width, projected_height = (
+        (max_lon - min_lon) * math.cos(math.radians(mid_lat)),
+        max_lat - min_lat,
+    )
     if projected_width / projected_height < aspect_ratio:
-        grow = (projected_height * aspect_ratio / math.cos(math.radians(mid_lat)) - (max_lon - min_lon)) / 2
+        grow = (
+            projected_height * aspect_ratio / math.cos(math.radians(mid_lat))
+            - (max_lon - min_lon)
+        ) / 2
         min_lon, max_lon = min_lon - grow, max_lon + grow
     else:
         grow = (projected_width / aspect_ratio - (max_lat - min_lat)) / 2
@@ -348,16 +608,32 @@ def _project_point(point, extent, x, y, width, height):
     min_lon, max_lon, min_lat, max_lat = extent
     mid_lat = (min_lat + max_lat) / 2
     lon_scale = math.cos(math.radians(mid_lat))
-    return (x + ((point[0] - min_lon) * lon_scale) / ((max_lon - min_lon) * lon_scale) * width, y + (point[1] - min_lat) / (max_lat - min_lat) * height)
+    return (
+        x
+        + ((point[0] - min_lon) * lon_scale)
+        / ((max_lon - min_lon) * lon_scale)
+        * width,
+        y + (point[1] - min_lat) / (max_lat - min_lat) * height,
+    )
 
 
 def _ring_bounds(rings):
     points = [point for ring in rings for point in ring]
-    return min(p[0] for p in points), max(p[0] for p in points), min(p[1] for p in points), max(p[1] for p in points)
+    return (
+        min(p[0] for p in points),
+        max(p[0] for p in points),
+        min(p[1] for p in points),
+        max(p[1] for p in points),
+    )
 
 
 def _intersects(bounds, extent):
-    return not (bounds[1] < extent[0] or bounds[0] > extent[1] or bounds[3] < extent[2] or bounds[2] > extent[3])
+    return not (
+        bounds[1] < extent[0]
+        or bounds[0] > extent[1]
+        or bounds[3] < extent[2]
+        or bounds[2] > extent[3]
+    )
 
 
 def _cluster_markers(points, distance=7):
@@ -400,7 +676,10 @@ def _wrap_company_text(text):
     if not words:
         return ("",)
     for word in words:
-        if stringWidth(word, COMPANY_LIST_FONT, COMPANY_LIST_FONT_SIZE) > COMPANY_LIST_WIDTH:
+        if (
+            stringWidth(word, COMPANY_LIST_FONT, COMPANY_LIST_FONT_SIZE)
+            > COMPANY_LIST_WIDTH
+        ):
             raise DistrictReportError(
                 "company list contains an unbreakable word wider than a column"
             )
@@ -408,7 +687,10 @@ def _wrap_company_text(text):
     current = words[0]
     for word in words[1:]:
         candidate = f"{current} {word}"
-        if stringWidth(candidate, COMPANY_LIST_FONT, COMPANY_LIST_FONT_SIZE) <= COMPANY_LIST_WIDTH:
+        if (
+            stringWidth(candidate, COMPANY_LIST_FONT, COMPANY_LIST_FONT_SIZE)
+            <= COMPANY_LIST_WIDTH
+        ):
             current = candidate
         else:
             lines.append(current)
@@ -417,12 +699,12 @@ def _wrap_company_text(text):
     return tuple(lines)
 
 
-def _plan_company_layout(companies):
+def _plan_company_layout(companies, *, first_page_top=COMPANY_LIST_FIRST_PAGE_TOP):
     """Measure and pack complete company entries across columns and pages."""
     placements = []
     page = 1
     column = 0
-    y = COMPANY_LIST_FIRST_PAGE_TOP
+    y = first_page_top
     for company in companies:
         lines = _wrap_company_text(_company_text(company))
         entry_bottom = y - (len(lines) - 1) * COMPANY_LIST_LINE_HEIGHT
@@ -435,11 +717,7 @@ def _plan_company_layout(companies):
                 raise DistrictReportError(
                     "company list cannot fit within two pages at the 8-point minimum"
                 )
-            y = (
-                COMPANY_LIST_FIRST_PAGE_TOP
-                if page == 1
-                else COMPANY_LIST_CONTINUATION_TOP
-            )
+            y = first_page_top if page == 1 else COMPANY_LIST_CONTINUATION_TOP
             entry_bottom = y - (len(lines) - 1) * COMPANY_LIST_LINE_HEIGHT
             if entry_bottom < COMPANY_LIST_FOOTER_TOP:
                 raise DistrictReportError(
@@ -450,9 +728,7 @@ def _plan_company_layout(companies):
             CompanyLinePlacement(line, page, x, y - index * COMPANY_LIST_LINE_HEIGHT)
             for index, line in enumerate(lines)
         )
-        placements.append(
-            CompanyPlacement(company, page, column, line_placements)
-        )
+        placements.append(CompanyPlacement(company, page, column, line_placements))
         y -= len(lines) * COMPANY_LIST_LINE_HEIGHT + COMPANY_LIST_ENTRY_GAP
     return tuple(placements)
 

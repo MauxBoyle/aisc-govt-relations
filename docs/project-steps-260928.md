@@ -433,7 +433,8 @@ Use the existing official snapshots as the offline report source:
 
 - House member data from the validated Clerk/directory snapshot;
 - Senate data from the validated Senate.gov snapshot;
-- official website, contact form, office address, phone, and photo URL when available.
+- official website, contact form, office address, phone, and a locally stored,
+  checksum-validated official House photo when available.
 
 Update the external report layout to show a compact representative contact block. Do not make network requests while rendering a report.
 

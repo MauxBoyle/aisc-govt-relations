@@ -13,10 +13,13 @@ import tempfile
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from html.parser import HTMLParser
+from io import BytesIO
 from pathlib import Path
+from uuid import uuid4
 from xml.etree import ElementTree
 
 import requests
+from PIL import Image
 
 from .senate import US_STATE_CODES
 
@@ -30,6 +33,14 @@ SNAPSHOT_DIRECTORY = Path(__file__).resolve().parents[2] / "data/reference/house
 SNAPSHOT_XML_PATH = SNAPSHOT_DIRECTORY / "members.xml"
 SNAPSHOT_CONTACTS_PATH = SNAPSHOT_DIRECTORY / "contacts.json"
 SNAPSHOT_METADATA_PATH = SNAPSHOT_DIRECTORY / "metadata.json"
+SNAPSHOT_PHOTOS_PATH = SNAPSHOT_DIRECTORY / "photos"
+
+# Some official member sites host portraits but do not publish them in the
+# House directory. These reviewed URLs supplement—not replace—the directory.
+OFFICIAL_PHOTO_OVERRIDES = {
+    ("IL", "7"): "https://davis.house.gov/sites/evo-subsites/davis.house.gov/files/styles/evo_image_portrait_480/public/evo-media-image/Rep.%20Davis%20Portrait.jpg?itok=X_maBDwx",
+    ("WI", "7"): "https://tiffany.house.gov/sites/evo-subsites/tiffany-evo.house.gov/files/styles/large/public/evo-media-image/Tom_Tiffany_official_headshot.jpg?itok=p-5HfvqS",
+}
 
 
 class HouseDataError(ValueError):
@@ -61,6 +72,20 @@ class HouseSnapshot:
     directory_source_url: str
     retrieved_at: datetime
     source_publication_date: str = ""
+    photos: tuple["HousePhoto", ...] = ()
+
+
+@dataclass(frozen=True)
+class HousePhoto:
+    """A checksum-validated official image stored with the House snapshot."""
+
+    state: str
+    district: str
+    source_url: str
+    filename: str
+    media_type: str
+    sha256: str
+    path: Path
 
 
 def parse_members_xml(xml: bytes | str) -> tuple[HouseContact, ...]:
@@ -176,7 +201,11 @@ def enrich_members(
         values.update(
             website_url=website,
             contact_form_url=contact,
-            photo_url=supplement.get("photo_url", ""),
+            photo_url=supplement.get(
+                "photo_url", OFFICIAL_PHOTO_OVERRIDES.get(
+                    (member.state, member.district), ""
+                )
+            ),
         )
         enriched.append(HouseContact(**values))
     return tuple(enriched)
@@ -232,10 +261,11 @@ def load_snapshot(
     xml_path: Path | str = SNAPSHOT_XML_PATH,
     contacts_path: Path | str = SNAPSHOT_CONTACTS_PATH,
     metadata_path: Path | str = SNAPSHOT_METADATA_PATH,
+    photos_path: Path | str = SNAPSHOT_PHOTOS_PATH,
 ) -> HouseSnapshot:
     """Load and integrity-check the local House files."""
-    xml_path, contacts_path, metadata_path = map(
-        Path, (xml_path, contacts_path, metadata_path)
+    xml_path, contacts_path, metadata_path, photos_path = map(
+        Path, (xml_path, contacts_path, metadata_path, photos_path)
     )
     if not all(path.is_file() for path in (xml_path, contacts_path, metadata_path)):
         raise HouseDataError(
@@ -283,12 +313,14 @@ def load_snapshot(
             "House contacts do not match the current Clerk-member seats."
         )
     validate_members(contacts)
+    photos = _load_photos(photos_path, contacts)
     return HouseSnapshot(
         contacts,
         metadata["clerk_source_url"],
         metadata["directory_source_url"],
         retrieved_at,
         metadata.get("source_publication_date", ""),
+        photos,
     )
 
 
@@ -296,6 +328,7 @@ def refresh_snapshot(
     xml_path: Path | str = SNAPSHOT_XML_PATH,
     contacts_path: Path | str = SNAPSHOT_CONTACTS_PATH,
     metadata_path: Path | str = SNAPSHOT_METADATA_PATH,
+    photos_path: Path | str = SNAPSHOT_PHOTOS_PATH,
     *,
     clerk_source_url: str = CLERK_SOURCE_URL,
     directory_source_url: str = DIRECTORY_SOURCE_URL,
@@ -319,6 +352,7 @@ def refresh_snapshot(
         parse_members_xml(xml), parse_directory_html(directory_response.content)
     )
     validate_members(members)
+    photo_files, photos = _download_photos(members, get, Path(photos_path))
     retrieved_at = (now() if now else datetime.now(UTC)).astimezone(UTC)
     contacts_bytes = (
         json.dumps([asdict(member) for member in members], indent=2) + "\n"
@@ -336,13 +370,157 @@ def refresh_snapshot(
         (Path(contacts_path), contacts_bytes),
         (Path(metadata_path), (json.dumps(metadata, indent=2) + "\n").encode()),
     )
+    _replace_photo_directory(Path(photos_path), photo_files)
     return HouseSnapshot(
         members,
         clerk_source_url,
         directory_source_url,
         retrieved_at,
         metadata["source_publication_date"],
+        photos,
     )
+
+
+def _load_photos(
+    photos_path: Path, members: tuple[HouseContact, ...]
+) -> tuple[HousePhoto, ...]:
+    """Load the optional locally stored images and their audit manifest."""
+    manifest_path = photos_path / "manifest.json"
+    if not manifest_path.exists():
+        return ()
+    try:
+        rows = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not isinstance(rows, list):
+            raise TypeError
+        photos = []
+        seats = set()
+        member_by_seat = {(member.state, member.district): member for member in members}
+        for row in rows:
+            required = {
+                "state",
+                "district",
+                "source_url",
+                "filename",
+                "media_type",
+                "sha256",
+            }
+            if not isinstance(row, dict) or not required <= row.keys():
+                raise TypeError
+            filename = row["filename"]
+            if Path(filename).name != filename:
+                raise TypeError
+            path = photos_path / filename
+            content = path.read_bytes()
+            if hashlib.sha256(content).hexdigest() != row["sha256"]:
+                raise HouseDataError(
+                    "House photo checksum does not match its manifest."
+                )
+            if _validate_image(content) != row["media_type"]:
+                raise HouseDataError(
+                    "House photo media type does not match its manifest."
+                )
+            seat = (row["state"], row["district"])
+            if seat in seats or seat not in member_by_seat:
+                raise HouseDataError(
+                    "House photo manifest has an invalid or duplicate seat."
+                )
+            if member_by_seat[seat].photo_url != row["source_url"]:
+                raise HouseDataError(
+                    "House photo manifest source does not match contacts."
+                )
+            seats.add(seat)
+            photos.append(HousePhoto(path=path, **{key: row[key] for key in required}))
+    except (OSError, json.JSONDecodeError, TypeError, KeyError) as error:
+        raise HouseDataError(
+            "House photo manifest is malformed or unreadable."
+        ) from error
+    return tuple(photos)
+
+
+def _download_photos(members, get, photos_path: Path):
+    """Download only URLs found in the official directory before replacing data."""
+    files, photos = {}, []
+    for member in members:
+        if not member.photo_url:
+            continue
+        try:
+            response = get(member.photo_url, timeout=30)
+            response.raise_for_status()
+        except requests.RequestException as error:
+            raise HouseDataError(
+                f"Could not download House photo for {member.name}: {error}"
+            ) from error
+        content = response.content
+        media_type = _validate_image(content)
+        extension = {"image/jpeg": ".jpg", "image/png": ".png"}[media_type]
+        filename = f"{member.state}-{member.district}{extension}"
+        digest = hashlib.sha256(content).hexdigest()
+        files[filename] = content
+        photos.append(
+            HousePhoto(
+                member.state,
+                member.district,
+                member.photo_url,
+                filename,
+                media_type,
+                digest,
+                photos_path / filename,
+            )
+        )
+    manifest = [
+        {
+            key: getattr(photo, key)
+            for key in (
+                "state",
+                "district",
+                "source_url",
+                "filename",
+                "media_type",
+                "sha256",
+            )
+        }
+        for photo in photos
+    ]
+    files["manifest.json"] = (json.dumps(manifest, indent=2) + "\n").encode()
+    return files, tuple(photos)
+
+
+def _validate_image(content: bytes) -> str:
+    try:
+        with Image.open(BytesIO(content)) as image:
+            image.verify()
+            media_type = Image.MIME.get(image.format)
+    except Exception as error:
+        raise HouseDataError("Downloaded House photo is not a valid image.") from error
+    if media_type not in {"image/jpeg", "image/png"}:
+        raise HouseDataError("Downloaded House photo must be a JPEG or PNG image.")
+    return media_type
+
+
+def _replace_photo_directory(path: Path, files: dict[str, bytes]) -> None:
+    """Replace the complete asset set only after every image has validated."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(dir=path.parent, prefix=".house-photos-"))
+    backup = path.with_name(f".house-photos-old-{uuid4().hex}")
+    try:
+        for filename, content in files.items():
+            (staging / filename).write_bytes(content)
+        if path.exists():
+            os.replace(path, backup)
+        os.replace(staging, path)
+        if backup.exists():
+            for child in backup.iterdir():
+                child.unlink()
+            backup.rmdir()
+    except OSError as error:
+        if backup.exists() and not path.exists():
+            os.replace(backup, path)
+        raise HouseDataError("Could not replace House photo assets.") from error
+    finally:
+        if staging.exists():
+            for child in staging.iterdir():
+                child.unlink()
+            staging.rmdir()
 
 
 def _text(element: ElementTree.Element, name: str) -> str:
@@ -434,7 +612,27 @@ class _DirectoryParser(HTMLParser):
 
 
 def _state_from_name(value: str) -> str:
-    names = {"Illinois": "IL"}
+    names = {
+        "Alabama": "AL", "Alaska": "AK", "American Samoa": "AS",
+        "Arizona": "AZ", "Arkansas": "AR", "California": "CA",
+        "Colorado": "CO", "Connecticut": "CT", "Delaware": "DE",
+        "District of Columbia": "DC", "Florida": "FL", "Georgia": "GA",
+        "Guam": "GU", "Hawaii": "HI", "Idaho": "ID", "Illinois": "IL",
+        "Indiana": "IN", "Iowa": "IA", "Kansas": "KS", "Kentucky": "KY",
+        "Louisiana": "LA", "Maine": "ME", "Maryland": "MD",
+        "Massachusetts": "MA", "Michigan": "MI", "Minnesota": "MN",
+        "Mississippi": "MS", "Missouri": "MO", "Montana": "MT",
+        "Nebraska": "NE", "Nevada": "NV", "New Hampshire": "NH",
+        "New Jersey": "NJ", "New Mexico": "NM", "New York": "NY",
+        "North Carolina": "NC", "North Dakota": "ND",
+        "Northern Mariana Islands": "MP", "Ohio": "OH", "Oklahoma": "OK",
+        "Oregon": "OR", "Pennsylvania": "PA", "Puerto Rico": "PR",
+        "Rhode Island": "RI", "South Carolina": "SC", "South Dakota": "SD",
+        "Tennessee": "TN", "Texas": "TX", "U.S. Virgin Islands": "VI",
+        "Utah": "UT", "Vermont": "VT", "Virginia": "VA",
+        "Washington": "WA", "West Virginia": "WV", "Wisconsin": "WI",
+        "Wyoming": "WY",
+    }
     return names.get(value)
 
 

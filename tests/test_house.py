@@ -3,9 +3,11 @@
 import hashlib
 import json
 from datetime import UTC, datetime
+from io import BytesIO
 
 import pytest
 import requests
+from PIL import Image
 
 from aisc_gr_statistics.house import (
     HouseContact,
@@ -23,7 +25,10 @@ MEMBERS_XML = b"""<MemberData publish-date="September 2, 2026"><members>
 <member><member-info><official-name>Another Member</official-name><party>R</party><state postal-code="CA"/><district>At Large</district><office-building>RHOB</office-building><office-room>200</office-room><office-zip>20515</office-zip><phone>(202) 225-0002</phone></member-info></member>
 </members></MemberData>"""
 
-DIRECTORY_HTML = """<table><caption>Illinois</caption><tr><td>1st</td><td><a href="https://example.house.gov">Member</a><img src="/photo.jpg"></td></tr></table>"""
+DIRECTORY_HTML = """<table><caption>Illinois</caption><tr><td>1st</td><td><a href="https://example.house.gov">Member</a><img src="/photo.jpg"></td></tr></table><table><caption>Wisconsin</caption><tr><td>7th</td><td><a href="https://tiffany.house.gov">Member</a></td></tr></table>"""
+_image = BytesIO()
+Image.new("RGB", (1, 1), "white").save(_image, format="PNG")
+PNG = _image.getvalue()
 
 
 def test_clerk_xml_is_the_authority_and_directory_only_adds_urls():
@@ -40,6 +45,22 @@ def test_clerk_xml_is_the_authority_and_directory_only_adds_urls():
     assert enriched[0].contact_form_url == "https://example.house.gov/contact"
     assert enriched[0].photo_url == "https://www.house.gov/photo.jpg"
     assert enriched[1].website_url == ""
+
+
+def test_directory_entries_are_keyed_to_their_own_state_heading():
+    directory = parse_directory_html(DIRECTORY_HTML)
+
+    assert directory[("IL", "1")]["website_url"] == "https://example.house.gov"
+    assert directory[("WI", "7")]["website_url"] == "https://tiffany.house.gov"
+    assert ("IL", "7") not in directory
+
+
+def test_reviewed_official_photo_override_is_used_when_directory_has_none():
+    member = HouseContact("Example Member", "D", "IL", "7", "Address", "Phone")
+
+    enriched = enrich_members((member,), {})
+
+    assert enriched[0].photo_url.startswith("https://davis.house.gov/")
 
 
 def test_vacancy_is_explicit_and_never_uses_predecessor_data():
@@ -124,8 +145,13 @@ def test_refresh_writes_checksums_for_valid_download(tmp_path):
     )
     snapshot = refresh_snapshot(
         *paths,
+        photos_path=tmp_path / "photos",
         get=lambda url, timeout: _Response(
-            MEMBERS_XML if "MemberData" in url else DIRECTORY_HTML.encode()
+            MEMBERS_XML
+            if "MemberData" in url
+            else PNG
+            if url.endswith("photo.jpg")
+            else DIRECTORY_HTML.encode()
         ),
         now=lambda: datetime(2026, 1, 2, tzinfo=UTC),
     )
@@ -134,3 +160,34 @@ def test_refresh_writes_checksums_for_valid_download(tmp_path):
     assert len(snapshot.members) == 2
     assert metadata["retrieved_at"] == "2026-01-02T00:00:00Z"
     assert metadata["xml_sha256"] == hashlib.sha256(MEMBERS_XML).hexdigest()
+    manifest = json.loads((tmp_path / "photos" / "manifest.json").read_text())
+    assert manifest[0]["filename"] == "IL-1.png"
+    assert (tmp_path / "photos" / "IL-1.png").read_bytes() == PNG
+
+
+def test_invalid_photo_preserves_the_previous_complete_snapshot(tmp_path):
+    paths = tuple(
+        tmp_path / name for name in ("members.xml", "contacts.json", "metadata.json")
+    )
+    photos = tmp_path / "photos"
+    photos.mkdir()
+    old_manifest = photos / "manifest.json"
+    old_manifest.write_text("[]\n", encoding="utf-8")
+    for path in paths:
+        path.write_text("old", encoding="utf-8")
+
+    with pytest.raises(HouseDataError, match="valid image"):
+        refresh_snapshot(
+            *paths,
+            photos_path=photos,
+            get=lambda url, timeout: _Response(
+                MEMBERS_XML
+                if "MemberData" in url
+                else b"not an image"
+                if url.endswith("photo.jpg")
+                else DIRECTORY_HTML.encode()
+            ),
+        )
+
+    assert [path.read_text(encoding="utf-8") for path in paths] == ["old"] * 3
+    assert old_manifest.read_text(encoding="utf-8") == "[]\n"

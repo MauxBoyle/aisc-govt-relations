@@ -41,7 +41,7 @@ from aisc_gr_statistics.senate import load_snapshot as load_senate_snapshot
 FIXTURE = Path(__file__).parent / "fixtures/external-report-companies.csv"
 
 
-def _snapshots(tmp_path, *, aggregate_count=None):
+def _snapshots(tmp_path, *, aggregate_count=None, aggregate_rows=None):
     districts = tmp_path / "districts.csv"
     aggregates = tmp_path / "aggregates.csv"
     with FIXTURE.open(newline="", encoding="utf-8") as handle:
@@ -49,7 +49,8 @@ def _snapshots(tmp_path, *, aggregate_count=None):
     write_districts_csv(rows, districts)
     count = len(rows) if aggregate_count is None else aggregate_count
     write_district_aggregates_csv(
-        [
+        aggregate_rows
+        or [
             DistrictAggregateRow("national", "", "", "", "", count, 37, 2, 1),
             DistrictAggregateRow("state", "IL", "17", "", "", count, 37, 2, 1),
             DistrictAggregateRow("district", "IL", "17", "7", "1707", 2, 25, 1, 1),
@@ -108,7 +109,10 @@ def test_house_and_senate_use_the_correct_company_populations(tmp_path):
         )
     )
     assert "District known jobs: N/A (employee data not available)" in house_text
+    assert "Illinois known jobs: 37 (2 of 3 companies" in house_text
+    assert "National known jobs" not in house_text
     assert "Illinois known jobs: 37 (2 of 3 companies" in senate_text
+    assert "National known jobs: 37 (2 of 3 companies" in senate_text
 
 
 def test_contact_cards_show_public_fields_and_omit_missing_optional_values(tmp_path):
@@ -365,6 +369,59 @@ def test_pdf_known_jobs_threshold_is_applied_before_text_is_drawn(
     )
     _, text = _text(output)
     assert expected in text
+
+
+@pytest.mark.parametrize(
+    ("local_contributors", "comparison_contributors", "expected"),
+    [
+        (2, 1, "Illinois known jobs: N/A (employee data not available)"),
+        (1, 2, "Illinois known jobs: 25 (2 of 2 companies have employee data)"),
+    ],
+)
+def test_pdf_known_jobs_thresholds_are_independent_for_each_aggregate(
+    tmp_path, local_contributors, comparison_contributors, expected
+):
+    local = DistrictAggregateRow(
+        "district", "IL", "17", "7", "1707", 2, 25, local_contributors, 0
+    )
+    comparison = DistrictAggregateRow(
+        "state", "IL", "17", "", "", 2, 25, comparison_contributors, 0
+    )
+    output = _render(
+        tmp_path / f"independent-{local_contributors}-{comparison_contributors}.pdf",
+        "Illinois Congressional District 7",
+        "Representative Example",
+        [ExternalCompany("Example Steel", "Chicago", "Cook County")],
+        local,
+        comparison,
+        {"1707": [[(-88.0, 41.0), (-87.0, 41.0), (-87.0, 42.0), (-88.0, 41.0)]]},
+        "1707",
+        {"retrieved_at": "2026-09-30T00:00:00Z"},
+        "2026-09-30",
+        comparison_label="Illinois",
+    )
+
+    _, text = _text(output)
+    assert expected in text
+
+
+@pytest.mark.parametrize("state_rows", [0, 2])
+def test_house_report_requires_exactly_one_state_aggregate_row(tmp_path, state_rows):
+    aggregates = [
+        DistrictAggregateRow("national", "", "", "", "", 3, 37, 2, 1),
+        DistrictAggregateRow("district", "IL", "17", "7", "1707", 2, 25, 1, 1),
+        DistrictAggregateRow("district", "IL", "17", "8", "1708", 1, 12, 1, 0),
+    ]
+    aggregates.extend(
+        DistrictAggregateRow("state", "IL", "17", "", "", 3, 37, 2, 1)
+        for _ in range(state_rows)
+    )
+    districts, aggregate_path = _snapshots(tmp_path, aggregate_rows=aggregates)
+
+    with pytest.raises(DistrictReportError, match="state aggregate row is missing or duplicated"):
+        render_house_report(
+            7, districts, aggregate_path, tmp_path / "house.pdf", _house_member()
+        )
 
 
 def test_count_mismatch_fails_without_creating_final_pdf(tmp_path):

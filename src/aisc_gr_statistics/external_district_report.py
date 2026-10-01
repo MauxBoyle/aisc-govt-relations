@@ -175,9 +175,9 @@ def render_house_report(
     if len(geoids) != 1:
         raise DistrictReportError("district snapshot has conflicting district GEOIDs.")
     district_aggregate = _aggregate(
-        aggregates, "district", "IL", district, geoids.pop()
+        aggregates, "district", "IL", "17", district, geoids.pop()
     )
-    national = _aggregate(aggregates, "national", "", "", "")
+    state = _aggregate(aggregates, "state", "IL", "17", "", "")
     _match_count(selected, district_aggregate)
     shapes, metadata = (
         load_boundary_snapshot(*(boundary_paths or ()))
@@ -213,7 +213,7 @@ def render_house_report(
         contact,
         companies,
         district_aggregate,
-        national,
+        state,
         shapes,
         district_aggregate.congressional_district_geoid,
         metadata,
@@ -221,6 +221,7 @@ def render_house_report(
         "District",
         marker_points,
         photo_path=photo_path,
+        comparison_label="Illinois",
     )
 
 
@@ -237,8 +238,8 @@ def render_senate_report(
     _validate_inputs(districts_csv, aggregates_csv)
     rows = [row for row in read_districts_csv(districts_csv) if row.state == "IL"]
     aggregates = read_aggregates_csv(aggregates_csv)
-    state = _aggregate(aggregates, "state", "IL", "", "")
-    national = _aggregate(aggregates, "national", "", "", "")
+    state = _aggregate(aggregates, "state", "IL", "17", "", "")
+    national = _aggregate(aggregates, "national", "", "", "", "")
     if len(rows) != state.included_company_count:
         raise DistrictReportError(
             "Senate report requires complete confirmed Illinois geography; resolve address-review data first."
@@ -275,6 +276,7 @@ def render_senate_report(
         as_of,
         "Illinois",
         marker_points,
+        comparison_label="National",
     )
 
 
@@ -292,12 +294,18 @@ def _validate_inputs(districts_csv, aggregates_csv):
         raise DistrictReportError(str(error)) from error
 
 
-def _aggregate(rows, scope, state, district, geoid):
+def _aggregate(rows, scope, state, state_fips, district, geoid):
     found = [
         r
         for r in rows
-        if (r.scope, r.state, r.congressional_district, r.congressional_district_geoid)
-        == (scope, state, district, geoid)
+        if (
+            r.scope,
+            r.state,
+            r.state_fips,
+            r.congressional_district,
+            r.congressional_district_geoid,
+        )
+        == (scope, state, state_fips, district, geoid)
     ]
     if len(found) != 1:
         raise DistrictReportError(
@@ -332,7 +340,7 @@ def _render(
     contacts,
     rows,
     local,
-    national,
+    comparison,
     shapes,
     highlighted,
     metadata,
@@ -340,6 +348,7 @@ def _render(
     local_label="District",
     marker_points=(),
     photo_path=None,
+    comparison_label="National",
 ):
     companies = sorted((_company(r) for r in rows), key=lambda c: c.name.casefold())
     contact_blocks = _contacts(contacts)
@@ -372,7 +381,7 @@ def _render(
     )
     canvas.setFont("Helvetica", 8)
     canvas.drawString(36, contact_bottom - 28, _jobs(local_label, local))
-    canvas.drawString(36, contact_bottom - 40, _jobs("National", national))
+    canvas.drawString(36, contact_bottom - 40, _jobs(comparison_label, comparison))
     footer = format_source_dates(metadata["retrieved_at"], as_of)
     _draw_company_page(canvas, placements, 1, footer)
     if any(item.page == 2 for item in placements):

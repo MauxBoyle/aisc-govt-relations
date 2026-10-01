@@ -78,8 +78,10 @@ district map as a full-width lower-page background, with report text layered
 above it; continuation pages are text-only. It never
 receives addresses, individual employee counts, tonnage, IDs, Census
 coordinates, classifications, certification data, or reconciliation data.
-Known jobs is displayed only when at least two companies contribute employee
-data; otherwise the report says `N/A (employee data not available)`.
+District PDFs label their two totals `District known jobs` and `Illinois known
+jobs`; statewide PDFs label them `Illinois known jobs` and `National known jobs`.
+Each total is displayed only when at least two companies contribute employee
+data; otherwise that total says `N/A (employee data not available)`.
 
 House and Senate-delegation PDFs use the same public-display contract. Map
 coordinates are private drawing input and are never public company fields.
@@ -183,7 +185,7 @@ the highest session number. The generic `Congressional Districts` layer is used
 only when no numbered layer is present; a malformed newest layer is sent to
 review rather than replaced with older geography.
 
-Create national and congressional-district aggregate data for later reports
+Create national, Illinois-state, and congressional-district aggregate data for later reports
 from a saved district snapshot:
 
 ```bash
@@ -195,11 +197,12 @@ uv run aisc_gr_statistics aggregate-districts \
 
 This step performs no Census lookup; when Salesforce credentials are configured,
 it reads the current Salesforce population and employee counts. Its CSV has one
-`national` row for every included company and `district` rows only for companies
-with a safe saved assignment, so district rows do not necessarily add up to the
-national row.
+`national` row for every included company, an Illinois `state` row when every
+included Illinois company has a safe saved assignment, and `district` rows only
+for companies with a safe saved assignment. District rows do not necessarily add
+up to the national row.
 `known_jobs` is the sum of valid whole-number employee counts, not an estimate
-of all jobs. Downstream reports must label it **Known jobs** and also show the
+of all jobs. Downstream reports label it `known jobs` and also show the
 employee-data coverage columns (`companies_with_employee_data` and
 `companies_missing_employee_data`).
 

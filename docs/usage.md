@@ -131,7 +131,8 @@ shrink below 8 points, truncate details, or add a third page. The Senate
 version also stops until every Illinois company has confirmed geography.
 External reports intentionally disclose only company name, city, county, an
 optional future relationship summary, safe aggregate known jobs/coverage,
-public official identity, map, and source dates. They never disclose
+public official contact information, locally stored official House photos, map,
+and source dates. They never disclose
 addresses, individual employee counts, tonnage, IDs, Census coordinates,
 classifications, or reconciliation data. Known jobs is shown only when at
 least two companies contribute employee data; otherwise it reads `N/A

@@ -26,10 +26,40 @@ class PublicJobAggregate:
     companies_with_employee_data: int
 
 
+@dataclass(frozen=True)
+class PublicContact:
+    """Public official details that are permitted in an external PDF."""
+
+    name: str
+    affiliation: str = ""
+    address: str = ""
+    phone: str = ""
+    website_url: str = ""
+    contact_form_url: str = ""
+
+
+def format_public_contact(contact: PublicContact) -> tuple[tuple[str, str], ...]:
+    """Return present contact fields, or one clear fallback for an empty card."""
+    fields = (
+        ("Address", contact.address),
+        ("Phone", contact.phone),
+        ("Website", contact.website_url),
+        ("Contact form", contact.contact_form_url),
+    )
+    present = tuple((label, value) for label, value in fields if value.strip())
+    if not present:
+        return (("", "Public contact information unavailable"),)
+    return present
+
+
 def format_company_text(company: PublicCompany) -> str:
     """Return the allow-listed company text, including an optional future note."""
     text = f"{company.name} — {company.city}, {company.county}"
-    return f"{text} — {company.relationship_summary}" if company.relationship_summary else text
+    return (
+        f"{text} — {company.relationship_summary}"
+        if company.relationship_summary
+        else text
+    )
 
 
 def format_known_jobs(label: str, aggregate: PublicJobAggregate) -> str:

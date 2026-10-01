@@ -114,7 +114,8 @@ one- or two-page PDFs from their saved CSV snapshots:
 uv run aisc_gr_statistics district-report \
   --district 7 --district 8 --senate \
   --districts-csv data/processed/company-districts.csv \
-  --aggregates-csv data/processed/district-aggregates.csv
+  --aggregates-csv data/processed/district-aggregates.csv \
+  --as-of 2026-09-30
 ```
 
 `--all-districts` creates the House batch. The command validates CSV checksum
@@ -130,11 +131,12 @@ column or if the complete list cannot fit safely within two pages. It does not
 shrink below 8 points, truncate details, or add a third page. The Senate
 version also stops until every Illinois company has confirmed geography.
 External reports intentionally disclose only company name, city, county, an
-optional future relationship summary, safe aggregate known jobs/coverage,
+one approved relationship summary, safe aggregate known jobs/coverage,
 public official contact information, locally stored official House photos, map,
 and source dates. They never disclose
 addresses, individual employee counts, tonnage, IDs, Census coordinates,
-classifications, or reconciliation data. Known jobs is shown only when at
+classifications, raw Salesforce/iMIS codes, certification names/statuses, or
+reconciliation data. Known jobs is shown only when at
 least two companies contribute employee data; otherwise it reads `N/A
 (employee data not available)`.
 
@@ -149,7 +151,8 @@ uv run aisc_gr_statistics enrich-districts \
   --imis-csv data/raw/imis/imis-tonnage-for-gr-statistics.csv \
   --districts-csv data/processed/company-districts.csv \
   --review-csv data/processed/address-district-review.csv \
-  --address-conversions-csv data/processed/address-conversions.csv
+  --address-conversions-csv data/processed/address-conversions.csv \
+  --as-of 2026-09-30
 ```
 
 The required address-conversions CSV includes one row for every company in the
@@ -180,6 +183,15 @@ addresses, no or multiple candidates, missing geography, malformed responses,
 and service errors. A Census service error writes the available successful and
 review rows, then returns a nonzero exit status. Run enrichment again whenever
 districts should be refreshed; Census current values are recorded for audit.
+
+`--as-of YYYY-MM-DD` is required. It is saved in district snapshot metadata
+and makes child-certification validation reproducible. Enrichment stores only
+one safe relationship phrase for the public PDF: a validated mapped AISC
+Certified phrase, a translated iMIS membership/category label, or `AISC
+relationship unavailable`. It never exposes raw source codes, child
+certification names, identifiers, or status values. Regenerate ignored
+operational snapshots after source changes, and pass the exact saved date to
+`district-report`.
 
 The Census API's `Current_Current` vintage moves forward over time and can
 return session-qualified keys such as `120th Congressional Districts`, which

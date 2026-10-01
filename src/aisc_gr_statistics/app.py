@@ -13,6 +13,7 @@ from .districts import (
     DistrictSnapshotError,
     aggregate_districts,
     enrich_companies,
+    validate_snapshot_metadata,
     write_address_conversions_csv,
     write_district_aggregates_csv,
     write_districts_csv,
@@ -244,6 +245,12 @@ def _build_parser():
         type=Path,
         help="Destination CSV showing source addresses and normalized Census fields.",
     )
+    districts.add_argument(
+        "--as-of",
+        required=True,
+        type=_iso_date,
+        help="Certification-effective report date, in YYYY-MM-DD format.",
+    )
     aggregates = subcommands.add_parser(
         "aggregate-districts",
         help="Create national and congressional-district job aggregates.",
@@ -299,7 +306,10 @@ def _build_parser():
         "--output-dir", type=Path, default=Path("data/processed")
     )
     district_report.add_argument(
-        "--as-of", default="", help="Optional YYYY-MM-DD saved district-data date."
+        "--as-of",
+        required=True,
+        type=_iso_date,
+        help="Required YYYY-MM-DD date matching the district snapshot.",
     )
     boundaries = subcommands.add_parser(
         "refresh-district-boundaries",
@@ -418,9 +428,9 @@ def _run_enrich_districts(arguments):
     """Create district, review, and conversion CSVs before reporting outages."""
     accounts, _ = _salesforce_accounts_if_configured()
     districts, reviews, conversions, service_failed = enrich_companies(
-        arguments.imis_csv, accounts
+        arguments.imis_csv, accounts, lookup_date=arguments.as_of
     )
-    write_districts_csv(districts, arguments.districts_csv)
+    write_districts_csv(districts, arguments.districts_csv, as_of=arguments.as_of)
     write_review_csv(reviews, arguments.review_csv)
     write_address_conversions_csv(conversions, arguments.address_conversions_csv)
     logger.info(
@@ -451,6 +461,12 @@ def _run_aggregate_districts(arguments):
 def _run_district_report(arguments):
     """Render selected PDFs from local snapshots only; no network calls occur."""
     try:
+        metadata = validate_snapshot_metadata(arguments.districts_csv, "districts")
+        if metadata.get("as_of") != arguments.as_of.isoformat():
+            raise DistrictReportError(
+                "--as-of must match the district snapshot metadata; rerun enrichment "
+                "or use its recorded date"
+            )
         if (
             not arguments.district
             and not arguments.all_districts
@@ -481,7 +497,7 @@ def _run_district_report(arguments):
                     arguments.output_dir / district_filename(str(district)),
                     house.members,
                     house_photos=house.photos,
-                    as_of=arguments.as_of,
+                    as_of=arguments.as_of.isoformat(),
                 )
             )
         if arguments.senate:
@@ -491,7 +507,7 @@ def _run_district_report(arguments):
                     arguments.aggregates_csv,
                     arguments.output_dir / senate_filename(),
                     senate.senators,
-                    as_of=arguments.as_of,
+                    as_of=arguments.as_of.isoformat(),
                 )
             )
     except (

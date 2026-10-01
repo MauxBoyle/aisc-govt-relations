@@ -323,7 +323,12 @@ def _external_companies(rows, references):
     """Separate allow-listed display objects from private map-drawing points."""
     mapped = tuple(
         _MapCompany(
-            PublicCompany(row.company_name, row.city, row.county),
+            PublicCompany(
+                row.company_name,
+                row.city,
+                row.county,
+                row.relationship_summary,
+            ),
             point_for_company(row.city, row.county_fips, references),
         )
         for row in rows
@@ -515,7 +520,9 @@ def _draw_contact_blocks(canvas, contacts, top, photo_path):
 def _company(row):
     if isinstance(row, PublicCompany):
         return row
-    return PublicCompany(row.company_name, row.city, row.county)
+    return PublicCompany(
+        row.company_name, row.city, row.county, getattr(row, "relationship_summary", "")
+    )
 
 
 def _draw_map(canvas, shapes, highlighted, x, y, width, height, marker_points=()):

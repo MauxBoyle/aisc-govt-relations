@@ -6,6 +6,27 @@ not public company display data.
 
 from dataclasses import dataclass
 
+from .imis_fields import CATEGORY_LABELS, MEMBERSHIP_TYPE_LABELS
+
+_CERTIFICATION_RELATIONSHIPS = frozenset(
+    {
+        "AISC Certified Fabricator",
+        "AISC Certified Erector",
+        "AISC Certified Fabricator/Erector",
+    }
+)
+_MEMBERSHIP_RELATIONSHIPS = frozenset(
+    " ".join(part for part in parts if part)
+    for membership in (*MEMBERSHIP_TYPE_LABELS.values(), "")
+    for category in (*CATEGORY_LABELS.values(), "")
+    if (parts := (membership, category)) and any(parts)
+)
+_PUBLIC_RELATIONSHIPS = (
+    _CERTIFICATION_RELATIONSHIPS
+    | _MEMBERSHIP_RELATIONSHIPS
+    | {"AISC relationship unavailable"}
+)
+
 
 @dataclass(frozen=True)
 class PublicCompany:
@@ -15,6 +36,13 @@ class PublicCompany:
     city: str
     county: str
     relationship_summary: str | None = None
+
+    def __post_init__(self):
+        if (
+            self.relationship_summary
+            and self.relationship_summary not in _PUBLIC_RELATIONSHIPS
+        ):
+            raise ValueError("relationship summary is not approved for public display")
 
 
 @dataclass(frozen=True)

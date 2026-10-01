@@ -323,6 +323,7 @@ def test_external_allowlist_keeps_internal_snapshot_fields_out_of_pdf(tmp_path):
         assert "Prairie Structural Steel" in text
         assert "Chicago, Cook" in text
         assert "County" in text
+        assert "AISC Certified Fabricator" in text
         assert "Census boundaries as of" in text
         for sentinel in (
             "SECRET-IMIS",
@@ -335,6 +336,8 @@ def test_external_allowlist_keeps_internal_snapshot_fields_out_of_pdf(tmp_path):
             "SECRET-BENCHMARK",
             "SECRET-VINTAGE",
             "SECRET-CONFIDENCE",
+            "PRIVATE CHILD CERTIFICATION",
+            "Fabricator/Erector",
             "tonnage",
             "reconciliation",
         ):
@@ -418,7 +421,9 @@ def test_house_report_requires_exactly_one_state_aggregate_row(tmp_path, state_r
     )
     districts, aggregate_path = _snapshots(tmp_path, aggregate_rows=aggregates)
 
-    with pytest.raises(DistrictReportError, match="state aggregate row is missing or duplicated"):
+    with pytest.raises(
+        DistrictReportError, match="state aggregate row is missing or duplicated"
+    ):
         render_house_report(
             7, districts, aggregate_path, tmp_path / "house.pdf", _house_member()
         )
@@ -569,6 +574,11 @@ def test_cli_uses_current_committed_house_and_senate_snapshots(monkeypatch, tmp_
 
     monkeypatch.setattr(app_module, "render_house_report", fake_house)
     monkeypatch.setattr(app_module, "render_senate_report", fake_senate)
+    monkeypatch.setattr(
+        app_module,
+        "validate_snapshot_metadata",
+        lambda *args: {"as_of": "2026-09-30"},
+    )
     app_module.main(
         [
             "district-report",
@@ -577,6 +587,8 @@ def test_cli_uses_current_committed_house_and_senate_snapshots(monkeypatch, tmp_
             "--senate",
             "--output-dir",
             str(tmp_path),
+            "--as-of",
+            "2026-09-30",
         ]
     )
 

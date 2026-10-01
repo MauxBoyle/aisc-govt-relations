@@ -27,10 +27,15 @@ def test_public_company_has_only_allowlisted_display_fields():
 def test_optional_relationship_summary_has_a_safe_fallback():
     assert (
         format_company_text(
-            PublicCompany("Example Steel", "Chicago", "Cook County", "Member")
+            PublicCompany("Example Steel", "Chicago", "Cook County", "Full AISC Member")
         )
-        == "Example Steel — Chicago, Cook County — Member"
+        == "Example Steel — Chicago, Cook County — Full AISC Member"
     )
+
+
+def test_public_company_rejects_raw_relationship_details():
+    with pytest.raises(ValueError, match="not approved"):
+        PublicCompany("Example Steel", "Chicago", "Cook County", "FAB")
     assert (
         format_company_text(
             PublicCompany("Example Steel", "Chicago", "Cook County", "")

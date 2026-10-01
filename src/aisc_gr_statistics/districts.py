@@ -12,6 +12,7 @@ from pathlib import Path
 import requests
 
 from .address_normalization import normalize_street, normalize_text, normalize_zip
+from .relationship_summary import relationship_summary
 from .report import (
     CombinedCompany,
     CompanyClassification,
@@ -27,9 +28,7 @@ from .salesforce_fields import (
     CertificationStatus,
 )
 
-CENSUS_GEOGRAPHIES_URL = (
-    "https://geocoding.geo.census.gov/geocoder/geographies/address"
-)
+CENSUS_GEOGRAPHIES_URL = "https://geocoding.geo.census.gov/geocoder/geographies/address"
 CENSUS_BENCHMARK = "Public_AR_Current"
 CENSUS_VINTAGE = "Current_Current"
 
@@ -135,6 +134,7 @@ class DistrictRow:
     lookup_date: str
     status: str
     confidence: str
+    relationship_summary: str = ""
 
 
 @dataclass(frozen=True)
@@ -236,7 +236,11 @@ def enrich_companies(
         try:
             payload = geocoder.lookup(normalized)
             row, reason, candidates = _district_from_payload(
-                identity, address, payload, lookup_date
+                identity,
+                address,
+                payload,
+                lookup_date,
+                relationship_summary(company, lookup_date),
             )
         except CensusServiceError as error:
             service_failed = True
@@ -256,9 +260,11 @@ def enrich_companies(
     return districts, reviews, conversions, service_failed
 
 
-def write_districts_csv(rows: list[DistrictRow], path: Path | str) -> None:
+def write_districts_csv(
+    rows: list[DistrictRow], path: Path | str, *, as_of: date | str | None = None
+) -> None:
     _write_csv(rows, path, DistrictRow)
-    _write_snapshot_metadata(path, "districts", len(rows))
+    _write_snapshot_metadata(path, "districts", len(rows), as_of=as_of)
 
 
 def write_review_csv(rows: list[ReviewRow], path: Path | str) -> None:
@@ -280,9 +286,7 @@ def read_districts_csv(path: Path | str) -> list[DistrictRow]:
         if reader.fieldnames is None or set(names) - set(reader.fieldnames):
             raise DistrictSnapshotError("district snapshot is missing required columns")
         rows = [
-            DistrictRow(
-                **{name: (row.get(name) or "").strip() for name in names}
-            )
+            DistrictRow(**{name: (row.get(name) or "").strip() for name in names})
             for row in reader
         ]
     return rows
@@ -308,7 +312,9 @@ def aggregate_districts(
     imis_companies, salesforce_accounts = filter_report_exclusions(
         imis_companies, salesforce_accounts, load_report_exclusion_phrases()
     )
-    population = _report_population(combine_companies(imis_companies, salesforce_accounts))
+    population = _report_population(
+        combine_companies(imis_companies, salesforce_accounts)
+    )
     population_by_identity = _population_by_identity(population)
     snapshot_by_identity = _snapshot_by_identity(read_districts_csv(districts_csv))
     unknown = set(snapshot_by_identity) - set(population_by_identity)
@@ -329,7 +335,9 @@ def aggregate_districts(
             snapshot.congressional_district_geoid,
         )
         if not all(district_key):
-            raise DistrictSnapshotError("district snapshot contains incomplete district data")
+            raise DistrictSnapshotError(
+                "district snapshot contains incomplete district data"
+            )
         by_district.setdefault(district_key, []).append(company)
     districts = [
         _aggregate_row("district", *key, companies)
@@ -339,12 +347,16 @@ def aggregate_districts(
     # has a confirmed Census assignment.  This prevents a Senate PDF from
     # quietly omitting companies whose addresses still need review.
     illinois_population = [
-        company for company in population
-        if (_preferred_address(company).state or "").strip().upper() in {"IL", "ILLINOIS"}
+        company
+        for company in population
+        if (_preferred_address(company).state or "").strip().upper()
+        in {"IL", "ILLINOIS"}
     ]
     illinois_assigned = [
-        company for identity, company in population_by_identity.items()
-        if identity in snapshot_by_identity and snapshot_by_identity[identity].state == "IL"
+        company
+        for identity, company in population_by_identity.items()
+        if identity in snapshot_by_identity
+        and snapshot_by_identity[identity].state == "IL"
     ]
     state_rows = (
         [_aggregate_row("state", "IL", "17", "", "", illinois_assigned)]
@@ -362,7 +374,9 @@ def write_district_aggregates_csv(
     _write_snapshot_metadata(path, "aggregates", len(rows))
 
 
-def validate_snapshot_metadata(path: Path | str, expected_kind: str) -> dict[str, object]:
+def validate_snapshot_metadata(
+    path: Path | str, expected_kind: str
+) -> dict[str, object]:
     """Validate the sidecar created with a saved enrichment output."""
     path = Path(path)
     metadata_path = path.with_suffix(path.suffix + ".metadata.json")
@@ -374,9 +388,16 @@ def validate_snapshot_metadata(path: Path | str, expected_kind: str) -> dict[str
     try:
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
-        raise DistrictSnapshotError(f"{expected_kind} snapshot metadata is unreadable") from error
-    if metadata.get("kind") != expected_kind or metadata.get("sha256") != hashlib.sha256(path.read_bytes()).hexdigest():
-        raise DistrictSnapshotError(f"{expected_kind} snapshot checksum does not match its CSV")
+        raise DistrictSnapshotError(
+            f"{expected_kind} snapshot metadata is unreadable"
+        ) from error
+    if (
+        metadata.get("kind") != expected_kind
+        or metadata.get("sha256") != hashlib.sha256(path.read_bytes()).hexdigest()
+    ):
+        raise DistrictSnapshotError(
+            f"{expected_kind} snapshot checksum does not match its CSV"
+        )
     return metadata
 
 
@@ -393,7 +414,9 @@ def _population_by_identity(
             _account_value(company.salesforce, CertificationAccountField.ID),
         )
         if identity in indexed:
-            raise DistrictSnapshotError("current report population has duplicate identities")
+            raise DistrictSnapshotError(
+                "current report population has duplicate identities"
+            )
         indexed[identity] = company
     return indexed
 
@@ -458,7 +481,9 @@ def _write_csv(rows, path, row_type) -> None:
         writer.writerows({name: getattr(row, name) for name in names} for row in rows)
 
 
-def _write_snapshot_metadata(path: Path | str, kind: str, row_count: int) -> None:
+def _write_snapshot_metadata(
+    path: Path | str, kind: str, row_count: int, *, as_of: date | str | None = None
+) -> None:
     destination = Path(path)
     metadata = {
         "kind": kind,
@@ -466,6 +491,8 @@ def _write_snapshot_metadata(path: Path | str, kind: str, row_count: int) -> Non
         "retrieved_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "sha256": hashlib.sha256(destination.read_bytes()).hexdigest(),
     }
+    if as_of is not None:
+        metadata["as_of"] = as_of.isoformat() if isinstance(as_of, date) else str(as_of)
     destination.with_suffix(destination.suffix + ".metadata.json").write_text(
         json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
     )
@@ -526,7 +553,9 @@ def _identity(company: CombinedCompany) -> tuple[str, str, str, str]:
     )
 
 
-def _district_from_payload(identity, source_address, payload, lookup_date):
+def _district_from_payload(
+    identity, source_address, payload, lookup_date, relationship_summary_text
+):
     result = payload.get("result")
     if not isinstance(result, dict) or not isinstance(
         result.get("addressMatches"), list
@@ -577,6 +606,7 @@ def _district_from_payload(identity, source_address, payload, lookup_date):
             lookup_date.isoformat(),
             "matched",
             "census-single-match",
+            relationship_summary_text,
         ),
         "",
         "",

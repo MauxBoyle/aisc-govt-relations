@@ -14,13 +14,18 @@ from aisc_gr_statistics.districts import (
     NormalizedAddress,
     aggregate_districts,
     enrich_companies,
+    validate_snapshot_metadata,
     write_address_conversions_csv,
     write_district_aggregates_csv,
     write_districts_csv,
     write_review_csv,
 )
+from aisc_gr_statistics.relationship_summary import relationship_summary
+from aisc_gr_statistics.report import CombinedCompany, Company, CompanyClassification
 from aisc_gr_statistics.salesforce_fields import (
     CertificationAccountField,
+    CertificationField,
+    CertificationRelationship,
     CertificationStatus,
 )
 
@@ -88,6 +93,60 @@ class Geocoder:
         if isinstance(self.payload, Exception):
             raise self.payload
         return self.payload
+
+
+def _relationship_company(
+    *, client_type="Fabricator", status="Certified", active=True, membership=""
+):
+    certification = {
+        CertificationField.NAME: "PRIVATE CHILD CERTIFICATION",
+        CertificationField.STATUS: "Active" if active else "Inactive",
+        CertificationField.START_DATE: "2026-01-01",
+        CertificationField.END_DATE: "2026-12-31",
+    }
+    return CombinedCompany(
+        CompanyClassification.BOTH,
+        Company("Example Steel", "IL", membership_type=membership),
+        {
+            CertificationAccountField.CERTIFICATION_STATUS: status,
+            CertificationAccountField.CLIENT_TYPE: client_type,
+            CertificationRelationship.ACCOUNT_CHILD: {"records": [certification]},
+        },
+    )
+
+
+@pytest.mark.parametrize(
+    ("client_type", "expected"),
+    [
+        ("Fabricator", "AISC Certified Fabricator"),
+        ("Erector", "AISC Certified Erector"),
+        ("Fabricator/Erector", "AISC Certified Fabricator/Erector"),
+    ],
+)
+def test_relationship_summary_requires_validated_certification(client_type, expected):
+    assert (
+        relationship_summary(
+            _relationship_company(client_type=client_type), date(2026, 9, 30)
+        )
+        == expected
+    )
+
+
+def test_relationship_summary_falls_back_without_safe_certification_wording():
+    assert (
+        relationship_summary(
+            _relationship_company(active=False, membership="Full AISC Member Erector"),
+            date(2026, 9, 30),
+        )
+        == "Full AISC Member Erector"
+    )
+    assert (
+        relationship_summary(
+            _relationship_company(client_type="Unmapped code", membership=""),
+            date(2026, 9, 30),
+        )
+        == "AISC relationship unavailable"
+    )
 
 
 def test_enrichment_selects_latest_submission_once_per_imis_id(tmp_path):
@@ -247,6 +306,18 @@ def test_salesforce_complete_address_takes_precedence_and_writes_metadata(tmp_pa
         CertificationAccountField.BILLING_CITY: "Chicago",
         CertificationAccountField.BILLING_STATE: "IL",
         CertificationAccountField.BILLING_POSTAL_CODE: "60601",
+        CertificationAccountField.CERTIFICATION_STATUS: CertificationStatus.CERTIFIED,
+        CertificationAccountField.CLIENT_TYPE: "Fabricator",
+        CertificationRelationship.ACCOUNT_CHILD: {
+            "records": [
+                {
+                    CertificationField.NAME: "INTERNAL CERTIFICATION NAME",
+                    CertificationField.STATUS: "Active",
+                    CertificationField.START_DATE: "2026-01-01",
+                    CertificationField.END_DATE: "2026-12-31",
+                }
+            ]
+        },
     }
     geocoder = Geocoder(_match())
 
@@ -261,6 +332,14 @@ def test_salesforce_complete_address_takes_precedence_and_writes_metadata(tmp_pa
     assert districts[0].congressional_district_geoid == "1707"
     assert districts[0].census_benchmark == "Public_AR_Current"
     assert districts[0].confidence == "census-single-match"
+    assert districts[0].relationship_summary == "AISC Certified Fabricator"
+
+
+def test_district_snapshot_records_the_certification_effective_date(tmp_path):
+    path = tmp_path / "districts.csv"
+    write_districts_csv([], path, as_of=date(2026, 9, 30))
+
+    assert validate_snapshot_metadata(path, "districts")["as_of"] == "2026-09-30"
 
 
 def test_incomplete_salesforce_address_falls_back_to_complete_imis_address(tmp_path):
@@ -358,9 +437,7 @@ def test_enrichment_uses_trailing_zip_from_multiline_imis_address_when_postal_co
     assert conversions[0].normalized_postal_code == "60469"
 
 
-@pytest.mark.parametrize(
-    "country", ["UNITED STATES", "US", "U.S.", "U.S.A.", "u.s.a."]
-)
+@pytest.mark.parametrize("country", ["UNITED STATES", "US", "U.S.", "U.S.A.", "u.s.a."])
 def test_enrichment_uses_zip_before_final_us_country_line_when_postal_code_is_blank(
     tmp_path, country
 ):
@@ -599,7 +676,9 @@ def test_csv_outputs_include_required_columns(tmp_path):
     )
 
 
-def test_normalized_lookup_uses_parsed_uppercase_fields_and_keeps_source_values(tmp_path):
+def test_normalized_lookup_uses_parsed_uppercase_fields_and_keeps_source_values(
+    tmp_path,
+):
     original = "100 Main Avenue; Suite #4"
     geocoder = Geocoder(_match())
 
@@ -610,7 +689,10 @@ def test_normalized_lookup_uses_parsed_uppercase_fields_and_keeps_source_values(
     assert districts and not reviews and not failed
     lookup = geocoder.addresses[0]
     assert (lookup.street, lookup.city, lookup.state, lookup.postal_code) == (
-        "100 MAIN AVE STE 4", "CHICAGO", "IL", "60601"
+        "100 MAIN AVE STE 4",
+        "CHICAGO",
+        "IL",
+        "60601",
     )
     assert districts[0].source_address == f"{original}, Chicago, IL, 60601-1234"
     assert conversions[0].original_street == original
@@ -618,7 +700,9 @@ def test_normalized_lookup_uses_parsed_uppercase_fields_and_keeps_source_values(
     assert conversions[0].normalization_status == "ready"
 
 
-def test_suffix_is_only_abbreviated_at_suffix_position_and_incomplete_is_a_conversion(tmp_path):
+def test_suffix_is_only_abbreviated_at_suffix_position_and_incomplete_is_a_conversion(
+    tmp_path,
+):
     geocoder = Geocoder(_match())
     _, reviews, conversions, _ = enrich_companies(
         _imis_csv(tmp_path, "100 Street Name Road", ""), geocoder=geocoder
@@ -655,8 +739,27 @@ def _account(imis_id, account_id, employees):
 
 def _district_row(imis_id, account_id, geoid="1707"):
     return DistrictRow(
-        "", "both", imis_id, account_id, "", "", "", "IL", "IL", "17", "",
-        "", geoid[-1], geoid, "", "", "", "", "", "matched", ""
+        "",
+        "both",
+        imis_id,
+        account_id,
+        "",
+        "",
+        "",
+        "IL",
+        "IL",
+        "17",
+        "",
+        "",
+        geoid[-1],
+        geoid,
+        "",
+        "",
+        "",
+        "",
+        "",
+        "matched",
+        "",
     )
 
 
@@ -678,7 +781,10 @@ def test_aggregate_districts_counts_known_and_missing_employee_data(tmp_path):
 
     national, district = rows
     assert (national.included_company_count, national.known_jobs) == (3, 10)
-    assert (national.companies_with_employee_data, national.companies_missing_employee_data) == (2, 1)
+    assert (
+        national.companies_with_employee_data,
+        national.companies_missing_employee_data,
+    ) == (2, 1)
     assert (district.included_company_count, district.known_jobs) == (2, 10)
     assert district.congressional_district_geoid == "1707"
 
@@ -703,16 +809,36 @@ def test_aggregate_districts_matches_salesforce_only_snapshot_by_salesforce_imis
     write_districts_csv(
         [
             DistrictRow(
-                "", "salesforce-only", "SALESFORCE-ONLY", "003", "", "", "", "IL",
-                "17", "17", "", "", "7", "1707", "", "", "", "", "",
-                "matched", "",
+                "",
+                "salesforce-only",
+                "SALESFORCE-ONLY",
+                "003",
+                "",
+                "",
+                "",
+                "IL",
+                "17",
+                "17",
+                "",
+                "",
+                "7",
+                "1707",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "matched",
+                "",
             )
         ],
         snapshot,
     )
 
     rows = aggregate_districts(
-        _aggregate_imis_csv(tmp_path), snapshot, [_account("SALESFORCE-ONLY", "003", 10)]
+        _aggregate_imis_csv(tmp_path),
+        snapshot,
+        [_account("SALESFORCE-ONLY", "003", 10)],
     )
 
     assert rows[1].included_company_count == 1
@@ -743,8 +869,14 @@ def test_district_aggregate_csv_has_stable_national_then_district_rows(tmp_path)
 
     written = list(csv.DictReader(output.open()))
     assert list(written[0]) == [
-        "scope", "state", "state_fips", "congressional_district",
-        "congressional_district_geoid", "included_company_count", "known_jobs",
-        "companies_with_employee_data", "companies_missing_employee_data",
+        "scope",
+        "state",
+        "state_fips",
+        "congressional_district",
+        "congressional_district_geoid",
+        "included_company_count",
+        "known_jobs",
+        "companies_with_employee_data",
+        "companies_missing_employee_data",
     ]
     assert [row["scope"] for row in written] == ["national", "district"]

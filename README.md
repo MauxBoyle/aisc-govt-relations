@@ -65,19 +65,20 @@ uv run aisc_gr_statistics district-report \
   --district 7 --senate \
   --districts-csv data/processed/company-districts.csv \
   --aggregates-csv data/processed/district-aggregates.csv \
+  --as-of 2026-09-30 \
   --output-dir data/processed
 ```
 
 Use `--district` more than once, or use `--all-districts`.  Output filenames
 are stable (`illinois-congressional-district-07-external.pdf` and
 `illinois-senate-delegation-external.pdf`).  The report only contains a member
-identity, company name/city/county, an optional future relationship summary,
+identity, company name/city/county, one approved relationship summary,
 company counts, thresholded known jobs totals and employee-data coverage, and
 source dates. Its first page uses a translucent
 district map as a full-width lower-page background, with report text layered
 above it; continuation pages are text-only. It never
 receives addresses, individual employee counts, tonnage, IDs, Census
-coordinates, classifications, certification data, or reconciliation data.
+coordinates, classifications, raw certification data, or reconciliation data.
 District PDFs label their two totals `District known jobs` and `Illinois known
 jobs`; statewide PDFs label them `Illinois known jobs` and `National known jobs`.
 Each total is displayed only when at least two companies contribute employee
@@ -148,7 +149,8 @@ uv run aisc_gr_statistics enrich-districts \
   --imis-csv data/raw/imis/imis-tonnage-for-gr-statistics.csv \
   --districts-csv data/processed/company-districts.csv \
   --review-csv data/processed/address-district-review.csv \
-  --address-conversions-csv data/processed/address-conversions.csv
+  --address-conversions-csv data/processed/address-conversions.csv \
+  --as-of 2026-09-30
 ```
 
 The required conversion table records each report company's selected source
@@ -176,6 +178,15 @@ missing geography, malformed responses, or service errors. The command writes
 both files after a Census outage but exits nonzero, so partial data is not
 mistaken for a finished run. Refresh districts by running the command again;
 each run records the current Census values it used.
+
+`--as-of YYYY-MM-DD` is required and is the certification-effective report
+date. Enrichment saves exactly one safe public relationship phrase per company:
+a validated `AISC Certified Fabricator`, `AISC Certified Erector`, or `AISC
+Certified Fabricator/Erector` phrase; a translated iMIS membership/category
+label; or `AISC relationship unavailable`. Raw Salesforce/iMIS codes,
+certification names, IDs, and statuses never enter the external PDF. Regenerate
+the ignored operational district and aggregate snapshots after source changes,
+then use that exact date with `district-report`.
 
 `Current_Current` is Census's moving current vintage, so its response can use a
 session-qualified layer such as `120th Congressional Districts`, matching the

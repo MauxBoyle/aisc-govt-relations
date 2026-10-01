@@ -116,14 +116,23 @@ def test_report_exclusions_omit_combined_outputs_but_keep_source_wide_audits(tmp
     main(arguments)
 
     pdf_text = "\n".join(
-        page.extract_text() or "" for page in PdfReader(destinations["--internal-output"]).pages
+        page.extract_text() or ""
+        for page in PdfReader(destinations["--internal-output"]).pages
     )
     assert "Keep Steel" in pdf_text
     assert "Test Company" not in pdf_text
-    assert "Test Company" not in destinations["--conflicts-csv"].read_text(encoding="utf-8")
-    assert "Test Company" not in destinations["--candidate-matches-csv"].read_text(encoding="utf-8")
-    assert "Test Company" not in destinations["--reconciliation-csv"].read_text(encoding="utf-8")
-    assert "UNKNOWN" in destinations["--unknown-imis-codes-csv"].read_text(encoding="utf-8")
+    assert "Test Company" not in destinations["--conflicts-csv"].read_text(
+        encoding="utf-8"
+    )
+    assert "Test Company" not in destinations["--candidate-matches-csv"].read_text(
+        encoding="utf-8"
+    )
+    assert "Test Company" not in destinations["--reconciliation-csv"].read_text(
+        encoding="utf-8"
+    )
+    assert "UNKNOWN" in destinations["--unknown-imis-codes-csv"].read_text(
+        encoding="utf-8"
+    )
     assert "C" in destinations["--tonnage-review-csv"].read_text(encoding="utf-8")
 
 
@@ -208,7 +217,7 @@ def test_enrich_districts_writes_outputs_and_exits_nonzero_after_census_outage(
 
     monkeypatch.setattr(
         "aisc_gr_statistics.app.enrich_companies",
-        lambda *args: ([], [], [], True),
+        lambda *args, **kwargs: ([], [], [], True),
     )
     with pytest.raises(SystemExit, match="1"):
         main(
@@ -222,6 +231,8 @@ def test_enrich_districts_writes_outputs_and_exits_nonzero_after_census_outage(
                 str(review),
                 "--address-conversions-csv",
                 str(conversions),
+                "--as-of",
+                "2026-09-30",
             ]
         )
 
@@ -240,8 +251,13 @@ def test_aggregate_districts_writes_a_csv(tmp_path, monkeypatch):
     )
     main(
         [
-            "aggregate-districts", "--imis-csv", "members.csv", "--districts-csv",
-            "districts.csv", "--aggregates-csv", str(output),
+            "aggregate-districts",
+            "--imis-csv",
+            "members.csv",
+            "--districts-csv",
+            "districts.csv",
+            "--aggregates-csv",
+            str(output),
         ]
     )
 

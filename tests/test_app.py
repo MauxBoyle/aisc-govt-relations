@@ -1,6 +1,7 @@
 """Tests for the application entry point."""
 
-from datetime import UTC
+import os
+from datetime import UTC, datetime
 from io import StringIO
 from pathlib import Path
 
@@ -85,6 +86,35 @@ def test_status_summary_shows_retrieval_dates_and_illinois_aggregate(monkeypatch
     assert "employee-data coverage=6/10" in output.getvalue()
 
 
+def test_status_colors_reflect_usability_and_age_only_for_terminals():
+    class Terminal(StringIO):
+        def isatty(self):
+            return True
+
+    now = datetime(2026, 10, 2, tzinfo=UTC)
+    fresh = SnapshotStatus("Fresh", True, "current", "2026-09-18T00:00:00Z")
+    old = SnapshotStatus("Old", True, "current", "2026-09-17T23:59:59Z")
+    missing_date = SnapshotStatus("Undated", True, "current")
+
+    assert app._color_status_line("fresh", fresh, Terminal(), now=now).startswith("\033[32m")
+    assert app._color_status_line("old", old, Terminal(), now=now).startswith("\033[37m")
+    assert app._color_status_line("undated", missing_date, Terminal(), now=now).startswith("\033[31m")
+    assert app._color_status_line("plain", fresh, StringIO(), now=now) == "plain"
+
+
+def test_imis_status_uses_the_csv_modification_time(tmp_path, monkeypatch):
+    imis = tmp_path / "imis.csv"
+    imis.write_text("header\n", encoding="utf-8")
+    modified = datetime(2026, 9, 20, 12, 0, tzinfo=UTC)
+    os.utime(imis, (modified.timestamp(), modified.timestamp()))
+    monkeypatch.setattr(app, "DEFAULT_IMIS_CSV", imis)
+
+    status = app._inspect_imis_source()
+
+    assert status.usable
+    assert status.retrieved_at == modified.isoformat()
+
+
 def test_invalid_snapshot_status_includes_refresh_command():
     status = app._inspect_snapshot(
         "House representatives",
@@ -124,6 +154,24 @@ def test_menu_dispatches_to_existing_command_handler(monkeypatch):
     app._run_menu(parser, output)
 
     assert calls == ["report"]
+
+
+def test_menu_redisplays_status_after_an_action(monkeypatch):
+    output = StringIO()
+    parser = app._build_parser()
+    choices = iter(["1", "7"])
+    monkeypatch.setattr("builtins.input", lambda prompt: next(choices))
+    monkeypatch.setattr(
+        app, "_menu_report", lambda parser: app.argparse.Namespace(command="report")
+    )
+    monkeypatch.setattr(app, "_run_report", lambda arguments: None)
+    monkeypatch.setattr(app, "inspect_local_status", lambda: ([], None))
+
+    app._run_menu(parser, output)
+
+    assert output.getvalue().count("Local data status:") == 1
+    assert "Update district assignments and review queue" in output.getvalue()
+    assert "Update House representatives or Senate senators" in output.getvalue()
 
 
 def test_load_local_environment_reads_credentials_without_overriding_shell(tmp_path):

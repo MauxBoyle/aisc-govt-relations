@@ -18,11 +18,13 @@ uv run aisc-gr-statistics
 
 With no arguments, the command checks the local iMIS, representative, Senate,
 Census, district, and aggregate snapshots without contacting any services. It
-shows whether each is usable and displays its recorded retrieval date. A date
-is informational only: the CLI does not warn based on snapshot age. In a
-terminal, it then offers a numbered menu for the common workflows. When output
-is piped or redirected, it prints the same status, usage help, and exits
-without prompting; use one of the explicit commands below in scripts.
+shows whether each is usable and displays its recorded retrieval date (or the
+iMIS CSV modification date). In a terminal, unavailable data is red, data no
+more than 14 days old is green, and older usable data is white. It then offers
+a numbered menu whose update actions identify the local snapshots they refresh.
+When output is piped or redirected, it prints the same status without colors,
+usage help, and exits without prompting; use one of the explicit commands below
+in scripts.
 
 The original underscore command, `uv run aisc_gr_statistics`, remains
 supported for compatibility.
@@ -81,7 +83,9 @@ uv run aisc-gr-statistics district-report \
 ```
 
 Use `--district` more than once for individual PDFs, or use `--all-districts`
-for one 17-page House PDF. Output filenames are stable
+for one House PDF containing only districts with companies. Selecting an empty
+district is informational and creates no PDF; if every district is empty, the
+combined command also succeeds without creating a PDF. Output filenames are stable
 (`illinois-congressional-district-07-external.pdf`,
 `illinois-congressional-districts-external.pdf`, and
 `illinois-senate-delegation-external.pdf`). The report only contains a member

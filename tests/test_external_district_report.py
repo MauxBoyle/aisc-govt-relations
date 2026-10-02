@@ -117,6 +117,34 @@ def test_house_and_senate_use_the_correct_company_populations(tmp_path):
     assert "National known jobs: 37 (2 of 3 companies" in senate_text
 
 
+def test_empty_house_district_returns_a_result_without_creating_a_pdf(tmp_path):
+    districts, aggregates = _snapshots(tmp_path)
+    output = tmp_path / "empty.pdf"
+
+    result = render_house_report(
+        1, districts, aggregates, output, _house_member()
+    )
+
+    assert result.district == 1
+    assert result.output_path is None
+    assert not result.has_companies
+    assert not output.exists()
+
+
+def test_combined_house_report_skips_empty_districts(tmp_path):
+    districts, aggregates = _snapshots(tmp_path)
+    output = tmp_path / all_districts_filename()
+
+    result = report_module.render_all_house_reports(
+        districts, aggregates, output, _house_member()
+    )
+
+    assert result.rendered_districts == (7, 8)
+    assert 1 in result.skipped_districts
+    assert result.output_path == output
+    assert len(PdfReader(result).pages) == 2
+
+
 def test_report_rejects_aggregate_from_a_different_district_snapshot(tmp_path):
     districts, aggregates = _snapshots(tmp_path)
     write_districts_csv(read_districts_csv(districts)[:1], districts)

@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from loguru import logger
@@ -177,7 +177,10 @@ def inspect_local_status():
 
 def _inspect_imis_source():
     if DEFAULT_IMIS_CSV.is_file() and os.access(DEFAULT_IMIS_CSV, os.R_OK):
-        return SnapshotStatus("iMIS source", True, str(DEFAULT_IMIS_CSV))
+        modified_at = datetime.fromtimestamp(DEFAULT_IMIS_CSV.stat().st_mtime, UTC)
+        return SnapshotStatus(
+            "iMIS source", True, str(DEFAULT_IMIS_CSV), _display_date(modified_at)
+        )
     return SnapshotStatus(
         "iMIS source",
         False,
@@ -261,13 +264,14 @@ def _display_date(value):
 
 
 def _print_status_summary(output):
-    """Print concise local-data status. Retrieval dates are informational only."""
+    """Print concise local-data status, with color only for terminal output."""
     statuses, illinois = inspect_local_status()
     print("Local data status:", file=output)
     for status in statuses:
         retrieval = f" (retrieved {status.retrieved_at})" if status.retrieved_at else ""
         state = "usable" if status.usable else "not usable"
-        print(f"- {status.name}: {state} — {status.detail}{retrieval}", file=output)
+        line = f"- {status.name}: {state} — {status.detail}{retrieval}"
+        print(_color_status_line(line, status, output), file=output)
     if illinois is not None:
         print(
             f"- Illinois aggregate: unresolved companies={illinois.unresolved_company_count}, employee-data coverage={illinois.companies_with_employee_data}/{illinois.included_company_count}",
@@ -275,15 +279,54 @@ def _print_status_summary(output):
         )
 
 
+def _color_status_line(line, status, output, *, now=None):
+    """Color a whole status line when output is a terminal.
+
+    Red means unavailable or undated, green means data at most 14 days old,
+    and white means usable but older local data.
+    """
+    if not output.isatty():
+        return line
+    color = _status_color(status, now=now)
+    return f"\033[{color}m{line}\033[0m"
+
+
+def _status_color(status, *, now=None):
+    if not status.usable:
+        return 31
+    timestamp = _status_datetime(status.retrieved_at)
+    if timestamp is None:
+        return 31
+    now = now if now is not None else datetime.now(UTC)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=UTC)
+    return 32 if now.astimezone(UTC) - timestamp <= timedelta(days=14) else 37
+
+
+def _status_datetime(value):
+    if isinstance(value, datetime):
+        timestamp = value
+    elif isinstance(value, str):
+        try:
+            timestamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    else:
+        return None
+    if timestamp.tzinfo is None:
+        return None
+    return timestamp.astimezone(UTC)
+
+
 def _run_menu(parser, output):
     """Offer repeatable terminal-only shortcuts for the documented workflows."""
     menu = {
         "1": ("Create statewide report", _menu_report),
-        "2": ("Enrich district assignments", _menu_enrich),
-        "3": ("Aggregate district data", _menu_aggregate),
+        "2": ("Update district assignments and review queue", _menu_enrich),
+        "3": ("Update district aggregates", _menu_aggregate),
         "4": ("Create district report", _menu_district_report),
-        "5": ("Refresh representatives", _menu_representatives),
-        "6": ("Refresh Census reference data", _menu_census),
+        "5": ("Update House representatives or Senate senators", _menu_representatives),
+        "6": ("Update Census boundaries or map references", _menu_census),
         "7": ("Exit", None),
     }
     while True:
@@ -300,6 +343,7 @@ def _run_menu(parser, output):
         arguments = item[1](parser)
         if arguments is not None:
             _dispatch(arguments)
+            _print_status_summary(output)
 
 
 def _menu_date(prompt):
@@ -825,28 +869,43 @@ def _run_district_report(arguments):
                 raise DistrictReportError(
                     "Illinois House districts must be between 1 and 17."
                 )
-            output_paths.append(
-                render_house_report(
+            result = render_house_report(
+                district,
+                arguments.districts_csv,
+                arguments.aggregates_csv,
+                arguments.output_dir / district_filename(str(district)),
+                house.members,
+                house_photos=house.photos,
+                as_of=arguments.as_of.isoformat(),
+            )
+            path = getattr(result, "output_path", result)
+            if path is None:
+                logger.info(
+                    "No companies found for Illinois district {}; no PDF was created.",
                     district,
-                    arguments.districts_csv,
-                    arguments.aggregates_csv,
-                    arguments.output_dir / district_filename(str(district)),
-                    house.members,
-                    house_photos=house.photos,
-                    as_of=arguments.as_of.isoformat(),
                 )
-            )
+            else:
+                output_paths.append(path)
         if arguments.all_districts:
-            output_paths.append(
-                render_all_house_reports(
-                    arguments.districts_csv,
-                    arguments.aggregates_csv,
-                    arguments.output_dir / all_districts_filename(),
-                    house.members,
-                    house_photos=house.photos,
-                    as_of=arguments.as_of.isoformat(),
-                )
+            result = render_all_house_reports(
+                arguments.districts_csv,
+                arguments.aggregates_csv,
+                arguments.output_dir / all_districts_filename(),
+                house.members,
+                house_photos=house.photos,
+                as_of=arguments.as_of.isoformat(),
             )
+            skipped = getattr(result, "skipped_districts", ())
+            if skipped:
+                logger.info(
+                    "Omitted districts with no companies from the combined report: {}.",
+                    ", ".join(map(str, skipped)),
+                )
+            path = getattr(result, "output_path", result)
+            if path is None:
+                logger.info("No House PDF was created because no districts have companies.")
+            else:
+                output_paths.append(path)
         if arguments.senate:
             output_paths.append(
                 render_senate_report(
@@ -867,9 +926,10 @@ def _run_district_report(arguments):
     ) as error:
         logger.error("District report was not created: {}", error)
         raise SystemExit(1) from error
-    logger.info(
-        "Created external district report(s): {}", ", ".join(map(str, output_paths))
-    )
+    if output_paths:
+        logger.info(
+            "Created external district report(s): {}", ", ".join(map(str, output_paths))
+        )
 
 
 def _run_refresh_district_boundaries(arguments):

@@ -2,7 +2,7 @@
 
 import csv
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from reportlab.lib import colors
@@ -68,6 +68,74 @@ REPRESENTATIVE_PHOTO_HEIGHT = 81
 
 
 ExternalCompany = PublicCompany
+
+
+@dataclass(frozen=True)
+class HouseReportResult:
+    """The outcome of rendering one requested House district."""
+
+    district: int
+    output_path: Path | None
+    _handle: object | None = field(default=None, init=False, repr=False, compare=False)
+
+    @property
+    def has_companies(self):
+        """Whether a PDF was made for this district."""
+        return self.output_path is not None
+
+    def __fspath__(self):
+        if self.output_path is None:
+            raise TypeError("an empty district does not have a report file")
+        return str(self.output_path)
+
+    # These small file methods preserve compatibility with callers that pass
+    # the historical Path return value directly to a PDF reader.
+    def _open(self):
+        if self.output_path is None:
+            raise ValueError("an empty district does not have a report file")
+        if self._handle is None:
+            object.__setattr__(self, "_handle", self.output_path.open("rb"))
+        return self._handle
+
+    def read(self, size=-1):
+        return self._open().read(size)
+
+    def seek(self, offset, whence=0):
+        return self._open().seek(offset, whence)
+
+    def tell(self):
+        return self._open().tell()
+
+
+@dataclass(frozen=True)
+class CombinedHouseReportResult:
+    """The outcome of rendering the combined Illinois House report."""
+
+    rendered_districts: tuple[int, ...]
+    skipped_districts: tuple[int, ...]
+    output_path: Path | None
+    _handle: object | None = field(default=None, init=False, repr=False, compare=False)
+
+    def __fspath__(self):
+        if self.output_path is None:
+            raise TypeError("an all-empty selection does not have a report file")
+        return str(self.output_path)
+
+    def _open(self):
+        if self.output_path is None:
+            raise ValueError("an all-empty selection does not have a report file")
+        if self._handle is None:
+            object.__setattr__(self, "_handle", self.output_path.open("rb"))
+        return self._handle
+
+    def read(self, size=-1):
+        return self._open().read(size)
+
+    def seek(self, offset, whence=0):
+        return self._open().seek(offset, whence)
+
+    def tell(self):
+        return self._open().tell()
 
 
 @dataclass(frozen=True)
@@ -160,12 +228,15 @@ def render_house_report(
     map_reference_paths=None,
     as_of="",
 ):
+    district = int(str(district))
     args = _house_render_args(
         district, districts_csv, aggregates_csv, house_members,
         house_photos=house_photos, boundary_paths=boundary_paths,
         map_reference_paths=map_reference_paths, as_of=as_of,
     )
-    return _render(output, *args, report_kind="house")
+    if args is None:
+        return HouseReportResult(district, None)
+    return HouseReportResult(district, _render(output, *args, report_kind="house"))
 
 
 def render_all_house_reports(
@@ -179,21 +250,29 @@ def render_all_house_reports(
     map_reference_paths=None,
     as_of="",
 ):
-    """Render districts 1 through 17 into one printable PDF, in that order."""
+    """Render populated districts into one printable PDF, in district order."""
     output = Path(output)
+    reports = [
+        (district, _house_render_args(
+            district, districts_csv, aggregates_csv, house_members,
+            house_photos=house_photos, boundary_paths=boundary_paths,
+            map_reference_paths=map_reference_paths, as_of=as_of,
+        ))
+        for district in range(1, 18)
+    ]
+    rendered = [(district, args) for district, args in reports if args is not None]
+    skipped = tuple(district for district, args in reports if args is None)
+    if not rendered:
+        return CombinedHouseReportResult((), skipped, None)
+
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.with_suffix(output.suffix + ".tmp")
     canvas = Canvas(str(temporary), pagesize=letter)
     try:
-        for index, district in enumerate(range(1, 18)):
-            args = _house_render_args(
-                district, districts_csv, aggregates_csv, house_members,
-                house_photos=house_photos, boundary_paths=boundary_paths,
-                map_reference_paths=map_reference_paths, as_of=as_of,
-            )
+        for index, (_, args) in enumerate(rendered):
             _render(
                 output, *args, report_kind="house", canvas=canvas,
-                advance=index != 16,
+                advance=index != len(rendered) - 1,
             )
         canvas.save()
         temporary.replace(output)
@@ -201,7 +280,9 @@ def render_all_house_reports(
         if temporary.exists():
             temporary.unlink()
         raise
-    return output
+    return CombinedHouseReportResult(
+        tuple(district for district, _ in rendered), skipped, output
+    )
 
 
 def _house_render_args(
@@ -209,6 +290,19 @@ def _house_render_args(
     boundary_paths=None, map_reference_paths=None, as_of="",
 ):
     district = str(int(str(district)))
+    _validate_inputs(districts_csv, aggregates_csv)
+    rows = read_districts_csv(districts_csv)
+    selected = [
+        row
+        for row in rows
+        if row.assignment_source in {"census-confirmed", "fallback-confirmed"}
+        and row.state == "IL"
+        and row.congressional_district == district
+    ]
+    # Empty districts are a normal outcome.  Do this before loading members,
+    # boundaries, photos, or map references, which are only needed for a PDF.
+    if not selected:
+        return None
     member = next(
         (
             m
@@ -220,19 +314,6 @@ def _house_render_args(
     if member is None:
         raise DistrictReportError(
             f"Illinois district {district} is not in the House snapshot."
-        )
-    _validate_inputs(districts_csv, aggregates_csv)
-    rows = read_districts_csv(districts_csv)
-    selected = [
-        row
-        for row in rows
-        if row.assignment_source in {"census-confirmed", "fallback-confirmed"}
-        and row.state == "IL"
-        and row.congressional_district == district
-    ]
-    if not selected:
-        raise DistrictReportError(
-            f"No saved companies exist for Illinois district {district}."
         )
     aggregates = read_aggregates_csv(aggregates_csv)
     geoids = {row.congressional_district_geoid for row in selected}

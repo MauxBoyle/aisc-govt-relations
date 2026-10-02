@@ -12,6 +12,10 @@ from pathlib import Path
 import requests
 
 from .address_normalization import normalize_street, normalize_text, normalize_zip
+from .census_map_references import (
+    load_map_references,
+    normalize_city_name,
+)
 from .relationship_summary import relationship_summary
 from .report import (
     CombinedCompany,
@@ -31,6 +35,9 @@ from .salesforce_fields import (
 CENSUS_GEOGRAPHIES_URL = "https://geocoding.geo.census.gov/geocoder/geographies/address"
 CENSUS_BENCHMARK = "Public_AR_Current"
 CENSUS_VINTAGE = "Current_Current"
+DEFAULT_FALLBACK_CSV = (
+    Path(__file__).resolve().parents[2] / "config" / "reviewed-geography-fallback.csv"
+)
 
 
 class CensusServiceError(RuntimeError):
@@ -39,6 +46,10 @@ class CensusServiceError(RuntimeError):
 
 class DistrictSnapshotError(ValueError):
     """A saved district snapshot cannot safely be used for aggregation."""
+
+
+class ReviewedFallbackError(ValueError):
+    """The checked-in reviewed geography fallback is not safe to use."""
 
 
 @dataclass(frozen=True)
@@ -135,6 +146,31 @@ class DistrictRow:
     status: str
     confidence: str
     relationship_summary: str = ""
+    assignment_source: str = "census-confirmed"
+    fallback_reviewer_source_note: str = ""
+    fallback_reviewed_date: str = ""
+    map_reference_kind: str = ""
+    map_reference_key: str = ""
+
+
+@dataclass(frozen=True)
+class ReviewedFallbackRow:
+    """A manually reviewed assignment used only after Census cannot assign one."""
+
+    company_name: str
+    company_classification: str
+    imis_id: str
+    salesforce_account_id: str
+    state: str
+    state_fips: str
+    county: str
+    county_fips: str
+    congressional_district: str
+    congressional_district_geoid: str
+    map_reference_kind: str
+    map_reference_key: str
+    reviewer_source_note: str
+    reviewed_date: str
 
 
 @dataclass(frozen=True)
@@ -206,6 +242,7 @@ def enrich_companies(
     salesforce_accounts=(),
     geocoder: CensusGeocoder | None = None,
     lookup_date: date | None = None,
+    fallback_csv: Path | str = DEFAULT_FALLBACK_CSV,
 ) -> tuple[list[DistrictRow], list[ReviewRow], list[AddressConversionRow], bool]:
     """Return district, review, conversion rows, and a service-failure flag.
 
@@ -214,6 +251,7 @@ def enrich_companies(
     """
     geocoder = geocoder or CensusGeocoder()
     lookup_date = lookup_date or datetime.now(UTC).date()
+    fallbacks = load_reviewed_fallback_csv(fallback_csv)
     imis_companies = select_imis_companies_for_district_enrichment(
         read_imis_companies(imis_csv, preserve_source_order=True)
     )
@@ -231,7 +269,10 @@ def enrich_companies(
         normalized = _normalize_address(address)
         conversions.append(_conversion(identity, address, normalized))
         if not normalized.complete:
-            reviews.append(_review(identity, address, "incomplete address"))
+            _assign_fallback_or_review(
+                districts, reviews, fallbacks, identity, address, company,
+                lookup_date, "incomplete address"
+            )
             continue
         try:
             payload = geocoder.lookup(normalized)
@@ -244,27 +285,71 @@ def enrich_companies(
             )
         except CensusServiceError as error:
             service_failed = True
-            reviews.append(
-                _review(identity, address, "Census service error", str(error))
+            _assign_fallback_or_review(
+                districts, reviews, fallbacks, identity, address, company,
+                lookup_date, "Census service error", str(error)
             )
             continue
         except ValueError as error:
-            reviews.append(
-                _review(identity, address, "malformed Census response", str(error))
+            _assign_fallback_or_review(
+                districts, reviews, fallbacks, identity, address, company,
+                lookup_date, "malformed Census response", str(error)
             )
             continue
         if row:
             districts.append(row)
         else:
-            reviews.append(_review(identity, address, reason, candidates))
+            _assign_fallback_or_review(
+                districts, reviews, fallbacks, identity, address, company,
+                lookup_date, reason, candidates
+            )
     return districts, reviews, conversions, service_failed
 
 
+def load_reviewed_fallback_csv(path: Path | str = DEFAULT_FALLBACK_CSV) -> dict[tuple[str, str, str, str], ReviewedFallbackRow]:
+    """Read explicit, reviewed assignments without permitting district guesses.
+
+    Rows have a deliberately strict composite identity.  This makes a changed
+    name, source classification, or identifier fail closed into the review CSV.
+    """
+    required = [field.name for field in fields(ReviewedFallbackRow)]
+    source = Path(path)
+    try:
+        with source.open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            if reader.fieldnames is None or set(required) - set(reader.fieldnames):
+                raise ReviewedFallbackError("reviewed fallback CSV is missing required columns")
+            rows = [
+                ReviewedFallbackRow(**{name: (row.get(name) or "").strip() for name in required})
+                for row in reader
+            ]
+    except OSError as error:
+        raise ReviewedFallbackError(f"could not read reviewed fallback CSV: {source}") from error
+    references = load_map_references()
+    indexed = {}
+    for line_number, row in enumerate(rows, start=2):
+        _validate_fallback_row(row, line_number, references)
+        key = _fallback_identity(row.company_name, row.company_classification, row.imis_id, row.salesforce_account_id)
+        if key in indexed:
+            raise ReviewedFallbackError(f"reviewed fallback CSV has duplicate identity on line {line_number}")
+        indexed[key] = row
+    return indexed
+
+
 def write_districts_csv(
-    rows: list[DistrictRow], path: Path | str, *, as_of: date | str | None = None
+    rows: list[DistrictRow], path: Path | str, *, as_of: date | str | None = None,
+    unresolved_count: int = 0, included_company_count: int | None = None,
 ) -> None:
     _write_csv(rows, path, DistrictRow)
-    _write_snapshot_metadata(path, "districts", len(rows), as_of=as_of)
+    census_count = sum(row.assignment_source == "census-confirmed" for row in rows)
+    fallback_count = sum(row.assignment_source == "fallback-confirmed" for row in rows)
+    _write_snapshot_metadata(
+        path, "districts", len(rows), as_of=as_of,
+        census_confirmed_count=census_count,
+        fallback_confirmed_count=fallback_count,
+        unresolved_count=unresolved_count,
+        included_company_count=(len(rows) if included_company_count is None else included_company_count),
+    )
 
 
 def write_review_csv(rows: list[ReviewRow], path: Path | str) -> None:
@@ -324,7 +409,13 @@ def aggregate_districts(
             "rerun enrichment and aggregation with the same available Salesforce data"
         )
 
-    national = _aggregate_row("national", "", "", "", "", population)
+    # The snapshot is the reviewed, confirmed population.  A missing snapshot
+    # row is unresolved and must not leak into a national, state, district, or
+    # public PDF total.
+    included_population = [
+        population_by_identity[identity] for identity in snapshot_by_identity
+    ]
+    national = _aggregate_row("national", "", "", "", "", included_population)
     by_district: dict[tuple[str, str, str, str], list[CombinedCompany]] = {}
     for identity, snapshot in snapshot_by_identity.items():
         company = population_by_identity[identity]
@@ -343,15 +434,8 @@ def aggregate_districts(
         _aggregate_row("district", *key, companies)
         for key, companies in sorted(by_district.items())
     ]
-    # A statewide aggregate is safe only when every included Illinois company
-    # has a confirmed Census assignment.  This prevents a Senate PDF from
-    # quietly omitting companies whose addresses still need review.
-    illinois_population = [
-        company
-        for company in population
-        if (_preferred_address(company).state or "").strip().upper()
-        in {"IL", "ILLINOIS"}
-    ]
+    # State totals describe the same confirmed Illinois population as the
+    # snapshot; unresolved Illinois companies stay in review data instead.
     illinois_assigned = [
         company
         for identity, company in population_by_identity.items()
@@ -360,7 +444,7 @@ def aggregate_districts(
     ]
     state_rows = (
         [_aggregate_row("state", "IL", "17", "", "", illinois_assigned)]
-        if illinois_population and len(illinois_population) == len(illinois_assigned)
+        if illinois_assigned
         else []
     )
     return [national, *state_rows, *districts]
@@ -426,6 +510,10 @@ def _snapshot_by_identity(
 ) -> dict[tuple[str, str, str], DistrictRow]:
     indexed: dict[tuple[str, str, str], DistrictRow] = {}
     for row in rows:
+        if row.assignment_source not in {"census-confirmed", "fallback-confirmed"}:
+            raise DistrictSnapshotError(
+                "district snapshot contains an unconfirmed assignment"
+            )
         identity = _aggregate_identity(
             row.company_classification, row.imis_id, row.salesforce_account_id
         )
@@ -482,7 +570,8 @@ def _write_csv(rows, path, row_type) -> None:
 
 
 def _write_snapshot_metadata(
-    path: Path | str, kind: str, row_count: int, *, as_of: date | str | None = None
+    path: Path | str, kind: str, row_count: int, *, as_of: date | str | None = None,
+    **counts: int,
 ) -> None:
     destination = Path(path)
     metadata = {
@@ -493,6 +582,7 @@ def _write_snapshot_metadata(
     }
     if as_of is not None:
         metadata["as_of"] = as_of.isoformat() if isinstance(as_of, date) else str(as_of)
+    metadata.update(counts)
     destination.with_suffix(destination.suffix + ".metadata.json").write_text(
         json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
     )
@@ -550,6 +640,67 @@ def _identity(company: CombinedCompany) -> tuple[str, str, str, str]:
         if imis
         else _account_value(account, CertificationAccountField.IMIS_ID),
         _account_value(account, CertificationAccountField.ID),
+    )
+
+
+def _fallback_identity(name: str, classification: str, imis_id: str, account_id: str):
+    return (name.strip(), classification.strip(), imis_id.strip(), account_id.strip())
+
+
+def _validate_fallback_row(row: ReviewedFallbackRow, line_number: int, references) -> None:
+    prefix = f"reviewed fallback CSV line {line_number}"
+    if not row.company_name or row.company_classification not in {item.value for item in CompanyClassification}:
+        raise ReviewedFallbackError(f"{prefix} has an incomplete or invalid identity")
+    if not (row.imis_id or row.salesforce_account_id):
+        raise ReviewedFallbackError(f"{prefix} must contain an iMIS ID or Salesforce account ID")
+    if not all((row.state, row.state_fips, row.county, row.county_fips, row.congressional_district, row.congressional_district_geoid)):
+        raise ReviewedFallbackError(f"{prefix} has incomplete geography")
+    if not re.fullmatch(r"\d{2}", row.state_fips) or not re.fullmatch(r"\d{3}", row.county_fips):
+        raise ReviewedFallbackError(f"{prefix} has invalid state or county FIPS")
+    if not re.fullmatch(r"\d{1,2}", row.congressional_district) or not re.fullmatch(r"\d{4}", row.congressional_district_geoid):
+        raise ReviewedFallbackError(f"{prefix} has invalid congressional district GEOID")
+    if row.congressional_district_geoid != row.state_fips + row.congressional_district.zfill(2):
+        raise ReviewedFallbackError(f"{prefix} has inconsistent FIPS and congressional district GEOID")
+    if not row.reviewer_source_note:
+        raise ReviewedFallbackError(f"{prefix} is missing reviewer/source provenance")
+    try:
+        reviewed = date.fromisoformat(row.reviewed_date)
+    except ValueError as error:
+        raise ReviewedFallbackError(f"{prefix} has an invalid reviewed_date") from error
+    if reviewed > datetime.now(UTC).date():
+        raise ReviewedFallbackError(f"{prefix} has a reviewed_date in the future")
+    if bool(row.map_reference_kind) != bool(row.map_reference_key):
+        raise ReviewedFallbackError(f"{prefix} has an incomplete map reference")
+    if row.map_reference_kind:
+        if row.map_reference_kind == "place":
+            valid = row.map_reference_key == normalize_city_name(row.map_reference_key) and row.map_reference_key in references.places
+        elif row.map_reference_kind == "county":
+            valid = bool(re.fullmatch(r"\d{3}", row.map_reference_key)) and row.map_reference_key in references.counties
+        else:
+            valid = False
+        if not valid:
+            raise ReviewedFallbackError(f"{prefix} has an unsafe or unknown map reference")
+
+
+def _assign_fallback_or_review(
+    districts, reviews, fallbacks, identity, address, company, lookup_date, reason, candidates=""
+):
+    fallback = fallbacks.get(_fallback_identity(*identity))
+    if fallback is None:
+        reviews.append(_review(identity, address, reason, candidates))
+        return
+    districts.append(
+        DistrictRow(
+            identity[0], identity[1], identity[2], identity[3], address.source,
+            address.source_address, "", address.city, fallback.state,
+            fallback.state_fips, fallback.county, fallback.county_fips,
+            fallback.congressional_district, fallback.congressional_district_geoid,
+            "", "", "", "", lookup_date.isoformat(), "matched",
+            "reviewed-fallback", relationship_summary(company, lookup_date),
+            "fallback-confirmed", fallback.reviewer_source_note,
+            fallback.reviewed_date, fallback.map_reference_kind,
+            fallback.map_reference_key,
+        )
     )
 
 

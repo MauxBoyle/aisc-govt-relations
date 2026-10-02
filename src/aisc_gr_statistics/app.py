@@ -10,6 +10,7 @@ from loguru import logger
 
 from .census_map_references import MapReferenceError, refresh_map_references
 from .districts import (
+    DEFAULT_FALLBACK_CSV,
     DistrictSnapshotError,
     aggregate_districts,
     enrich_companies,
@@ -228,6 +229,12 @@ def _build_parser():
         "--imis-csv", required=True, type=Path, help="Path to an iMIS CSV export."
     )
     districts.add_argument(
+        "--fallback-csv",
+        type=Path,
+        default=DEFAULT_FALLBACK_CSV,
+        help="Reviewed exact-match geography fallback CSV (default: config/reviewed-geography-fallback.csv).",
+    )
+    districts.add_argument(
         "--districts-csv",
         required=True,
         type=Path,
@@ -428,20 +435,23 @@ def _run_enrich_districts(arguments):
     """Create district, review, and conversion CSVs before reporting outages."""
     accounts, _ = _salesforce_accounts_if_configured()
     districts, reviews, conversions, service_failed = enrich_companies(
-        arguments.imis_csv, accounts, lookup_date=arguments.as_of
+        arguments.imis_csv, accounts, lookup_date=arguments.as_of,
+        fallback_csv=arguments.fallback_csv,
     )
-    write_districts_csv(districts, arguments.districts_csv, as_of=arguments.as_of)
+    write_districts_csv(
+        districts, arguments.districts_csv, as_of=arguments.as_of,
+        unresolved_count=len(reviews), included_company_count=len(districts),
+    )
     write_review_csv(reviews, arguments.review_csv)
     write_address_conversions_csv(conversions, arguments.address_conversions_csv)
     logger.info(
-        "Created district enrichment files: matched={}, review={}, conversions={}",
+        "Created district enrichment files: confirmed={}, unresolved={}, conversions={}",
         len(districts),
         len(reviews),
         len(conversions),
     )
     if service_failed:
-        logger.error("One or more Census requests failed; review the partial outputs.")
-        raise SystemExit(1)
+        logger.warning("One or more Census requests failed; fallback assignments were used where reviewed, and remaining companies need review.")
 
 
 def _run_aggregate_districts(arguments):

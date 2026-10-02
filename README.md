@@ -98,9 +98,8 @@ or changed sidecar, missing aggregate row, incompatible Census map, an
 unbreakable word wider than a column, or a complete list that cannot fit in at
 most two pages at 8 points; in those cases it writes no new PDF and never
 truncates company details. A Senate
-report additionally requires every included Illinois company to have confirmed
-district geography. Resolve `address-district-review.csv` and rerun enrichment
-when that check fails.
+report uses the confirmed Illinois snapshot population. Companies left in
+`address-district-review.csv` are excluded from every aggregate and PDF list.
 
 The checked-in Census KML/map metadata and Census place/county reference
 snapshots are used offline, so PDF creation stays
@@ -178,6 +177,16 @@ missing geography, malformed responses, or service errors. The command writes
 both files after a Census outage but exits nonzero, so partial data is not
 mistaken for a finished run. Refresh districts by running the command again;
 each run records the current Census values it used.
+
+`config/reviewed-geography-fallback.csv` can provide a reviewed assignment only
+after Census cannot assign a company. Its company name, classification, iMIS
+ID, and Salesforce account ID must exactly match; at least one ID, complete
+FIPS/GEOID values, reviewer/source note, and ISO reviewed date are required.
+Optional map references may only be checked-in Census `place` keys or `county`
+FIPS keys—coordinates are never accepted. Use `--fallback-csv` to provide a
+different reviewed file. Nonmatching rows remain unresolved, and snapshot
+metadata records Census-confirmed, fallback-confirmed, unresolved, and
+included-company counts.
 
 `--as-of YYYY-MM-DD` is required and is the certification-effective report
 date. Enrichment saves exactly one safe public relationship phrase per company:

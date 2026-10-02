@@ -161,6 +161,19 @@ shows the derived, normalized fields submitted to Census, including a status
 and reason for incomplete addresses. It is generated under `data/processed/`
 and does not modify either source system's data.
 
+### Reviewed fallback geography
+
+`config/reviewed-geography-fallback.csv` is checked-in configuration for
+explicit assignments that have been reviewed after Census cannot assign a
+company. Its `company_name`, `company_classification`, `imis_id`, and
+`salesforce_account_id` are an exact composite match (with at least one ID).
+Each row also needs consistent state/county/district FIPS and GEOID values, a
+reviewer/source note, and an ISO reviewed date. Optional map references are
+only checked-in Census `place` keys or three-digit `county` keys; coordinates
+are rejected. Missing matches stay unresolved in the review CSV. The snapshot
+metadata records Census-confirmed, fallback-confirmed, unresolved, and
+included-company counts; aggregates and PDFs use confirmed rows only.
+
 This command uses the public [U.S. Census Geocoding Services API](https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html), requesting
 `Public_AR_Current` and `Current_Current`. It includes the report population:
 iMIS companies plus report-eligible Salesforce-only certified companies when

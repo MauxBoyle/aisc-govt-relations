@@ -12,7 +12,12 @@ from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfgen.canvas import Canvas
 
 from .census_boundaries import load_boundary_snapshot
-from .census_map_references import MapPoint, load_map_references, point_for_company
+from .census_map_references import (
+    MapPoint,
+    load_map_references,
+    point_for_company,
+    point_for_reference,
+)
 from .districts import (
     DistrictAggregateRow,
     read_districts_csv,
@@ -164,7 +169,9 @@ def render_house_report(
     selected = [
         row
         for row in rows
-        if row.state == "IL" and row.congressional_district == district
+        if row.assignment_source in {"census-confirmed", "fallback-confirmed"}
+        and row.state == "IL"
+        and row.congressional_district == district
     ]
     if not selected:
         raise DistrictReportError(
@@ -236,14 +243,15 @@ def render_senate_report(
     as_of="",
 ):
     _validate_inputs(districts_csv, aggregates_csv)
-    rows = [row for row in read_districts_csv(districts_csv) if row.state == "IL"]
+    rows = [
+        row
+        for row in read_districts_csv(districts_csv)
+        if row.assignment_source in {"census-confirmed", "fallback-confirmed"}
+        and row.state == "IL"
+    ]
     aggregates = read_aggregates_csv(aggregates_csv)
     state = _aggregate(aggregates, "state", "IL", "17", "", "")
     national = _aggregate(aggregates, "national", "", "", "", "")
-    if len(rows) != state.included_company_count:
-        raise DistrictReportError(
-            "Senate report requires complete confirmed Illinois geography; resolve address-review data first."
-        )
     _match_count(rows, state)
     shapes, metadata = (
         load_boundary_snapshot(*(boundary_paths or ()))
@@ -329,7 +337,11 @@ def _external_companies(rows, references):
                 row.county,
                 row.relationship_summary,
             ),
-            point_for_company(row.city, row.county_fips, references),
+            point_for_reference(
+                row.map_reference_kind, row.map_reference_key, references
+            )
+            if row.map_reference_kind
+            else point_for_company(row.city, row.county_fips, references),
         )
         for row in rows
     )

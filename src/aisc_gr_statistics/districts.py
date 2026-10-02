@@ -151,6 +151,7 @@ class DistrictRow:
     fallback_reviewed_date: str = ""
     map_reference_kind: str = ""
     map_reference_key: str = ""
+    report_population: str = "included"
 
 
 @dataclass(frozen=True)
@@ -186,6 +187,7 @@ class ReviewRow:
     postal_code: str
     review_reason: str
     candidate_information: str
+    report_population: str = "unresolved"
 
 
 @dataclass(frozen=True)
@@ -201,6 +203,9 @@ class DistrictAggregateRow:
     known_jobs: int
     companies_with_employee_data: int
     companies_missing_employee_data: int
+    census_confirmed_company_count: int = 0
+    fallback_confirmed_company_count: int = 0
+    unresolved_company_count: int = 0
 
 
 class CensusGeocoder:
@@ -340,6 +345,8 @@ def write_districts_csv(
     rows: list[DistrictRow], path: Path | str, *, as_of: date | str | None = None,
     unresolved_count: int = 0, included_company_count: int | None = None,
 ) -> None:
+    if any(row.report_population != "included" for row in rows):
+        raise DistrictSnapshotError("district rows must have report_population=included")
     _write_csv(rows, path, DistrictRow)
     census_count = sum(row.assignment_source == "census-confirmed" for row in rows)
     fallback_count = sum(row.assignment_source == "fallback-confirmed" for row in rows)
@@ -353,7 +360,10 @@ def write_districts_csv(
 
 
 def write_review_csv(rows: list[ReviewRow], path: Path | str) -> None:
+    if any(row.report_population != "unresolved" for row in rows):
+        raise DistrictSnapshotError("review rows must have report_population=unresolved")
     _write_csv(rows, path, ReviewRow)
+    _write_snapshot_metadata(path, "review", len(rows), unresolved_company_count=len(rows))
 
 
 def write_address_conversions_csv(
@@ -365,28 +375,50 @@ def write_address_conversions_csv(
 
 def read_districts_csv(path: Path | str) -> list[DistrictRow]:
     """Read a prior ``company-districts.csv`` snapshot with required columns."""
-    with Path(path).open(newline="", encoding="utf-8") as handle:
-        reader = csv.DictReader(handle)
-        names = [field.name for field in fields(DistrictRow)]
-        if reader.fieldnames is None or set(names) - set(reader.fieldnames):
-            raise DistrictSnapshotError("district snapshot is missing required columns")
-        rows = [
-            DistrictRow(**{name: (row.get(name) or "").strip() for name in names})
-            for row in reader
-        ]
-    return rows
+    try:
+        with Path(path).open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            names = [field.name for field in fields(DistrictRow)]
+            if reader.fieldnames is None or set(names) - set(reader.fieldnames):
+                raise DistrictSnapshotError("district snapshot is missing required columns")
+            return [
+                DistrictRow(**{name: (row.get(name) or "").strip() for name in names})
+                for row in reader
+            ]
+    except OSError as error:
+        raise DistrictSnapshotError("district snapshot could not be read") from error
+
+
+def read_review_csv(path: Path | str) -> list[ReviewRow]:
+    """Read the unresolved review queue with its complete identity schema."""
+    try:
+        with Path(path).open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            names = [field.name for field in fields(ReviewRow)]
+            if reader.fieldnames is None or set(names) - set(reader.fieldnames):
+                raise DistrictSnapshotError("review snapshot is missing required columns")
+            return [
+                ReviewRow(**{name: (row.get(name) or "").strip() for name in names})
+                for row in reader
+            ]
+    except OSError as error:
+        raise DistrictSnapshotError("review snapshot could not be read") from error
 
 
 def aggregate_districts(
     imis_csv: Path | str,
     districts_csv: Path | str,
+    review_csv: Path | str,
     salesforce_accounts=(),
 ) -> list[DistrictAggregateRow]:
     """Aggregate the current report population using a saved district snapshot.
 
-    Unassigned companies stay in the national result but deliberately do not
-    appear in a district result.  This function performs no Census lookup.
+    Unresolved companies are excluded from every displayed total.  This
+    function performs no Census lookup and fails unless the two operational
+    CSVs exactly partition today's eligible report population.
     """
+    validate_snapshot_metadata(districts_csv, "districts")
+    validate_snapshot_metadata(review_csv, "review")
     # Match enrichment's repeat-ID rule exactly.  A district snapshot contains
     # the latest usable iMIS submission for a repeated nonblank ID, so using
     # every export row here would create duplicate identities and incompatible
@@ -401,13 +433,9 @@ def aggregate_districts(
         combine_companies(imis_companies, salesforce_accounts)
     )
     population_by_identity = _population_by_identity(population)
-    snapshot_by_identity = _snapshot_by_identity(read_districts_csv(districts_csv))
-    unknown = set(snapshot_by_identity) - set(population_by_identity)
-    if unknown:
-        raise DistrictSnapshotError(
-            "district snapshot contains a company outside the current report population; "
-            "rerun enrichment and aggregation with the same available Salesforce data"
-        )
+    snapshot_by_identity, review_by_identity = validate_population_partition(
+        read_districts_csv(districts_csv), read_review_csv(review_csv), population
+    )
 
     # The snapshot is the reviewed, confirmed population.  A missing snapshot
     # row is unresolved and must not leak into a national, state, district, or
@@ -415,7 +443,11 @@ def aggregate_districts(
     included_population = [
         population_by_identity[identity] for identity in snapshot_by_identity
     ]
-    national = _aggregate_row("national", "", "", "", "", included_population)
+    unresolved_count = len(review_by_identity)
+    national = _aggregate_row(
+        "national", "", "", "", "", included_population, snapshot_by_identity,
+        unresolved_count,
+    )
     by_district: dict[tuple[str, str, str, str], list[CombinedCompany]] = {}
     for identity, snapshot in snapshot_by_identity.items():
         company = population_by_identity[identity]
@@ -431,11 +463,12 @@ def aggregate_districts(
             )
         by_district.setdefault(district_key, []).append(company)
     districts = [
-        _aggregate_row("district", *key, companies)
+        _aggregate_row("district", *key, companies, snapshot_by_identity, 0)
         for key, companies in sorted(by_district.items())
     ]
     # State totals describe the same confirmed Illinois population as the
-    # snapshot; unresolved Illinois companies stay in review data instead.
+    # snapshot.  Review rows retain the saved state for unresolved companies,
+    # so only Illinois review rows belong in the Illinois state count.
     illinois_assigned = [
         company
         for identity, company in population_by_identity.items()
@@ -443,7 +476,11 @@ def aggregate_districts(
         and snapshot_by_identity[identity].state == "IL"
     ]
     state_rows = (
-        [_aggregate_row("state", "IL", "17", "", "", illinois_assigned)]
+        [_aggregate_row(
+            "state", "IL", "17", "", "", illinois_assigned,
+            snapshot_by_identity,
+            sum(row.state == "IL" for row in review_by_identity.values()),
+        )]
         if illinois_assigned
         else []
     )
@@ -451,11 +488,25 @@ def aggregate_districts(
 
 
 def write_district_aggregates_csv(
-    rows: list[DistrictAggregateRow], path: Path | str
+    rows: list[DistrictAggregateRow], path: Path | str, *,
+    districts_csv: Path | str | None = None, review_csv: Path | str | None = None,
 ) -> None:
     """Write national and district aggregates with a stable, typed header."""
     _write_csv(rows, path, DistrictAggregateRow)
-    _write_snapshot_metadata(path, "aggregates", len(rows))
+    counts = {}
+    national = next((row for row in rows if row.scope == "national"), None)
+    if national:
+        counts = {
+            "included_company_count": national.included_company_count,
+            "census_confirmed_company_count": national.census_confirmed_company_count,
+            "fallback_confirmed_company_count": national.fallback_confirmed_company_count,
+            "unresolved_company_count": national.unresolved_company_count,
+        }
+    if districts_csv is not None:
+        counts["districts_sha256"] = _file_checksum(districts_csv)
+    if review_csv is not None:
+        counts["review_sha256"] = _file_checksum(review_csv)
+    _write_snapshot_metadata(path, "aggregates", len(rows), **counts)
 
 
 def validate_snapshot_metadata(
@@ -510,6 +561,8 @@ def _snapshot_by_identity(
 ) -> dict[tuple[str, str, str], DistrictRow]:
     indexed: dict[tuple[str, str, str], DistrictRow] = {}
     for row in rows:
+        if row.report_population != "included":
+            raise DistrictSnapshotError("district snapshot rows must be included")
         if row.assignment_source not in {"census-confirmed", "fallback-confirmed"}:
             raise DistrictSnapshotError(
                 "district snapshot contains an unconfirmed assignment"
@@ -521,6 +574,45 @@ def _snapshot_by_identity(
             raise DistrictSnapshotError("district snapshot has duplicate identities")
         indexed[identity] = row
     return indexed
+
+
+def _review_by_identity(rows: list[ReviewRow]) -> dict[tuple[str, str, str], ReviewRow]:
+    indexed = {}
+    for row in rows:
+        if row.report_population != "unresolved":
+            raise DistrictSnapshotError("review snapshot rows must be unresolved")
+        identity = _aggregate_identity(
+            row.company_classification, row.imis_id, row.salesforce_account_id
+        )
+        if identity in indexed:
+            raise DistrictSnapshotError("review snapshot has duplicate identities")
+        indexed[identity] = row
+    return indexed
+
+
+def validate_population_partition(
+    confirmed_rows: list[DistrictRow], unresolved_rows: list[ReviewRow],
+    population: list[CombinedCompany],
+) -> tuple[dict[tuple[str, str, str], DistrictRow], dict[tuple[str, str, str], ReviewRow]]:
+    """Prove every eligible company is confirmed once or unresolved once."""
+    confirmed = _snapshot_by_identity(confirmed_rows)
+    unresolved = _review_by_identity(unresolved_rows)
+    population_by_identity = _population_by_identity(population)
+    overlap = set(confirmed) & set(unresolved)
+    if overlap:
+        raise DistrictSnapshotError("district and review snapshots overlap")
+    recorded = set(confirmed) | set(unresolved)
+    unknown = recorded - set(population_by_identity)
+    if unknown:
+        raise DistrictSnapshotError(
+            "district or review snapshot contains a company outside the current report population"
+        )
+    missing = set(population_by_identity) - recorded
+    if missing:
+        raise DistrictSnapshotError(
+            "district and review snapshots do not cover the current report population"
+        )
+    return confirmed, unresolved
 
 
 def _aggregate_identity(
@@ -536,6 +628,8 @@ def _aggregate_row(
     district: str,
     geoid: str,
     companies: list[CombinedCompany],
+    snapshots: dict[tuple[str, str, str], DistrictRow],
+    unresolved_count: int,
 ) -> DistrictAggregateRow:
     counts = [
         employee_count_decimal(
@@ -546,6 +640,24 @@ def _aggregate_row(
         for company in companies
     ]
     known = [count for count in counts if count is not None]
+    identities = {
+        _aggregate_identity(
+            company.classification.value,
+            company.imis.imis_id if company.imis else _account_value(
+                company.salesforce, CertificationAccountField.IMIS_ID
+            ),
+            _account_value(company.salesforce, CertificationAccountField.ID),
+        )
+        for company in companies
+    }
+    census_count = sum(
+        snapshots[identity].assignment_source == "census-confirmed"
+        for identity in identities
+    )
+    fallback_count = sum(
+        snapshots[identity].assignment_source == "fallback-confirmed"
+        for identity in identities
+    )
     return DistrictAggregateRow(
         scope,
         state,
@@ -556,6 +668,9 @@ def _aggregate_row(
         int(sum(known)),
         len(known),
         len(companies) - len(known),
+        census_count,
+        fallback_count,
+        unresolved_count,
     )
 
 
@@ -571,7 +686,7 @@ def _write_csv(rows, path, row_type) -> None:
 
 def _write_snapshot_metadata(
     path: Path | str, kind: str, row_count: int, *, as_of: date | str | None = None,
-    **counts: int,
+    **counts: object,
 ) -> None:
     destination = Path(path)
     metadata = {
@@ -586,6 +701,10 @@ def _write_snapshot_metadata(
     destination.with_suffix(destination.suffix + ".metadata.json").write_text(
         json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
     )
+
+
+def _file_checksum(path: Path | str) -> str:
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 def _report_population(companies: list[CombinedCompany]) -> list[CombinedCompany]:

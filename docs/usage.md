@@ -226,17 +226,22 @@ current Salesforce population and employee counts:
 uv run aisc_gr_statistics aggregate-districts \
   --imis-csv data/raw/imis/imis-tonnage-for-gr-statistics.csv \
   --districts-csv data/processed/company-districts.csv \
+  --review-csv data/processed/address-district-review.csv \
   --aggregates-csv data/processed/district-aggregates.csv
 ```
 
-The output contains a `national` row for every included company and `district`
-rows only for companies with a safe assignment in `company-districts.csv`.
-Companies without an assignment therefore remain national-only, and district
-totals may not equal the national total. `known_jobs` sums only valid
-whole-number employee counts. A downstream report must call this **Known jobs**
-and show the employee-data coverage columns, so readers do not mistake it for
-a total across every company. Generated aggregate CSVs remain ignored
-operational data in `data/processed/`.
+The confirmed and unresolved CSVs must exactly partition the current eligible
+population. Unresolved companies are excluded from national, state, district,
+and PDF totals. Aggregate rows include included, Census-confirmed,
+fallback-confirmed, unresolved, and employee-data coverage counts. `known_jobs`
+is a numeric internal partial sum; public reports display `N/A` below two
+employee-data contributors. Aggregate metadata records input checksums, and a
+PDF requires the exact district snapshot used to create its aggregate.
+
+To resolve a review record, manually verify it and copy its exact identity,
+FIPS/GEOID, reviewer source note, date, and safe place/county map reference to
+the version-controlled `config/reviewed-geography-fallback.csv`; then rerun
+enrichment and aggregation. The review CSV remains the unresolved queue.
 
 `--imis-export-date` is required and must be the date iMIS created the CSV,
 written as `YYYY-MM-DD`. The final **Report provenance** block records that

@@ -214,19 +214,25 @@ from a saved district snapshot:
 uv run aisc_gr_statistics aggregate-districts \
   --imis-csv data/raw/imis/imis-tonnage-for-gr-statistics.csv \
   --districts-csv data/processed/company-districts.csv \
+  --review-csv data/processed/address-district-review.csv \
   --aggregates-csv data/processed/district-aggregates.csv
 ```
 
-This step performs no Census lookup; when Salesforce credentials are configured,
-it reads the current Salesforce population and employee counts. Its CSV has one
-`national` row for every included company, an Illinois `state` row when every
-included Illinois company has a safe saved assignment, and `district` rows only
-for companies with a safe saved assignment. District rows do not necessarily add
-up to the national row.
-`known_jobs` is the sum of valid whole-number employee counts, not an estimate
-of all jobs. Downstream reports label it `known jobs` and also show the
-employee-data coverage columns (`companies_with_employee_data` and
-`companies_missing_employee_data`).
+This step performs no Census lookup. It requires the confirmed and unresolved
+CSVs to partition the current eligible population exactly once; unresolved
+companies are excluded from every displayed total. Each aggregate records
+`included_company_count`, Census-confirmed and fallback-confirmed counts,
+`unresolved_company_count`, and employee-data coverage counts. `known_jobs` is
+an internal partial sum of valid whole-number employee counts; public reports
+show `N/A` when fewer than two contributors have employee data. Aggregate
+metadata records checksums for both inputs, and a PDF rejects an aggregate made
+from a different district snapshot.
+
+To resolve a review record, verify its geography, then manually copy its exact
+identity plus required FIPS/GEOID, reviewer source note, reviewed date, and
+safe place/county map reference into the version-controlled
+`config/reviewed-geography-fallback.csv`. Rerun enrichment and aggregation;
+the review CSV itself remains the unresolved queue.
 
 The internal Senate-contact section reads a committed local Senate.gov XML
 snapshot, so report creation does not fetch data from the network and remains

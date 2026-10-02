@@ -272,6 +272,12 @@ def _build_parser():
         help="Previously generated company-districts.csv snapshot.",
     )
     aggregates.add_argument(
+        "--review-csv",
+        required=True,
+        type=Path,
+        help="Previously generated address-district-review.csv unresolved queue.",
+    )
+    aggregates.add_argument(
         "--aggregates-csv",
         required=True,
         type=Path,
@@ -468,12 +474,15 @@ def _run_aggregate_districts(arguments):
     accounts, _ = _salesforce_accounts_if_configured()
     try:
         rows = aggregate_districts(
-            arguments.imis_csv, arguments.districts_csv, accounts
+            arguments.imis_csv, arguments.districts_csv, arguments.review_csv, accounts
         )
     except DistrictSnapshotError as error:
         logger.error("District aggregates were not created: {}", error)
         raise SystemExit(1) from error
-    write_district_aggregates_csv(rows, arguments.aggregates_csv)
+    write_district_aggregates_csv(
+        rows, arguments.aggregates_csv,
+        districts_csv=arguments.districts_csv, review_csv=arguments.review_csv,
+    )
     logger.info("Created district aggregate file: rows={}", len(rows))
 
 

@@ -1,6 +1,7 @@
 """Tests for conservative congressional-district enrichment."""
 
 import csv
+from dataclasses import replace
 from datetime import date
 
 import pytest
@@ -13,6 +14,7 @@ from aisc_gr_statistics.districts import (
     DistrictSnapshotError,
     NormalizedAddress,
     ReviewedFallbackError,
+    ReviewRow,
     aggregate_districts,
     enrich_companies,
     load_reviewed_fallback_csv,
@@ -820,6 +822,19 @@ def _district_row(imis_id, account_id, geoid="1707"):
     )
 
 
+def _review_csv(tmp_path, rows):
+    path = tmp_path / "review.csv"
+    write_review_csv(rows, path)
+    return path
+
+
+def _review_row(imis_id, account_id, classification="both"):
+    return ReviewRow(
+        "", classification, imis_id, account_id, "", "", "", "IL", "",
+        "requires review", "",
+    )
+
+
 def test_aggregate_districts_counts_known_and_missing_employee_data(tmp_path):
     snapshot = tmp_path / "districts.csv"
     write_districts_csv(
@@ -829,6 +844,7 @@ def test_aggregate_districts_counts_known_and_missing_employee_data(tmp_path):
     rows = aggregate_districts(
         _aggregate_imis_csv(tmp_path),
         snapshot,
+        _review_csv(tmp_path, [_review_row("IMIS-3", "003")]),
         [
             _account("IMIS-1", "001", "10"),
             _account("IMIS-2", "002", 0),
@@ -847,6 +863,87 @@ def test_aggregate_districts_counts_known_and_missing_employee_data(tmp_path):
     assert district.congressional_district_geoid == "1707"
 
 
+def test_aggregate_districts_reconciles_census_fallback_and_unresolved_population(tmp_path):
+    snapshot = tmp_path / "districts.csv"
+    write_districts_csv(
+        [
+            _district_row("IMIS-1", "001"),
+            replace(
+                _district_row("IMIS-2", "002"),
+                assignment_source="fallback-confirmed",
+            ),
+        ],
+        snapshot,
+    )
+    review = _review_csv(tmp_path, [_review_row("IMIS-3", "003")])
+
+    rows = aggregate_districts(
+        _aggregate_imis_csv(tmp_path), snapshot, review,
+        [
+            _account("IMIS-1", "001", 10),
+            _account("IMIS-2", "002", 20),
+            _account("IMIS-3", "003", 30),
+        ],
+    )
+
+    national, state, district = rows
+    for row in (national, state, district):
+        assert row.included_company_count == (
+            row.census_confirmed_company_count + row.fallback_confirmed_company_count
+        )
+        assert row.companies_with_employee_data + row.companies_missing_employee_data == row.included_company_count
+    assert national.unresolved_company_count == state.unresolved_company_count == 1
+    assert district.unresolved_company_count == 0
+
+
+def test_aggregate_districts_scopes_unresolved_count_to_illinois_review_rows(tmp_path):
+    imis_csv = tmp_path / "imis.csv"
+    imis_csv.write_text(
+        "company name,state,city,iMIS ID\n"
+        "Confirmed Illinois Steel,IL,Chicago,IMIS-1\n"
+        "Unresolved Illinois Steel,IL,Chicago,IMIS-2\n"
+        "Unresolved Out-of-State Steel,IL,Chicago,IMIS-3\n",
+        encoding="utf-8",
+    )
+    snapshot = tmp_path / "districts.csv"
+    write_districts_csv([_district_row("IMIS-1", "001")], snapshot)
+    review = _review_csv(
+        tmp_path,
+        [
+            _review_row("IMIS-2", "002"),
+            replace(_review_row("IMIS-3", "003"), state="WI"),
+        ],
+    )
+
+    rows = aggregate_districts(
+        imis_csv,
+        snapshot,
+        review,
+        [
+            _account("IMIS-1", "001", 10),
+            _account("IMIS-2", "002", 20),
+            _account("IMIS-3", "003", 30),
+        ],
+    )
+
+    national = next(row for row in rows if row.scope == "national")
+    state = next(row for row in rows if row.scope == "state")
+    assert national.unresolved_company_count == 2
+    assert state.unresolved_company_count == 1
+
+
+def test_aggregate_districts_requires_review_rows_for_every_unconfirmed_company(tmp_path):
+    snapshot = tmp_path / "districts.csv"
+    write_districts_csv([_district_row("IMIS-1", "001")], snapshot)
+    review = _review_csv(tmp_path, [])
+
+    with pytest.raises(DistrictSnapshotError, match="do not cover"):
+        aggregate_districts(
+            _aggregate_imis_csv(tmp_path), snapshot, review,
+            [_account("IMIS-1", "001", 10)],
+        )
+
+
 def test_aggregate_districts_treats_invalid_employee_counts_as_missing(tmp_path):
     snapshot = tmp_path / "districts.csv"
     write_districts_csv([_district_row("IMIS-1", "001")], snapshot)
@@ -854,6 +951,10 @@ def test_aggregate_districts_treats_invalid_employee_counts_as_missing(tmp_path)
         rows = aggregate_districts(
             _aggregate_imis_csv(tmp_path),
             snapshot,
+            _review_csv(tmp_path, [
+                _review_row("IMIS-2", "", "imis-only"),
+                _review_row("IMIS-3", "", "imis-only"),
+            ]),
             [_account("IMIS-1", "001", value)],
         )
         assert rows[0].companies_missing_employee_data == 1
@@ -896,6 +997,11 @@ def test_aggregate_districts_matches_salesforce_only_snapshot_by_salesforce_imis
     rows = aggregate_districts(
         _aggregate_imis_csv(tmp_path),
         snapshot,
+        _review_csv(tmp_path, [
+            _review_row("IMIS-1", "", "imis-only"),
+            _review_row("IMIS-2", "", "imis-only"),
+            _review_row("IMIS-3", "", "imis-only"),
+        ]),
         [_account("SALESFORCE-ONLY", "003", 10)],
     )
 
@@ -909,11 +1015,23 @@ def test_aggregate_districts_rejects_duplicate_or_unknown_snapshot_rows(tmp_path
     )
     accounts = [_account("IMIS-1", "001", 10)]
     with pytest.raises(DistrictSnapshotError, match="duplicate"):
-        aggregate_districts(_aggregate_imis_csv(tmp_path), snapshot, accounts)
+        aggregate_districts(
+            _aggregate_imis_csv(tmp_path), snapshot,
+            _review_csv(tmp_path, [
+                _review_row("IMIS-1", "001"), _review_row("IMIS-2", "", "imis-only"),
+                _review_row("IMIS-3", "", "imis-only"),
+            ]), accounts,
+        )
 
     write_districts_csv([_district_row("UNKNOWN", "999")], snapshot)
     with pytest.raises(DistrictSnapshotError, match="outside"):
-        aggregate_districts(_aggregate_imis_csv(tmp_path), snapshot, accounts)
+        aggregate_districts(
+            _aggregate_imis_csv(tmp_path), snapshot,
+            _review_csv(tmp_path, [
+                _review_row("IMIS-1", "001"), _review_row("IMIS-2", "", "imis-only"),
+                _review_row("IMIS-3", "", "imis-only"),
+            ]), accounts,
+        )
 
 
 def test_district_aggregate_csv_has_stable_national_then_district_rows(tmp_path):
@@ -921,7 +1039,11 @@ def test_district_aggregate_csv_has_stable_national_then_district_rows(tmp_path)
     output = tmp_path / "aggregates.csv"
     write_districts_csv([_district_row("IMIS-1", "001")], snapshot)
     rows = aggregate_districts(
-        _aggregate_imis_csv(tmp_path), snapshot, [_account("IMIS-1", "001", 10)]
+        _aggregate_imis_csv(tmp_path), snapshot,
+        _review_csv(tmp_path, [
+            _review_row("IMIS-2", "", "imis-only"),
+            _review_row("IMIS-3", "", "imis-only"),
+        ]), [_account("IMIS-1", "001", 10)]
     )
     write_district_aggregates_csv(rows, output)
 
@@ -936,5 +1058,8 @@ def test_district_aggregate_csv_has_stable_national_then_district_rows(tmp_path)
         "known_jobs",
         "companies_with_employee_data",
         "companies_missing_employee_data",
+        "census_confirmed_company_count",
+        "fallback_confirmed_company_count",
+        "unresolved_company_count",
     ]
     assert [row["scope"] for row in written] == ["national", "state", "district"]

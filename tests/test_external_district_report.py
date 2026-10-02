@@ -30,6 +30,7 @@ from aisc_gr_statistics.external_district_report import (
     _draw_map,
     _plan_company_layout,
     _render,
+    all_districts_filename,
     render_house_report,
     render_senate_report,
 )
@@ -273,11 +274,8 @@ def test_render_draws_one_lower_page_map_before_company_text(monkeypatch, tmp_pa
         "",
     )
 
-    assert events == [
-        ("map", MAP_X, MAP_Y, MAP_WIDTH, MAP_HEIGHT),
-        ("companies", 1),
-        ("companies", 2),
-    ]
+    # A Senate map is omitted when the first-page text needs the lower region.
+    assert events == [("companies", 1), ("companies", 2)]
     assert MAP_X == 36
     assert MAP_WIDTH == 612 - 72
     assert MAP_Y >= 36
@@ -457,7 +455,7 @@ def test_layout_wraps_long_names_at_eight_points_and_preserves_entries():
     assert COMPANY_LIST_FONT_SIZE == 8
     assert MAX_REPORT_PAGES == 2
     assert len(plans) == 1
-    assert len(plans[0].lines) > 1
+    assert len(plans[0].lines) == 1
     assert " ".join(plans[0].lines) == (f"{long_name} — Arlington Heights, Cook County")
     assert all(
         stringWidth(line, "Helvetica", COMPANY_LIST_FONT_SIZE) <= COMPANY_LIST_WIDTH
@@ -492,7 +490,7 @@ def test_layout_rejects_over_capacity_and_unbreakable_tokens():
             ]
         )
     with pytest.raises(DistrictReportError, match="unbreakable"):
-        _plan_company_layout([ExternalCompany("X" * 100, "Chicago", "Cook County")])
+        _plan_company_layout([ExternalCompany("X" * 200, "Chicago", "Cook County")])
 
 
 def test_two_page_pdf_keeps_wrapped_names_extractable_and_above_footer(tmp_path):
@@ -606,3 +604,68 @@ def test_cli_uses_current_committed_house_and_senate_snapshots(monkeypatch, tmp_
     expected_house = tuple(member.name for member in load_house_snapshot().members)
     expected_senate = tuple(senator.name for senator in load_senate_snapshot().senators)
     assert captured == {"house": expected_house, "senate": expected_senate}
+
+
+def test_cli_all_districts_uses_one_combined_pdf(monkeypatch, tmp_path):
+    captured = []
+
+    def fake_all(districts_csv, aggregates_csv, output, members, **options):
+        captured.append(output)
+        return output
+
+    monkeypatch.setattr(app_module, "render_all_house_reports", fake_all)
+    monkeypatch.setattr(
+        app_module, "validate_snapshot_metadata", lambda *args: {"as_of": "2026-09-30"}
+    )
+    app_module.main(
+        [
+            "district-report", "--all-districts", "--output-dir", str(tmp_path),
+            "--as-of", "2026-09-30",
+        ]
+    )
+
+    assert captured == [tmp_path / all_districts_filename()]
+    assert all_districts_filename() == "illinois-congressional-districts-external.pdf"
+
+
+def test_combined_house_report_has_17_ordered_pages(monkeypatch, tmp_path):
+    aggregate = DistrictAggregateRow("state", "IL", "17", "", "", 1, 0, 0, 1)
+
+    def fake_args(district, *unused, **options):
+        return (
+            f"Illinois Congressional District {district}", "Representative",
+            [ExternalCompany("Steel", "Chicago", "Cook")], aggregate, aggregate,
+            {"1701": [[(-88, 41), (-87, 41), (-87, 42)]]}, "1701",
+            {"retrieved_at": "2026-09-30T00:00:00Z"}, "2026-09-30", "District",
+            (), None, "Illinois",
+        )
+
+    monkeypatch.setattr(report_module, "_house_render_args", fake_args)
+    output = report_module.render_all_house_reports(
+        "districts.csv", "aggregates.csv", tmp_path / all_districts_filename(), []
+    )
+    reader = PdfReader(output)
+    assert len(reader.pages) == 17
+    assert [page.extract_text().splitlines()[0] for page in reader.pages] == [
+        f"Illinois Congressional District {district}" for district in range(1, 18)
+    ]
+
+
+def test_senate_map_is_drawn_only_when_a_four_by_five_region_remains(
+    monkeypatch, tmp_path
+):
+    events = []
+    monkeypatch.setattr(
+        report_module,
+        "_draw_map",
+        lambda canvas, shapes, highlighted, x, y, width, height, markers: events.append(
+            (x, y, width, height)
+        ),
+    )
+    aggregate = DistrictAggregateRow("state", "IL", "17", "", "", 1, 0, 0, 1)
+    _render(
+        tmp_path / "map.pdf", "Title", "Identity", [ExternalCompany("Steel", "Chicago", "Cook")],
+        aggregate, aggregate, {"1707": [[(-88, 41), (-87, 41), (-87, 42)]]}, "",
+        {"retrieved_at": "2026-09-30T00:00:00Z"}, "", report_kind="senate",
+    )
+    assert events and events[0][2:] == (288, 360)

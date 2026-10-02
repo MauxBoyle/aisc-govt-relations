@@ -42,15 +42,19 @@ class DistrictReportError(ValueError):
 
 COMPANY_LIST_FONT = "Helvetica"
 COMPANY_LIST_FONT_SIZE = 8
-COMPANY_LIST_WIDTH = 170
+COMPANY_LIST_WIDTH = letter[0] - 72
 COMPANY_LIST_LINE_HEIGHT = 10
 COMPANY_LIST_ENTRY_GAP = 3
-COMPANY_LIST_COLUMNS = 3
-COMPANY_LIST_COLUMN_GAP = 10
+COMPANY_LIST_COLUMNS = 1
+COMPANY_LIST_COLUMN_GAP = 0
 COMPANY_LIST_FIRST_PAGE_TOP = letter[1] - 154
 COMPANY_LIST_CONTINUATION_TOP = letter[1] - 68
 COMPANY_LIST_FOOTER_TOP = 38
 MAX_REPORT_PAGES = 2
+MAP_GAP = 12
+SENATE_MAP_WIDTH = 288
+SENATE_MAP_HEIGHT = 360
+HOUSE_MAP_HEIGHT = 240
 
 # The map uses the printable width and the lower two-thirds of a letter page.
 # It is deliberately a background for first-page report text, not a separate
@@ -139,6 +143,11 @@ def senate_filename() -> str:
     return "illinois-senate-delegation-external.pdf"
 
 
+def all_districts_filename() -> str:
+    """The stable filename used for the printable, combined House report."""
+    return "illinois-congressional-districts-external.pdf"
+
+
 def render_house_report(
     district,
     districts_csv,
@@ -150,6 +159,54 @@ def render_house_report(
     boundary_paths=None,
     map_reference_paths=None,
     as_of="",
+):
+    args = _house_render_args(
+        district, districts_csv, aggregates_csv, house_members,
+        house_photos=house_photos, boundary_paths=boundary_paths,
+        map_reference_paths=map_reference_paths, as_of=as_of,
+    )
+    return _render(output, *args, report_kind="house")
+
+
+def render_all_house_reports(
+    districts_csv,
+    aggregates_csv,
+    output,
+    house_members,
+    *,
+    house_photos=(),
+    boundary_paths=None,
+    map_reference_paths=None,
+    as_of="",
+):
+    """Render districts 1 through 17 into one printable PDF, in that order."""
+    output = Path(output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary = output.with_suffix(output.suffix + ".tmp")
+    canvas = Canvas(str(temporary), pagesize=letter)
+    try:
+        for index, district in enumerate(range(1, 18)):
+            args = _house_render_args(
+                district, districts_csv, aggregates_csv, house_members,
+                house_photos=house_photos, boundary_paths=boundary_paths,
+                map_reference_paths=map_reference_paths, as_of=as_of,
+            )
+            _render(
+                output, *args, report_kind="house", canvas=canvas,
+                advance=index != 16,
+            )
+        canvas.save()
+        temporary.replace(output)
+    except Exception:
+        if temporary.exists():
+            temporary.unlink()
+        raise
+    return output
+
+
+def _house_render_args(
+    district, districts_csv, aggregates_csv, house_members, *, house_photos=(),
+    boundary_paths=None, map_reference_paths=None, as_of="",
 ):
     district = str(int(str(district)))
     member = next(
@@ -214,8 +271,7 @@ def render_house_report(
         else load_map_references()
     )
     companies, marker_points = _external_companies(selected, references)
-    return _render(
-        output,
+    return (
         f"Illinois Congressional District {district}",
         contact,
         companies,
@@ -227,8 +283,8 @@ def render_house_report(
         as_of,
         "District",
         marker_points,
-        photo_path=photo_path,
-        comparison_label="Illinois",
+        photo_path,
+        "Illinois",
     )
 
 
@@ -285,6 +341,7 @@ def render_senate_report(
         "Illinois",
         marker_points,
         comparison_label="National",
+        report_kind="senate",
     )
 
 
@@ -370,27 +427,52 @@ def _render(
     marker_points=(),
     photo_path=None,
     comparison_label="National",
+    report_kind="senate",
+    canvas=None,
+    advance=False,
 ):
     companies = sorted((_company(r) for r in rows), key=lambda c: c.name.casefold())
     contact_blocks = _contacts(contacts)
     company_top = _company_top(contact_blocks)
-    placements = _plan_company_layout(companies, first_page_top=company_top)
+    # Maps are reserved page regions.  They are never placed behind company
+    # text, so wrapping remains readable when a list is long.
+    if report_kind == "house":
+        try:
+            placements = _plan_company_layout(
+                companies, first_page_top=company_top,
+                first_page_bottom=MAP_Y + HOUSE_MAP_HEIGHT + MAP_GAP,
+                max_pages=1,
+            )
+            map_region = (MAP_X, MAP_Y, MAP_WIDTH, HOUSE_MAP_HEIGHT)
+        except DistrictReportError:
+            placements = _plan_company_layout(
+                companies, first_page_top=company_top, max_pages=1
+            )
+            map_region = None
+    else:
+        placements = _plan_company_layout(companies, first_page_top=company_top)
+        map_region = None
+        if (
+            max(item.page for item in placements) == 1
+            and min(item.bottom for item in placements)
+            >= MAP_Y + SENATE_MAP_HEIGHT + MAP_GAP
+        ):
+            map_region = (
+                (letter[0] - SENATE_MAP_WIDTH) / 2,
+                MAP_Y,
+                SENATE_MAP_WIDTH,
+                SENATE_MAP_HEIGHT,
+            )
     output = Path(output)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    temporary = output.with_suffix(output.suffix + ".tmp")
-    canvas = Canvas(str(temporary), pagesize=letter)
+    owns_canvas = canvas is None
+    if owns_canvas:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        temporary = output.with_suffix(output.suffix + ".tmp")
+        canvas = Canvas(str(temporary), pagesize=letter)
     width, height = letter
     canvas.setTitle(title)
-    _draw_map(
-        canvas,
-        shapes,
-        highlighted,
-        MAP_X,
-        MAP_Y,
-        MAP_WIDTH,
-        MAP_HEIGHT,
-        marker_points,
-    )
+    if map_region:
+        _draw_map(canvas, shapes, highlighted, *map_region, marker_points)
     canvas.setFont("Helvetica-Bold", 15)
     canvas.drawString(36, height - 42, title)
     contact_bottom = _draw_contact_blocks(
@@ -414,8 +496,11 @@ def _render(
         canvas.setFont("Helvetica-Bold", 11)
         canvas.drawString(36, height - 42, f"{title} — Companies continued")
         _draw_company_page(canvas, placements, 2, footer)
-    canvas.save()
-    temporary.replace(output)
+    if owns_canvas:
+        canvas.save()
+        temporary.replace(output)
+    elif advance:
+        canvas.showPage()
     return output
 
 
@@ -702,7 +787,7 @@ def _company_text(company):
     return format_company_text(company)
 
 
-def _wrap_company_text(text):
+def _wrap_company_text(text, *, width=COMPANY_LIST_WIDTH):
     """Wrap at word boundaries using ReportLab's actual font measurements."""
     words = text.split()
     if not words:
@@ -710,7 +795,7 @@ def _wrap_company_text(text):
     for word in words:
         if (
             stringWidth(word, COMPANY_LIST_FONT, COMPANY_LIST_FONT_SIZE)
-            > COMPANY_LIST_WIDTH
+            > width
         ):
             raise DistrictReportError(
                 "company list contains an unbreakable word wider than a column"
@@ -721,7 +806,7 @@ def _wrap_company_text(text):
         candidate = f"{current} {word}"
         if (
             stringWidth(candidate, COMPANY_LIST_FONT, COMPANY_LIST_FONT_SIZE)
-            <= COMPANY_LIST_WIDTH
+            <= width
         ):
             current = candidate
         else:
@@ -731,8 +816,15 @@ def _wrap_company_text(text):
     return tuple(lines)
 
 
-def _plan_company_layout(companies, *, first_page_top=COMPANY_LIST_FIRST_PAGE_TOP):
-    """Measure and pack complete company entries across columns and pages."""
+def _plan_company_layout(
+    companies,
+    *,
+    first_page_top=COMPANY_LIST_FIRST_PAGE_TOP,
+    first_page_bottom=COMPANY_LIST_FOOTER_TOP,
+    continuation_top=COMPANY_LIST_CONTINUATION_TOP,
+    max_pages=MAX_REPORT_PAGES,
+):
+    """Measure complete entries in the full printable width, never splitting one."""
     placements = []
     page = 1
     column = 0
@@ -740,22 +832,22 @@ def _plan_company_layout(companies, *, first_page_top=COMPANY_LIST_FIRST_PAGE_TO
     for company in companies:
         lines = _wrap_company_text(_company_text(company))
         entry_bottom = y - (len(lines) - 1) * COMPANY_LIST_LINE_HEIGHT
-        if entry_bottom < COMPANY_LIST_FOOTER_TOP:
-            column += 1
-            if column == COMPANY_LIST_COLUMNS:
-                page += 1
-                column = 0
-            if page > MAX_REPORT_PAGES:
+        page_bottom = first_page_bottom if page == 1 else COMPANY_LIST_FOOTER_TOP
+        if entry_bottom < page_bottom:
+            page += 1
+            column = 0
+            if page > max_pages:
+                capacity = "two pages" if max_pages == 2 else f"{max_pages} page(s)"
                 raise DistrictReportError(
-                    "company list cannot fit within two pages at the 8-point minimum"
+                    f"company list cannot fit within {capacity} at the 8-point minimum"
                 )
-            y = first_page_top if page == 1 else COMPANY_LIST_CONTINUATION_TOP
+            y = continuation_top
             entry_bottom = y - (len(lines) - 1) * COMPANY_LIST_LINE_HEIGHT
             if entry_bottom < COMPANY_LIST_FOOTER_TOP:
                 raise DistrictReportError(
                     "a complete company entry cannot fit within one report column"
                 )
-        x = 36 + column * (COMPANY_LIST_WIDTH + COMPANY_LIST_COLUMN_GAP)
+        x = 36
         line_placements = tuple(
             CompanyLinePlacement(line, page, x, y - index * COMPANY_LIST_LINE_HEIGHT)
             for index, line in enumerate(lines)

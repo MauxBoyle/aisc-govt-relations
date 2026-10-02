@@ -118,16 +118,21 @@ uv run aisc_gr_statistics district-report \
   --as-of 2026-09-30
 ```
 
-`--all-districts` creates the House batch. The command validates CSV checksum
+`--all-districts` creates one combined, 17-page House PDF named
+`illinois-congressional-districts-external.pdf`; explicit `--district` choices
+continue to create individual PDFs. The command validates CSV checksum
 sidecars, House and Senate snapshots, and the committed Census boundary KML
 before writing a PDF. Company-list text is never smaller than 8 points. Long
-names wrap at measured word boundaries, and each company stays together in a
-single column. The first page layers its text over a 75%-opaque map that fills
-the printable lower page. The usual report is one page; a full list may use
-one compact text-only continuation page with its own heading and source footer.
+names use the full printable width, wrap at measured word boundaries, and each
+company stays together. Maps use a separate lower-page region rather than
+sitting behind text: a House map is omitted if needed to retain a one-page
+district report, and the Senate map is included only when at least a 4-by-5-
+inch region remains. The Senate may use one compact text-only continuation
+page with its own heading and source footer.
 
-The command stops before producing a new PDF if a word is too wide for a
-column or if the complete list cannot fit safely within two pages. It does not
+The command stops before producing a new PDF if a word is too wide for the
+printable width, if a House list cannot fit safely on one page, or if a Senate
+list cannot fit safely within two pages. It does not
 shrink below 8 points, truncate details, or add a third page. The Senate
 version also stops until every Illinois company has confirmed geography.
 External reports intentionally disclose only company name, city, county, an

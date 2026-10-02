@@ -13,14 +13,25 @@ uv sync
 Run via the CLI entrypoint:
 
 ```bash
-uv run aisc_gr_statistics
+uv run aisc-gr-statistics
 ```
+
+With no arguments, the command checks the local iMIS, representative, Senate,
+Census, district, and aggregate snapshots without contacting any services. It
+shows whether each is usable and displays its recorded retrieval date. A date
+is informational only: the CLI does not warn based on snapshot age. In a
+terminal, it then offers a numbered menu for the common workflows. When output
+is piped or redirected, it prints the same status, usage help, and exits
+without prompting; use one of the explicit commands below in scripts.
+
+The original underscore command, `uv run aisc_gr_statistics`, remains
+supported for compatibility.
 
 Create a statewide Illinois certification and membership PDF from a local iMIS
 CSV export:
 
 ```bash
-uv run aisc_gr_statistics report \
+uv run aisc-gr-statistics report \
   --imis-csv data/raw/imis/imis-tonnage-for-gr-statistics.csv \
   --imis-export-date 2026-09-18 \
   --external-output data/processed/illinois-certification-membership-external.pdf \
@@ -61,7 +72,7 @@ Create the saved district and aggregate snapshots first, then create a
 one- or two-page external PDF without making any network calls:
 
 ```bash
-uv run aisc_gr_statistics district-report \
+uv run aisc-gr-statistics district-report \
   --district 7 --senate \
   --districts-csv data/processed/company-districts.csv \
   --aggregates-csv data/processed/district-aggregates.csv \
@@ -108,7 +119,7 @@ the official Census 2025 Illinois 119th-Congress KML archive, then review and
 commit both files:
 
 ```bash
-uv run aisc_gr_statistics refresh-district-boundaries
+uv run aisc-gr-statistics refresh-district-boundaries
 ```
 
 The refresh command downloads the official [Census Cartographic Boundary
@@ -129,7 +140,7 @@ never reach the external PDF. Refresh and review the accompanying Census
 Gazetteer snapshots separately when needed:
 
 ```bash
-uv run aisc_gr_statistics refresh-map-references
+uv run aisc-gr-statistics refresh-map-references
 ```
 
 The command fetches the official Census place and county Gazetteer files,
@@ -144,7 +155,7 @@ uses the public [U.S. Census Geocoding Services API](https://geocoding.geo.censu
 with Census's current address benchmark and congressional-geography vintage:
 
 ```bash
-uv run aisc_gr_statistics enrich-districts \
+uv run aisc-gr-statistics enrich-districts \
   --imis-csv data/raw/imis/imis-tonnage-for-gr-statistics.csv \
   --districts-csv data/processed/company-districts.csv \
   --review-csv data/processed/address-district-review.csv \
@@ -211,7 +222,7 @@ Create national, Illinois-state, and congressional-district aggregate data for l
 from a saved district snapshot:
 
 ```bash
-uv run aisc_gr_statistics aggregate-districts \
+uv run aisc-gr-statistics aggregate-districts \
   --imis-csv data/raw/imis/imis-tonnage-for-gr-statistics.csv \
   --districts-csv data/processed/company-districts.csv \
   --review-csv data/processed/address-district-review.csv \
@@ -251,7 +262,7 @@ Maintainers refresh that reference data intentionally, then review and commit
 the changed XML and JSON together:
 
 ```bash
-uv run aisc_gr_statistics refresh-senators
+uv run aisc-gr-statistics refresh-senators
 ```
 
 The official source is the [U.S. Senate contact-information XML](https://www.senate.gov/general/contact_information/senators_cfm.xml).
@@ -278,7 +289,7 @@ Maintainers intentionally refresh the snapshot, review the XML, contacts JSON,
 metadata, photo manifest, and any downloaded photo assets together, and commit them together:
 
 ```bash
-uv run aisc_gr_statistics refresh-representatives
+uv run aisc-gr-statistics refresh-representatives
 ```
 
 When the official House directory supplies an image URL, the refresh command
@@ -360,7 +371,7 @@ display fields. The PDF labels the selected tonnage year.
 Run with development environment settings:
 
 ```bash
-uv run aisc_gr_statistics
+uv run aisc-gr-statistics
 ```
 
 Or run as a Python module:

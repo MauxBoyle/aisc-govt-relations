@@ -3,12 +3,18 @@
 import argparse
 import os
 import sys
+from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
 
 from loguru import logger
 
-from .census_map_references import MapReferenceError, refresh_map_references
+from .census_boundaries import BoundarySnapshotError, load_boundary_snapshot
+from .census_map_references import (
+    MapReferenceError,
+    load_map_references,
+    refresh_map_references,
+)
 from .districts import (
     DEFAULT_FALLBACK_CSV,
     DistrictSnapshotError,
@@ -23,6 +29,7 @@ from .districts import (
 from .external_district_report import (
     DistrictReportError,
     district_filename,
+    read_aggregates_csv,
     render_house_report,
     render_senate_report,
     senate_filename,
@@ -60,6 +67,21 @@ from .salesforce import SalesforceError, create_client
 from .salesforce_fields import REPORT_ACCOUNT_FIELDS
 from .senate import SenateDataError, load_snapshot, refresh_snapshot, senators_for_state
 
+DEFAULT_IMIS_CSV = Path("data/raw/imis/imis-tonnage-for-gr-statistics.csv")
+DEFAULT_DISTRICTS_CSV = Path("data/processed/company-districts.csv")
+DEFAULT_REVIEW_CSV = Path("data/processed/address-district-review.csv")
+DEFAULT_AGGREGATES_CSV = Path("data/processed/district-aggregates.csv")
+
+
+@dataclass(frozen=True)
+class SnapshotStatus:
+    """A local data source's usability for the friendly CLI summary."""
+
+    name: str
+    usable: bool
+    detail: str
+    retrieved_at: str | None = None
+
 
 def configure_logging():
     """Configure loguru for console and file logging.
@@ -77,42 +99,325 @@ def configure_logging():
     logger.add(log_file, level="DEBUG", rotation="50 KB", retention=1)
 
 
-def main(argv=()):
+def main(argv=(), *, stdin=None, stdout=None):
     """Run the application with explicitly supplied command-line arguments."""
     load_local_environment()
     configure_logging()
     parser = _build_parser()
     arguments = parser.parse_args(argv)
-    if arguments.command == "report":
-        _run_report(arguments)
+    if arguments.command:
+        _dispatch(arguments)
         return
-    if arguments.command == "refresh-senators":
-        _run_refresh_senators()
-        return
-    if arguments.command == "refresh-representatives":
-        _run_refresh_representatives()
-        return
-    if arguments.command == "enrich-districts":
-        _run_enrich_districts(arguments)
-        return
-    if arguments.command == "aggregate-districts":
-        _run_aggregate_districts(arguments)
-        return
-    if arguments.command == "district-report":
-        _run_district_report(arguments)
-        return
-    if arguments.command == "refresh-district-boundaries":
-        _run_refresh_district_boundaries(arguments)
-        return
-    if arguments.command == "refresh-map-references":
-        _run_refresh_map_references(arguments)
-        return
-    logger.info("Hello from aisc_gr_statistics!")
+    stdin = stdin if stdin is not None else sys.stdin
+    stdout = stdout if stdout is not None else sys.stdout
+    _print_status_summary(stdout)
+    if stdin.isatty() and stdout.isatty():
+        _run_menu(parser, stdout)
+    else:
+        parser.print_usage(file=stdout)
+        print(
+            "Run an explicit subcommand for an action; no data was changed.",
+            file=stdout,
+        )
 
 
 def cli():
     """Run the installed console command with the shell's arguments."""
     main(sys.argv[1:])
+
+
+def _dispatch(arguments):
+    """Send parsed explicit commands and menu choices to the same handlers."""
+    handlers = {
+        "report": lambda: _run_report(arguments),
+        "refresh-senators": _run_refresh_senators,
+        "refresh-representatives": _run_refresh_representatives,
+        "enrich-districts": lambda: _run_enrich_districts(arguments),
+        "aggregate-districts": lambda: _run_aggregate_districts(arguments),
+        "district-report": lambda: _run_district_report(arguments),
+        "refresh-district-boundaries": lambda: _run_refresh_district_boundaries(
+            arguments
+        ),
+        "refresh-map-references": lambda: _run_refresh_map_references(arguments),
+    }
+    handlers[arguments.command]()
+
+
+def inspect_local_status():
+    """Inspect local inputs without network access or raising CLI-stopping errors."""
+    statuses = [
+        _inspect_imis_source(),
+        _inspect_snapshot(
+            "House representatives", load_house_snapshot, "refresh-representatives"
+        ),
+        _inspect_snapshot("Senate senators", load_snapshot, "refresh-senators"),
+        _inspect_snapshot(
+            "Census boundaries", load_boundary_snapshot, "refresh-district-boundaries"
+        ),
+        _inspect_snapshot(
+            "Census map references", load_map_references, "refresh-map-references"
+        ),
+        _inspect_snapshot(
+            "District assignments",
+            lambda: validate_snapshot_metadata(DEFAULT_DISTRICTS_CSV, "districts"),
+            "enrich-districts",
+        ),
+        _inspect_snapshot(
+            "District review queue",
+            lambda: validate_snapshot_metadata(DEFAULT_REVIEW_CSV, "review"),
+            "enrich-districts",
+        ),
+    ]
+    aggregates, aggregate_row = _inspect_aggregates()
+    statuses.append(aggregates)
+    return statuses, aggregate_row
+
+
+def _inspect_imis_source():
+    if DEFAULT_IMIS_CSV.is_file() and os.access(DEFAULT_IMIS_CSV, os.R_OK):
+        return SnapshotStatus("iMIS source", True, str(DEFAULT_IMIS_CSV))
+    return SnapshotStatus(
+        "iMIS source",
+        False,
+        f"not usable; add or select {DEFAULT_IMIS_CSV} before running report or enrichment",
+    )
+
+
+def _inspect_snapshot(name, loader, refresh_command):
+    try:
+        snapshot = loader()
+    except (
+        BoundarySnapshotError,
+        DistrictSnapshotError,
+        HouseDataError,
+        MapReferenceError,
+        SenateDataError,
+        OSError,
+        ValueError,
+    ) as error:
+        return SnapshotStatus(
+            name,
+            False,
+            f"not usable: {error}. Run `aisc-gr-statistics {refresh_command}`.",
+        )
+    retrieved_at = getattr(snapshot, "retrieved_at", None)
+    if retrieved_at is None and isinstance(snapshot, dict):
+        retrieved_at = snapshot.get("retrieved_at")
+    metadata = getattr(snapshot, "metadata", None)
+    if retrieved_at is None and isinstance(metadata, dict):
+        retrieved_at = metadata.get("retrieved_at")
+    if (
+        retrieved_at is None
+        and isinstance(snapshot, tuple)
+        and snapshot
+        and isinstance(snapshot[-1], dict)
+    ):
+        retrieved_at = snapshot[-1].get("retrieved_at")
+    return SnapshotStatus(name, True, "current", _display_date(retrieved_at))
+
+
+def _inspect_aggregates():
+    try:
+        districts = validate_snapshot_metadata(DEFAULT_DISTRICTS_CSV, "districts")
+        metadata = validate_snapshot_metadata(DEFAULT_AGGREGATES_CSV, "aggregates")
+        if metadata.get("districts_sha256") != districts.get("sha256"):
+            raise DistrictSnapshotError(
+                "aggregate snapshot was not generated from this exact district snapshot"
+            )
+        rows = read_aggregates_csv(DEFAULT_AGGREGATES_CSV)
+        illinois = [row for row in rows if row.scope == "state" and row.state == "IL"]
+        if len(illinois) != 1:
+            raise DistrictReportError(
+                "required Illinois aggregate row is missing or duplicated"
+            )
+    except (DistrictSnapshotError, DistrictReportError, OSError, ValueError) as error:
+        return (
+            SnapshotStatus(
+                "District aggregates",
+                False,
+                f"not usable: {error}. Run `aisc-gr-statistics aggregate-districts`.",
+            ),
+            None,
+        )
+    return (
+        SnapshotStatus(
+            "District aggregates",
+            True,
+            "current",
+            _display_date(metadata.get("retrieved_at")),
+        ),
+        illinois[0],
+    )
+
+
+def _display_date(value):
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return str(value)
+
+
+def _print_status_summary(output):
+    """Print concise local-data status. Retrieval dates are informational only."""
+    statuses, illinois = inspect_local_status()
+    print("Local data status:", file=output)
+    for status in statuses:
+        retrieval = f" (retrieved {status.retrieved_at})" if status.retrieved_at else ""
+        state = "usable" if status.usable else "not usable"
+        print(f"- {status.name}: {state} — {status.detail}{retrieval}", file=output)
+    if illinois is not None:
+        print(
+            f"- Illinois aggregate: unresolved companies={illinois.unresolved_company_count}, employee-data coverage={illinois.companies_with_employee_data}/{illinois.included_company_count}",
+            file=output,
+        )
+
+
+def _run_menu(parser, output):
+    """Offer repeatable terminal-only shortcuts for the documented workflows."""
+    menu = {
+        "1": ("Create statewide report", _menu_report),
+        "2": ("Enrich district assignments", _menu_enrich),
+        "3": ("Aggregate district data", _menu_aggregate),
+        "4": ("Create district report", _menu_district_report),
+        "5": ("Refresh representatives", _menu_representatives),
+        "6": ("Refresh Census reference data", _menu_census),
+        "7": ("Exit", None),
+    }
+    while True:
+        print("\nMenu:", file=output)
+        for key, (label, _) in menu.items():
+            print(f"  {key}. {label}", file=output)
+        choice = input("Choose an option: ").strip()
+        if choice == "7":
+            return
+        item = menu.get(choice)
+        if item is None:
+            print("Please enter a menu number from 1 to 7.", file=output)
+            continue
+        arguments = item[1](parser)
+        if arguments is not None:
+            _dispatch(arguments)
+
+
+def _menu_date(prompt):
+    while True:
+        try:
+            return _iso_date(input(prompt).strip()).isoformat()
+        except argparse.ArgumentTypeError:
+            print("Please use YYYY-MM-DD.")
+
+
+def _menu_report(parser):
+    export_date = _menu_date("iMIS export date (YYYY-MM-DD): ")
+    return parser.parse_args(
+        [
+            "report",
+            "--imis-csv",
+            str(DEFAULT_IMIS_CSV),
+            "--imis-export-date",
+            export_date,
+            "--external-output",
+            "data/processed/illinois-certification-membership-external.pdf",
+            "--internal-output",
+            "data/processed/illinois-certification-membership-internal.pdf",
+            "--conflicts-csv",
+            "data/processed/field-conflicts.csv",
+            "--candidate-matches-csv",
+            "data/processed/candidate-matches.csv",
+            "--reconciliation-csv",
+            "data/processed/reconciliation.csv",
+            "--reconciliation-log",
+            "data/processed/reconciliation.log",
+            "--unknown-imis-codes-csv",
+            "data/processed/unknown-imis-codes.csv",
+            "--tonnage-review-csv",
+            "data/processed/tonnage-review.csv",
+        ]
+    )
+
+
+def _menu_enrich(parser):
+    as_of = _menu_date("Snapshot date (YYYY-MM-DD): ")
+    return parser.parse_args(
+        [
+            "enrich-districts",
+            "--imis-csv",
+            str(DEFAULT_IMIS_CSV),
+            "--districts-csv",
+            str(DEFAULT_DISTRICTS_CSV),
+            "--review-csv",
+            str(DEFAULT_REVIEW_CSV),
+            "--address-conversions-csv",
+            "data/processed/address-conversions.csv",
+            "--as-of",
+            as_of,
+        ]
+    )
+
+
+def _menu_aggregate(parser):
+    return parser.parse_args(
+        [
+            "aggregate-districts",
+            "--imis-csv",
+            str(DEFAULT_IMIS_CSV),
+            "--districts-csv",
+            str(DEFAULT_DISTRICTS_CSV),
+            "--review-csv",
+            str(DEFAULT_REVIEW_CSV),
+            "--aggregates-csv",
+            str(DEFAULT_AGGREGATES_CSV),
+        ]
+    )
+
+
+def _menu_district_report(parser):
+    while True:
+        selection = input("District number, or 'all': ").strip().lower()
+        if selection == "all":
+            district_arguments = ["--all-districts"]
+            break
+        try:
+            district_arguments = ["--district", str(int(selection))]
+            break
+        except ValueError:
+            print("Please enter a district number or 'all'.")
+    senate = input("Include Senate delegation? [y/N]: ").strip().lower() in {"y", "yes"}
+    as_of = _menu_date("Snapshot date (YYYY-MM-DD): ")
+    arguments = [
+        "district-report",
+        "--districts-csv",
+        str(DEFAULT_DISTRICTS_CSV),
+        "--aggregates-csv",
+        str(DEFAULT_AGGREGATES_CSV),
+        "--output-dir",
+        "data/processed",
+        "--as-of",
+        as_of,
+    ]
+    arguments.extend(district_arguments)
+    if senate:
+        arguments.append("--senate")
+    return parser.parse_args(arguments)
+
+
+def _menu_representatives(parser):
+    commands = {"1": ["refresh-representatives"], "2": ["refresh-senators"]}
+    while True:
+        choice = input("Refresh (1) House or (2) Senate? ").strip()
+        if choice in commands:
+            return parser.parse_args(commands[choice])
+        print("Please enter 1 or 2.")
+
+
+def _menu_census(parser):
+    commands = {"1": ["refresh-district-boundaries"], "2": ["refresh-map-references"]}
+    while True:
+        choice = input("Refresh (1) boundaries or (2) map references? ").strip()
+        if choice in commands:
+            return parser.parse_args(commands[choice])
+        print("Please enter 1 or 2.")
 
 
 def load_local_environment(path=Path(".env"), environment=None):
@@ -151,7 +456,7 @@ def _unquote_environment_value(value):
 
 
 def _build_parser():
-    parser = argparse.ArgumentParser(prog="aisc_gr_statistics")
+    parser = argparse.ArgumentParser(prog="aisc-gr-statistics")
     subcommands = parser.add_subparsers(dest="command")
     report = subcommands.add_parser(
         "report", help="Create a printable statewide Illinois PDF report."
@@ -441,12 +746,17 @@ def _run_enrich_districts(arguments):
     """Create district, review, and conversion CSVs before reporting outages."""
     accounts, _ = _salesforce_accounts_if_configured()
     districts, reviews, conversions, service_failed = enrich_companies(
-        arguments.imis_csv, accounts, lookup_date=arguments.as_of,
+        arguments.imis_csv,
+        accounts,
+        lookup_date=arguments.as_of,
         fallback_csv=arguments.fallback_csv,
     )
     write_districts_csv(
-        districts, arguments.districts_csv, as_of=arguments.as_of,
-        unresolved_count=len(reviews), included_company_count=len(districts),
+        districts,
+        arguments.districts_csv,
+        as_of=arguments.as_of,
+        unresolved_count=len(reviews),
+        included_company_count=len(districts),
     )
     write_review_csv(reviews, arguments.review_csv)
     write_address_conversions_csv(conversions, arguments.address_conversions_csv)
@@ -480,8 +790,10 @@ def _run_aggregate_districts(arguments):
         logger.error("District aggregates were not created: {}", error)
         raise SystemExit(1) from error
     write_district_aggregates_csv(
-        rows, arguments.aggregates_csv,
-        districts_csv=arguments.districts_csv, review_csv=arguments.review_csv,
+        rows,
+        arguments.aggregates_csv,
+        districts_csv=arguments.districts_csv,
+        review_csv=arguments.review_csv,
     )
     logger.info("Created district aggregate file: rows={}", len(rows))
 

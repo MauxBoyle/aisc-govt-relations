@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 aisc_gr_statistics = "aisc_gr_statistics.app:cli"
+aisc-gr-statistics = "aisc_gr_statistics.app:cli"
 
 [dependency-groups]
 dev = [

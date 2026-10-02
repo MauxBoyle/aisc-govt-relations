@@ -1,24 +1,129 @@
 """Tests for the application entry point."""
 
 from datetime import UTC
+from io import StringIO
+from pathlib import Path
 
 import pytest
 from pypdf import PdfReader
 
+import aisc_gr_statistics.app as app
 from aisc_gr_statistics.app import (
+    SnapshotStatus,
     _salesforce_accounts_if_configured,
     load_local_environment,
     main,
 )
-from aisc_gr_statistics.districts import ReviewRow
+from aisc_gr_statistics.districts import DistrictAggregateRow, ReviewRow
 from aisc_gr_statistics.salesforce import SalesforceError
 
 
-def test_main_logs_greeting(capfd):
-    """Confirm the application writes its greeting to stderr."""
-    main()
-    captured = capfd.readouterr()
-    assert "Hello from aisc_gr_statistics!" in captured.err
+def test_pyproject_keeps_both_console_script_names():
+    configuration = Path("pyproject.toml").read_text(encoding="utf-8")
+
+    assert 'aisc_gr_statistics = "aisc_gr_statistics.app:cli"' in configuration
+    assert 'aisc-gr-statistics = "aisc_gr_statistics.app:cli"' in configuration
+
+
+def test_no_argument_noninteractive_run_prints_status_and_usage_without_input(
+    monkeypatch,
+):
+    output = StringIO()
+    monkeypatch.setattr(app, "inspect_local_status", lambda: ([], None))
+    monkeypatch.setattr("builtins.input", lambda prompt: pytest.fail("prompted"))
+
+    main([], stdin=StringIO(), stdout=output)
+
+    assert "Local data status:" in output.getvalue()
+    assert "usage:" in output.getvalue()
+    assert "explicit subcommand" in output.getvalue()
+
+
+def test_no_argument_interactive_run_shows_status_menu_and_exits(monkeypatch):
+    class Terminal(StringIO):
+        def isatty(self):
+            return True
+
+    output = Terminal()
+    monkeypatch.setattr(app, "inspect_local_status", lambda: ([], None))
+    monkeypatch.setattr("builtins.input", lambda prompt: "7")
+
+    main([], stdin=Terminal(), stdout=output)
+
+    assert "Local data status:" in output.getvalue()
+    assert "Create statewide report" in output.getvalue()
+    assert "Exit" in output.getvalue()
+
+
+def test_status_summary_shows_retrieval_dates_and_illinois_aggregate(monkeypatch):
+    output = StringIO()
+    aggregate = DistrictAggregateRow(
+        "state",
+        "IL",
+        "17",
+        "",
+        "",
+        10,
+        200,
+        6,
+        4,
+        unresolved_company_count=3,
+    )
+    monkeypatch.setattr(
+        app,
+        "inspect_local_status",
+        lambda: (
+            [SnapshotStatus("House representatives", True, "current", "2026-09-01")],
+            aggregate,
+        ),
+    )
+
+    app._print_status_summary(output)
+
+    assert "retrieved 2026-09-01" in output.getvalue()
+    assert "unresolved companies=3" in output.getvalue()
+    assert "employee-data coverage=6/10" in output.getvalue()
+
+
+def test_invalid_snapshot_status_includes_refresh_command():
+    status = app._inspect_snapshot(
+        "House representatives",
+        lambda: (_ for _ in ()).throw(app.HouseDataError("checksum does not match")),
+        "refresh-representatives",
+    )
+
+    assert not status.usable
+    assert "not usable" in status.detail
+    assert "refresh-representatives" in status.detail
+
+
+def test_snapshot_status_reads_retrieval_date_from_metadata_returned_by_loader():
+    status = app._inspect_snapshot(
+        "Census boundaries",
+        lambda: ({}, {"retrieved_at": "2026-09-01T12:00:00Z"}),
+        "refresh-district-boundaries",
+    )
+
+    assert status.usable
+    assert status.retrieved_at == "2026-09-01T12:00:00Z"
+
+
+def test_menu_dispatches_to_existing_command_handler(monkeypatch):
+    output = StringIO()
+    calls = []
+    parser = app._build_parser()
+    monkeypatch.setattr("builtins.input", lambda prompt: next(choices))
+    monkeypatch.setattr(
+        app, "_menu_report", lambda parser: app.argparse.Namespace(command="report")
+    )
+    monkeypatch.setattr(
+        app, "_run_report", lambda arguments: calls.append(arguments.command)
+    )
+    choices = iter(["1", "7"])
+
+    app._run_menu(parser, output)
+
+    assert calls == ["report"]
 
 
 def test_load_local_environment_reads_credentials_without_overriding_shell(tmp_path):
@@ -208,9 +313,7 @@ def test_failed_salesforce_load_has_no_retrieval_time(monkeypatch):
     ) == ([], None)
 
 
-def test_enrich_districts_writes_outputs_after_census_outage(
-    tmp_path, monkeypatch
-):
+def test_enrich_districts_writes_outputs_after_census_outage(tmp_path, monkeypatch):
     """Partial enrichment remains inspectable even when Census is unavailable."""
     districts = tmp_path / "districts.csv"
     review = tmp_path / "review.csv"
@@ -249,8 +352,17 @@ def test_enrich_districts_exits_nonzero_when_census_outage_leaves_unresolved_com
     review = tmp_path / "review.csv"
     conversions = tmp_path / "address-conversions.csv"
     unresolved_company = ReviewRow(
-        "Unresolved Steel", "Fabricator", "123", "", "iMIS", "1 Main St",
-        "Chicago", "IL", "60601", "Census service error", "",
+        "Unresolved Steel",
+        "Fabricator",
+        "123",
+        "",
+        "iMIS",
+        "1 Main St",
+        "Chicago",
+        "IL",
+        "60601",
+        "Census service error",
+        "",
     )
 
     monkeypatch.setattr(
@@ -297,10 +409,10 @@ def test_aggregate_districts_writes_a_csv(tmp_path, monkeypatch):
             "aggregate-districts",
             "--imis-csv",
             "members.csv",
-                "--districts-csv",
-                str(districts),
-                "--review-csv",
-                str(review),
+            "--districts-csv",
+            str(districts),
+            "--review-csv",
+            str(review),
             "--aggregates-csv",
             str(output),
         ]

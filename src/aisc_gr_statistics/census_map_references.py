@@ -89,6 +89,15 @@ def point_for_company(city: str, county_fips: str, references: MapReferences) ->
     return references.counties.get(str(county_fips or "").strip().zfill(3))
 
 
+def point_for_reference(kind: str, key: str, references: MapReferences) -> MapPoint | None:
+    """Return only an already validated checked-in place or county point."""
+    if kind == "place":
+        return references.places.get(key)
+    if kind == "county":
+        return references.counties.get(key)
+    return None
+
+
 def refresh_map_references(
     places_path=PLACES_PATH,
     counties_path=COUNTIES_PATH,

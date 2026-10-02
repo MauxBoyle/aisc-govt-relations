@@ -12,8 +12,10 @@ from aisc_gr_statistics.districts import (
     DistrictRow,
     DistrictSnapshotError,
     NormalizedAddress,
+    ReviewedFallbackError,
     aggregate_districts,
     enrich_companies,
+    load_reviewed_fallback_csv,
     validate_snapshot_metadata,
     write_address_conversions_csv,
     write_district_aggregates_csv,
@@ -93,6 +95,61 @@ class Geocoder:
         if isinstance(self.payload, Exception):
             raise self.payload
         return self.payload
+
+
+def _fallback_csv(tmp_path, *, imis_id="IMIS-1", reviewed_date="2026-09-30"):
+    path = tmp_path / "fallback.csv"
+    path.write_text(
+        "company_name,company_classification,imis_id,salesforce_account_id,state,state_fips,county,county_fips,congressional_district,congressional_district_geoid,map_reference_kind,map_reference_key,reviewer_source_note,reviewed_date\n"
+        f"Example Steel,imis-only,{imis_id},,IL,17,Cook County,031,7,1707,county,031,Reviewed against official district office,{reviewed_date}\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+@pytest.mark.parametrize("payload", [{"result": {"addressMatches": []}}, CensusServiceError("offline")])
+def test_reviewed_fallback_confirms_each_unassigned_census_outcome(tmp_path, payload):
+    districts, reviews, _, failed = enrich_companies(
+        _imis_csv(tmp_path), geocoder=Geocoder(payload),
+        fallback_csv=_fallback_csv(tmp_path), lookup_date=date(2026, 9, 30),
+    )
+    assert not reviews
+    assert districts[0].assignment_source == "fallback-confirmed"
+    assert districts[0].map_reference_kind == "county"
+    assert failed is isinstance(payload, CensusServiceError)
+
+
+def test_reviewed_fallback_rejects_duplicate_and_unsafe_map_reference(tmp_path):
+    path = _fallback_csv(tmp_path)
+    path.write_text(path.read_text(encoding="utf-8") + path.read_text(encoding="utf-8").split("\n", 1)[1], encoding="utf-8")
+    with pytest.raises(ValueError, match="duplicate"):
+        load_reviewed_fallback_csv(path)
+    path = _fallback_csv(tmp_path)
+    path.write_text(path.read_text(encoding="utf-8").replace("county,031", "coordinates,-87.62"), encoding="utf-8")
+    with pytest.raises(ValueError, match="unsafe"):
+        load_reviewed_fallback_csv(path)
+
+
+@pytest.mark.parametrize(
+    ("replacement", "expected"),
+    [
+        ("CA,17,Cook County,031,7,1707", "state IL and state FIPS 17"),
+        ("IL,18,Cook County,031,7,1807", "state IL and state FIPS 17"),
+    ],
+)
+def test_reviewed_fallback_requires_illinois_state_and_fips(
+    tmp_path, replacement, expected
+):
+    path = _fallback_csv(tmp_path)
+    path.write_text(
+        path.read_text(encoding="utf-8").replace(
+            "IL,17,Cook County,031,7,1707", replacement
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ReviewedFallbackError, match=expected):
+        load_reviewed_fallback_csv(path)
 
 
 def _relationship_company(
@@ -779,12 +836,13 @@ def test_aggregate_districts_counts_known_and_missing_employee_data(tmp_path):
         ],
     )
 
-    national, district = rows
-    assert (national.included_company_count, national.known_jobs) == (3, 10)
+    national, state, district = rows
+    assert (national.included_company_count, national.known_jobs) == (2, 10)
     assert (
         national.companies_with_employee_data,
         national.companies_missing_employee_data,
-    ) == (2, 1)
+    ) == (2, 0)
+    assert state.included_company_count == 2
     assert (district.included_company_count, district.known_jobs) == (2, 10)
     assert district.congressional_district_geoid == "1707"
 
@@ -798,7 +856,7 @@ def test_aggregate_districts_treats_invalid_employee_counts_as_missing(tmp_path)
             snapshot,
             [_account("IMIS-1", "001", value)],
         )
-        assert rows[0].companies_missing_employee_data == 3
+        assert rows[0].companies_missing_employee_data == 1
         assert rows[0].known_jobs == 0
 
 
@@ -879,4 +937,4 @@ def test_district_aggregate_csv_has_stable_national_then_district_rows(tmp_path)
         "companies_with_employee_data",
         "companies_missing_employee_data",
     ]
-    assert [row["scope"] for row in written] == ["national", "district"]
+    assert [row["scope"] for row in written] == ["national", "state", "district"]

@@ -10,6 +10,7 @@ from aisc_gr_statistics.app import (
     load_local_environment,
     main,
 )
+from aisc_gr_statistics.districts import ReviewRow
 from aisc_gr_statistics.salesforce import SalesforceError
 
 
@@ -234,6 +235,45 @@ def test_enrich_districts_writes_outputs_after_census_outage(
             "2026-09-30",
         ]
     )
+
+    assert districts.read_text(encoding="utf-8").startswith("company_name")
+    assert review.read_text(encoding="utf-8").startswith("company_name")
+    assert conversions.read_text(encoding="utf-8").startswith("company_name")
+
+
+def test_enrich_districts_exits_nonzero_when_census_outage_leaves_unresolved_companies(
+    tmp_path, monkeypatch
+):
+    """A partial Census outage must not look like a completed enrichment run."""
+    districts = tmp_path / "districts.csv"
+    review = tmp_path / "review.csv"
+    conversions = tmp_path / "address-conversions.csv"
+    unresolved_company = ReviewRow(
+        "Unresolved Steel", "Fabricator", "123", "", "iMIS", "1 Main St",
+        "Chicago", "IL", "60601", "Census service error", "",
+    )
+
+    monkeypatch.setattr(
+        "aisc_gr_statistics.app.enrich_companies",
+        lambda *args, **kwargs: ([], [unresolved_company], [], True),
+    )
+
+    with pytest.raises(SystemExit, match="1"):
+        main(
+            [
+                "enrich-districts",
+                "--imis-csv",
+                "tests/fixtures/imis-membership-sample.csv",
+                "--districts-csv",
+                str(districts),
+                "--review-csv",
+                str(review),
+                "--address-conversions-csv",
+                str(conversions),
+                "--as-of",
+                "2026-09-30",
+            ]
+        )
 
     assert districts.read_text(encoding="utf-8").startswith("company_name")
     assert review.read_text(encoding="utf-8").startswith("company_name")

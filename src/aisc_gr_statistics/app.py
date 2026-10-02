@@ -450,8 +450,17 @@ def _run_enrich_districts(arguments):
         len(reviews),
         len(conversions),
     )
+    if service_failed and reviews:
+        logger.error(
+            "One or more Census requests failed and left companies unresolved; "
+            "the partial outputs require review."
+        )
+        raise SystemExit(1)
     if service_failed:
-        logger.warning("One or more Census requests failed; fallback assignments were used where reviewed, and remaining companies need review.")
+        logger.warning(
+            "One or more Census requests failed; reviewed fallback assignments "
+            "resolved every affected company."
+        )
 
 
 def _run_aggregate_districts(arguments):

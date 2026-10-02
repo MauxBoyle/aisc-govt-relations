@@ -1,8 +1,8 @@
 {
   "clerk_source_url": "https://clerk.house.gov/xml/lists/MemberData.xml",
   "directory_source_url": "https://www.house.gov/representatives",
-  "retrieved_at": "2026-10-01T20:18:22.178882Z",
-  "source_publication_date": "September 2, 2026",
-  "xml_sha256": "07aec65948e99fd80b5e7c31722f1208d9f5e0717ba00f4b02122f4724cb0c18",
+  "retrieved_at": "2026-10-02T16:09:08.101490Z",
+  "source_publication_date": "October 1, 2026",
+  "xml_sha256": "01833c6c646873b2247950e8ab9c7ecc2c57fd2bf019d1014bd64a58b496ed3d",
   "contacts_sha256": "0bdd581ee761a0279210456dcba764c0a055a9b372c82bf19d38211c6d86f22b"
 }

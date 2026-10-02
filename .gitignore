@@ -210,6 +210,3 @@ data/raw/imis/*
 !data/raw/imis/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
-
-# Downloaded House reference snapshots are local operational data.
-data/reference/house/

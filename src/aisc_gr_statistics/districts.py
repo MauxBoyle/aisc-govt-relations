@@ -655,6 +655,10 @@ def _validate_fallback_row(row: ReviewedFallbackRow, line_number: int, reference
         raise ReviewedFallbackError(f"{prefix} must contain an iMIS ID or Salesforce account ID")
     if not all((row.state, row.state_fips, row.county, row.county_fips, row.congressional_district, row.congressional_district_geoid)):
         raise ReviewedFallbackError(f"{prefix} has incomplete geography")
+    if (row.state, row.state_fips) != ("IL", "17"):
+        raise ReviewedFallbackError(
+            f"{prefix} must use Illinois state IL and state FIPS 17"
+        )
     if not re.fullmatch(r"\d{2}", row.state_fips) or not re.fullmatch(r"\d{3}", row.county_fips):
         raise ReviewedFallbackError(f"{prefix} has invalid state or county FIPS")
     if not re.fullmatch(r"\d{1,2}", row.congressional_district) or not re.fullmatch(r"\d{4}", row.congressional_district_geoid):

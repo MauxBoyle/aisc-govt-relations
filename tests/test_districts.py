@@ -12,6 +12,7 @@ from aisc_gr_statistics.districts import (
     DistrictRow,
     DistrictSnapshotError,
     NormalizedAddress,
+    ReviewedFallbackError,
     aggregate_districts,
     enrich_companies,
     load_reviewed_fallback_csv,
@@ -126,6 +127,28 @@ def test_reviewed_fallback_rejects_duplicate_and_unsafe_map_reference(tmp_path):
     path = _fallback_csv(tmp_path)
     path.write_text(path.read_text(encoding="utf-8").replace("county,031", "coordinates,-87.62"), encoding="utf-8")
     with pytest.raises(ValueError, match="unsafe"):
+        load_reviewed_fallback_csv(path)
+
+
+@pytest.mark.parametrize(
+    ("replacement", "expected"),
+    [
+        ("CA,17,Cook County,031,7,1707", "state IL and state FIPS 17"),
+        ("IL,18,Cook County,031,7,1807", "state IL and state FIPS 17"),
+    ],
+)
+def test_reviewed_fallback_requires_illinois_state_and_fips(
+    tmp_path, replacement, expected
+):
+    path = _fallback_csv(tmp_path)
+    path.write_text(
+        path.read_text(encoding="utf-8").replace(
+            "IL,17,Cook County,031,7,1707", replacement
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ReviewedFallbackError, match=expected):
         load_reviewed_fallback_csv(path)
 
 

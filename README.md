@@ -182,6 +182,8 @@ each run records the current Census values it used.
 after Census cannot assign a company. Its company name, classification, iMIS
 ID, and Salesforce account ID must exactly match; at least one ID, complete
 FIPS/GEOID values, reviewer/source note, and ISO reviewed date are required.
+This Illinois snapshot accepts only textual state `IL` paired with state FIPS
+`17`.
 Optional map references may only be checked-in Census `place` keys or `county`
 FIPS keys—coordinates are never accepted. Use `--fallback-csv` to provide a
 different reviewed file. Nonmatching rows remain unresolved, and snapshot

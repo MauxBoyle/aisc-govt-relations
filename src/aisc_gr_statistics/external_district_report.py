@@ -296,8 +296,12 @@ def _sessions(rows):
 
 def _validate_inputs(districts_csv, aggregates_csv):
     try:
-        validate_snapshot_metadata(districts_csv, "districts")
-        validate_snapshot_metadata(aggregates_csv, "aggregates")
+        districts = validate_snapshot_metadata(districts_csv, "districts")
+        aggregates = validate_snapshot_metadata(aggregates_csv, "aggregates")
+        if aggregates.get("districts_sha256") != districts.get("sha256"):
+            raise DistrictReportError(
+                "aggregate snapshot was not generated from this exact district snapshot"
+            )
     except ValueError as error:
         raise DistrictReportError(str(error)) from error
 

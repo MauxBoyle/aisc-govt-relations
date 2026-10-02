@@ -57,6 +57,7 @@ def _snapshots(tmp_path, *, aggregate_count=None, aggregate_rows=None):
             DistrictAggregateRow("district", "IL", "17", "8", "1708", 1, 12, 1, 0),
         ],
         aggregates,
+        districts_csv=districts,
     )
     return districts, aggregates
 
@@ -113,6 +114,16 @@ def test_house_and_senate_use_the_correct_company_populations(tmp_path):
     assert "National known jobs" not in house_text
     assert "Illinois known jobs: 37 (2 of 3 companies" in senate_text
     assert "National known jobs: 37 (2 of 3 companies" in senate_text
+
+
+def test_report_rejects_aggregate_from_a_different_district_snapshot(tmp_path):
+    districts, aggregates = _snapshots(tmp_path)
+    write_districts_csv(read_districts_csv(districts)[:1], districts)
+
+    with pytest.raises(DistrictReportError, match="exact district snapshot"):
+        render_house_report(
+            7, districts, aggregates, tmp_path / "house.pdf", _house_member()
+        )
 
 
 def test_contact_cards_show_public_fields_and_omit_missing_optional_values(tmp_path):

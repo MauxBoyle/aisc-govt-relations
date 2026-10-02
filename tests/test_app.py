@@ -284,6 +284,10 @@ def test_aggregate_districts_writes_a_csv(tmp_path, monkeypatch):
     from aisc_gr_statistics.districts import DistrictAggregateRow
 
     output = tmp_path / "aggregates.csv"
+    districts = tmp_path / "districts.csv"
+    review = tmp_path / "review.csv"
+    districts.write_text("snapshot", encoding="utf-8")
+    review.write_text("snapshot", encoding="utf-8")
     monkeypatch.setattr(
         "aisc_gr_statistics.app.aggregate_districts",
         lambda *args: [DistrictAggregateRow("national", "", "", "", "", 1, 10, 1, 0)],
@@ -293,8 +297,10 @@ def test_aggregate_districts_writes_a_csv(tmp_path, monkeypatch):
             "aggregate-districts",
             "--imis-csv",
             "members.csv",
-            "--districts-csv",
-            "districts.csv",
+                "--districts-csv",
+                str(districts),
+                "--review-csv",
+                str(review),
             "--aggregates-csv",
             str(output),
         ]

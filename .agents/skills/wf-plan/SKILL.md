@@ -54,6 +54,12 @@ Point out any doubts about the implementation. **Only continue if you are confid
   user changes and do not move a tracked data file without confirming whether its
   history is intentionally retained.
 
+### Interface Independence
+
+When functionality could reasonably be used by another script, scheduled process, CLI, or future web interface, keep business logic independent of the user interface.
+Prefer functions that accept explicit inputs and return structured results. Keep interactive prompts, console output, file selection, and UI-specific behavior in a thin interface layer.
+Avoid adding web frameworks or abstraction solely for hypothetical future use. Apply this guidance where it naturally improves reuse, testing, or separation of concerns.
+
 ### 4. Create the Plan
 
 The plan MUST follow this structure:

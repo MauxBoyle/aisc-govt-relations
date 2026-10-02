@@ -54,6 +54,8 @@ Create a GitHub issue that includes:
   If a different layout is justified by deployment, backups, security, or
   operational needs, state that the implementer may choose it and document why.
 
+  Interface independence: When functionality may reasonably be reused by another script, scheduled process, CLI, or future web interface, note that business logic should remain separate from interface-specific behavior. Prefer explicit inputs and structured results, but don't add abstractions or frameworks solely for hypothetical future use.
+
 Use `gh issue create` to create the issue.
 
 **Do NOT plan the implementation.** The goal is a well-written issue that another developer can pick up — not a step-by-step execution plan.

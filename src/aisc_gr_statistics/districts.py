@@ -467,7 +467,8 @@ def aggregate_districts(
         for key, companies in sorted(by_district.items())
     ]
     # State totals describe the same confirmed Illinois population as the
-    # snapshot; unresolved Illinois companies stay in review data instead.
+    # snapshot.  Review rows retain the saved state for unresolved companies,
+    # so only Illinois review rows belong in the Illinois state count.
     illinois_assigned = [
         company
         for identity, company in population_by_identity.items()
@@ -477,7 +478,8 @@ def aggregate_districts(
     state_rows = (
         [_aggregate_row(
             "state", "IL", "17", "", "", illinois_assigned,
-            snapshot_by_identity, unresolved_count,
+            snapshot_by_identity,
+            sum(row.state == "IL" for row in review_by_identity.values()),
         )]
         if illinois_assigned
         else []

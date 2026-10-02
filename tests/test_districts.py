@@ -896,6 +896,42 @@ def test_aggregate_districts_reconciles_census_fallback_and_unresolved_populatio
     assert district.unresolved_company_count == 0
 
 
+def test_aggregate_districts_scopes_unresolved_count_to_illinois_review_rows(tmp_path):
+    imis_csv = tmp_path / "imis.csv"
+    imis_csv.write_text(
+        "company name,state,city,iMIS ID\n"
+        "Confirmed Illinois Steel,IL,Chicago,IMIS-1\n"
+        "Unresolved Illinois Steel,IL,Chicago,IMIS-2\n"
+        "Unresolved Out-of-State Steel,IL,Chicago,IMIS-3\n",
+        encoding="utf-8",
+    )
+    snapshot = tmp_path / "districts.csv"
+    write_districts_csv([_district_row("IMIS-1", "001")], snapshot)
+    review = _review_csv(
+        tmp_path,
+        [
+            _review_row("IMIS-2", "002"),
+            replace(_review_row("IMIS-3", "003"), state="WI"),
+        ],
+    )
+
+    rows = aggregate_districts(
+        imis_csv,
+        snapshot,
+        review,
+        [
+            _account("IMIS-1", "001", 10),
+            _account("IMIS-2", "002", 20),
+            _account("IMIS-3", "003", 30),
+        ],
+    )
+
+    national = next(row for row in rows if row.scope == "national")
+    state = next(row for row in rows if row.scope == "state")
+    assert national.unresolved_company_count == 2
+    assert state.unresolved_company_count == 1
+
+
 def test_aggregate_districts_requires_review_rows_for_every_unconfirmed_company(tmp_path):
     snapshot = tmp_path / "districts.csv"
     write_districts_csv([_district_row("IMIS-1", "001")], snapshot)

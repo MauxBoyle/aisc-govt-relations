@@ -28,8 +28,10 @@ from .districts import (
 )
 from .external_district_report import (
     DistrictReportError,
+    all_districts_filename,
     district_filename,
     read_aggregates_csv,
+    render_all_house_reports,
     render_house_report,
     render_senate_report,
     senate_filename,
@@ -817,14 +819,8 @@ def _run_district_report(arguments):
             )
         house = load_house_snapshot()
         senate = load_snapshot()
-        districts = sorted(
-            set(
-                (list(range(1, 18)) if arguments.all_districts else [])
-                + (arguments.district or [])
-            )
-        )
         output_paths = []
-        for district in districts:
+        for district in arguments.district or []:
             if district < 1 or district > 17:
                 raise DistrictReportError(
                     "Illinois House districts must be between 1 and 17."
@@ -835,6 +831,17 @@ def _run_district_report(arguments):
                     arguments.districts_csv,
                     arguments.aggregates_csv,
                     arguments.output_dir / district_filename(str(district)),
+                    house.members,
+                    house_photos=house.photos,
+                    as_of=arguments.as_of.isoformat(),
+                )
+            )
+        if arguments.all_districts:
+            output_paths.append(
+                render_all_house_reports(
+                    arguments.districts_csv,
+                    arguments.aggregates_csv,
+                    arguments.output_dir / all_districts_filename(),
                     house.members,
                     house_photos=house.photos,
                     as_of=arguments.as_of.isoformat(),

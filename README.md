@@ -80,14 +80,17 @@ uv run aisc-gr-statistics district-report \
   --output-dir data/processed
 ```
 
-Use `--district` more than once, or use `--all-districts`.  Output filenames
-are stable (`illinois-congressional-district-07-external.pdf` and
-`illinois-senate-delegation-external.pdf`).  The report only contains a member
+Use `--district` more than once for individual PDFs, or use `--all-districts`
+for one 17-page House PDF. Output filenames are stable
+(`illinois-congressional-district-07-external.pdf`,
+`illinois-congressional-districts-external.pdf`, and
+`illinois-senate-delegation-external.pdf`). The report only contains a member
 identity, company name/city/county, one approved relationship summary,
 company counts, thresholded known jobs totals and employee-data coverage, and
-source dates. Its first page uses a translucent
-district map as a full-width lower-page background, with report text layered
-above it; continuation pages are text-only. It never
+source dates. Company summaries use the full printable width and wrap at
+measured word boundaries. A map is drawn only when it has its own lower-page
+region; House maps are omitted when necessary to keep each district on one
+sheet, while Senate reports may use one text-only continuation page. It never
 receives addresses, individual employee counts, tonnage, IDs, Census
 coordinates, classifications, raw certification data, or reconciliation data.
 District PDFs label their two totals `District known jobs` and `Illinois known

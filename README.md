@@ -139,12 +139,13 @@ replacement fails, the command restores the prior KML and metadata as a pair.
 `--source-url` and `--congressional-session` are optional overrides for a
 reviewed future Census release.
 
-District-map company markers deliberately use city-level precision: a saved
-city name is normalized and matched to the checked-in Census place snapshot.
-If it does not match, its saved county FIPS selects the Census county reference
-point instead. The address-geocoder latitude and longitude in the saved CSV
-never reach the external PDF. Refresh and review the accompanying Census
-Gazetteer snapshots separately when needed:
+District-map company markers use Census place GEOIDs as unique place keys. A
+saved city name and county FIPS must both match the reviewed place reference;
+this lets identically named places resolve to the correct point. If no unique
+place matches, the saved county FIPS selects the Census county reference point.
+The address-geocoder latitude and longitude in the saved CSV never reach the
+external PDF. Refresh and review the accompanying Census Gazetteer snapshots
+separately when needed:
 
 ```bash
 uv run aisc-gr-statistics refresh-map-references
@@ -202,8 +203,9 @@ ID, and Salesforce account ID must exactly match; at least one ID, complete
 FIPS/GEOID values, reviewer/source note, and ISO reviewed date are required.
 This Illinois snapshot accepts only textual state `IL` paired with state FIPS
 `17`.
-Optional map references may only be checked-in Census `place` keys or `county`
-FIPS keys—coordinates are never accepted. Use `--fallback-csv` to provide a
+Optional map references may only be checked-in Census place GEOIDs or `county`
+FIPS keys—coordinates are never accepted. Automatic matching uses the saved
+city and county FIPS. Use `--fallback-csv` to provide a
 different reviewed file. Nonmatching rows remain unresolved, and snapshot
 metadata records Census-confirmed, fallback-confirmed, unresolved, and
 included-company counts.

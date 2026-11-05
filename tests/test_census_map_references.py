@@ -12,6 +12,7 @@ from aisc_gr_statistics.census_map_references import (
     load_map_references,
     normalize_city_name,
     point_for_company,
+    _gazetteer_points,
 )
 from aisc_gr_statistics.external_district_report import (
     _cluster_markers,
@@ -22,9 +23,11 @@ from aisc_gr_statistics.external_district_report import (
 
 def test_city_matching_normalizes_names_and_falls_back_to_county():
     references = MapReferences(
-        {"mccook": MapPoint(-87.8, 41.7)},
+        {"1700000": MapPoint(-87.8, 41.7)},
         {"031": MapPoint(-87.7, 41.8)},
         {},
+        {"1700000": "031"},
+        {"1700000": "mccook"},
     )
 
     assert normalize_city_name("Mc Cook village") == "mccook"
@@ -33,9 +36,30 @@ def test_city_matching_normalizes_names_and_falls_back_to_county():
     assert point_for_company("Unmatched City", "", references) is None
 
 
+def test_duplicate_place_names_are_keyed_by_geoid_and_matched_with_county():
+    places = _gazetteer_points([
+        "GEOID|NAME|COUNTYFP|INTPTLAT|INTPTLONG",
+        "1781430|Wilmington city|197|41.30|-88.15",
+        "1781431|Wilmington village|071|39.48|-90.49",
+    ], "place")
+    references = MapReferences(
+        {key: MapPoint(value["longitude"], value["latitude"])
+         for key, value in places.items()},
+        {"197": MapPoint(-88.0, 41.2)},
+        {},
+        {key: value["county_fips"] for key, value in places.items()},
+        {key: normalize_city_name(value["name"]) for key, value in places.items()},
+    )
+
+    assert set(places) == {"1781430", "1781431"}
+    assert point_for_company("Wilmington", "197", references) == MapPoint(-88.15, 41.3)
+    assert point_for_company("Wilmington", "071", references) == MapPoint(-90.49, 39.48)
+    assert point_for_company("Other", "197", references) == MapPoint(-88.0, 41.2)
+
+
 def test_reference_loader_rejects_changed_snapshot_data(tmp_path):
     places, counties, metadata = (tmp_path / name for name in ("places.json", "counties.json", "metadata.json"))
-    places.write_text('{"chicago": {"longitude": -87.6, "latitude": 41.8}}\n', encoding="utf-8")
+    places.write_text('{"1700000": {"name": "Chicago", "county_fips": "031", "longitude": -87.6, "latitude": 41.8}}\n', encoding="utf-8")
     counties.write_text("{}\n", encoding="utf-8")
     metadata.write_text(json.dumps({
         "places_source_url": "https://census.example/places.zip",

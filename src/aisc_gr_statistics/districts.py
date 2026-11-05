@@ -796,7 +796,7 @@ def _validate_fallback_row(row: ReviewedFallbackRow, line_number: int, reference
         raise ReviewedFallbackError(f"{prefix} has an incomplete map reference")
     if row.map_reference_kind:
         if row.map_reference_kind == "place":
-            valid = row.map_reference_key == normalize_city_name(row.map_reference_key) and row.map_reference_key in references.places
+            valid = bool(re.fullmatch(r"17\d{5}", row.map_reference_key)) and row.map_reference_key in references.places
         elif row.map_reference_kind == "county":
             valid = bool(re.fullmatch(r"\d{3}", row.map_reference_key)) and row.map_reference_key in references.counties
         else:

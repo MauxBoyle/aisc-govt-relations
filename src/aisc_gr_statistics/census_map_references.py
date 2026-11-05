@@ -11,7 +11,7 @@ import json
 import re
 import unicodedata
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -49,6 +49,8 @@ class MapReferences:
     places: dict[str, MapPoint]
     counties: dict[str, MapPoint]
     metadata: dict
+    place_counties: dict[str, str] = field(default_factory=dict)
+    place_names: dict[str, str] = field(default_factory=dict)
 
 
 def normalize_city_name(value: str) -> str:
@@ -78,15 +80,26 @@ def load_map_references(
     except (OSError, json.JSONDecodeError) as error:
         raise MapReferenceError("Census map references are unreadable.") from error
     _validate_metadata(metadata, places_data, counties_data)
-    return MapReferences(_points(places, "place"), _points(counties, "county"), metadata)
+    place_names = {key: normalize_city_name(value["name"]) for key, value in places.items()}
+    place_counties = {key: str(value.get("county_fips", "")) for key, value in places.items()}
+    return MapReferences(
+        _points(places, "place"), _points(counties, "county"), metadata,
+        place_counties, place_names,
+    )
 
 
 def point_for_company(city: str, county_fips: str, references: MapReferences) -> MapPoint | None:
     """Return a city point, or the public county point when city matching fails."""
     city_key = normalize_city_name(city)
-    if city_key and city_key in references.places:
-        return references.places[city_key]
-    return references.counties.get(str(county_fips or "").strip().zfill(3))
+    county_key = str(county_fips or "").strip().zfill(3)
+    matches = [
+        key for key in references.places
+        if (references.place_names or {}).get(key) == city_key
+        and (references.place_counties or {}).get(key) == county_key
+    ]
+    if len(matches) == 1:
+        return references.places[matches[0]]
+    return references.counties.get(county_key)
 
 
 def point_for_reference(kind: str, key: str, references: MapReferences) -> MapPoint | None:
@@ -164,10 +177,15 @@ def _gazetteer_points(lines: Iterable[str], kind):
         geoid = (row.get("GEOID") or "").strip()
         if not geoid.startswith("17"):
             continue
-        key = normalize_city_name(row["NAME"]) if kind == "place" else geoid[-3:]
+        key = geoid if kind == "place" else geoid[-3:]
         if not key or key in points:
             continue
-        points[key] = {"name": row["NAME"].strip(), "longitude": _coordinate(row["INTPTLONG"]), "latitude": _coordinate(row["INTPTLAT"])}
+        value = {"name": row["NAME"].strip(), "longitude": _coordinate(row["INTPTLONG"]), "latitude": _coordinate(row["INTPTLAT"])}
+        if kind == "place":
+            county_fips = (row.get("COUNTYFP") or row.get("COUNTY_FIPS") or "").strip()
+            if county_fips:
+                value["county_fips"] = county_fips.zfill(3)
+        points[key] = value
     return points
 
 
@@ -192,6 +210,11 @@ def _points(values, kind):
         if not -90 <= latitude <= 90:
             raise MapReferenceError("Census map references contain invalid coordinates.")
         result[key] = MapPoint(longitude, latitude)
+        if kind == "place" and not (
+            re.fullmatch(r"17\d{5}", key)
+            or (key == normalize_city_name(value.get("name", "")) and key)
+        ):
+            raise MapReferenceError("Census place references need an Illinois GEOID key.")
     if kind == "county" and len(result) != 102:
         raise MapReferenceError("Census county map references must contain all 102 Illinois counties.")
     return result

@@ -87,6 +87,32 @@ def _text(path):
     return reader, "\n".join(page.extract_text() or "" for page in reader.pages)
 
 
+def test_external_company_marker_uses_wilmington_in_saved_county():
+    from types import SimpleNamespace
+
+    from aisc_gr_statistics.census_map_references import MapPoint, MapReferences
+
+    references = MapReferences(
+        {
+            "1781430": MapPoint(-88.15, 41.30),
+            "1781431": MapPoint(-90.49, 39.48),
+        },
+        {"197": MapPoint(-88.0, 41.2)},
+        {},
+        {"1781430": "197", "1781431": "071"},
+        {"1781430": "wilmington", "1781431": "wilmington"},
+    )
+    row = SimpleNamespace(
+        company_name="Example Steel", city="Wilmington", county="Will",
+        relationship_summary="AISC relationship unavailable", map_reference_kind="",
+        map_reference_key="", county_fips="197",
+    )
+
+    _, markers = report_module._external_companies([row], references)
+
+    assert markers == (MapPoint(-88.15, 41.30),)
+
+
 def test_house_and_senate_use_the_correct_company_populations(tmp_path):
     districts, aggregates = _snapshots(tmp_path)
     house = render_house_report(

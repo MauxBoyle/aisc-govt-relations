@@ -15,6 +15,7 @@ from .census_map_references import (
     load_map_references,
     refresh_map_references,
 )
+from .census_place_counties import PlaceCountyError, refresh_place_counties
 from .districts import (
     DEFAULT_FALLBACK_CSV,
     DistrictSnapshotError,
@@ -141,6 +142,7 @@ def _dispatch(arguments):
             arguments
         ),
         "refresh-map-references": lambda: _run_refresh_map_references(arguments),
+        "refresh-place-counties": lambda: _run_refresh_place_counties(arguments),
     }
     handlers[arguments.command]()
 
@@ -697,6 +699,10 @@ def _build_parser():
         "--counties-source-url",
         help="Optional official Census county Gazetteer ZIP URL override.",
     )
+    subcommands.add_parser(
+        "refresh-place-counties",
+        help="Build 2025 Census place-to-county relationships and validation output.",
+    )
     return parser
 
 
@@ -964,6 +970,21 @@ def _run_refresh_map_references(arguments):
         refresh_map_references(**options)
     except MapReferenceError as error:
         logger.error("Census map references were not refreshed: {}", error)
+        raise SystemExit(1) from error
+
+
+def _run_refresh_place_counties(_arguments):
+    """Build the reproducible 2025 place-to-county snapshot and validation report."""
+    try:
+        _mapping, validation = refresh_place_counties()
+        logger.info(
+            "Built 2025 place-to-county snapshot: {} matched, {} unmatched, {} spanning multiple counties.",
+            validation["matched_place_count"],
+            len(validation["unmatched_place_geoids"]),
+            len(validation["multi_county_places"]),
+        )
+    except PlaceCountyError as error:
+        logger.error("Census place-to-county snapshot was not refreshed: {}", error)
         raise SystemExit(1) from error
 
 

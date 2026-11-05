@@ -83,11 +83,12 @@ release.
 
 ### Census map-marker reference data
 
-External company markers use only reviewed Census geography points. The report
-normalizes each saved city and matches it to the committed Illinois place
-snapshot; if there is no match, it uses the committed county point selected by
-the saved county FIPS. It never draws an address or the address-geocoder
-latitude/longitude stored in `company-districts.csv`.
+External company markers use only reviewed Census geography points. Place
+references use Census GEOIDs as unique keys. The report matches both the
+normalized saved city and county FIPS, so duplicate city names resolve to the
+right place. If there is no unique match, it uses the committed county point
+selected by the saved county FIPS. It never draws an address or the
+address-geocoder latitude/longitude stored in `company-districts.csv`.
 
 Refresh these version-controlled Census Gazetteer snapshots separately from
 normal offline PDF generation:
@@ -175,8 +176,9 @@ company. Its `company_name`, `company_classification`, `imis_id`, and
 Each row also needs consistent state/county/district FIPS and GEOID values, a
 reviewer/source note, and an ISO reviewed date. This Illinois snapshot accepts
 only textual state `IL` paired with state FIPS `17`. Optional map references
-are only checked-in Census `place` keys or three-digit `county` keys;
-coordinates are rejected. Missing matches stay unresolved in the review CSV.
+are only checked-in Census place GEOIDs or three-digit `county` keys;
+coordinates are rejected. Automatic matching uses both the saved city and
+county FIPS. Missing matches stay unresolved in the review CSV.
 The snapshot metadata records Census-confirmed, fallback-confirmed,
 unresolved, and included-company counts; aggregates and PDFs use confirmed
 rows only.

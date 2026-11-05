@@ -151,6 +151,22 @@ separately when needed:
 uv run aisc-gr-statistics refresh-map-references
 ```
 
+Build the 2025 place-to-county association snapshot from Census GRF-C block
+codes and validate it against the checked-in 2025 Illinois Gazetteer Places
+records with:
+
+```bash
+uv run aisc-gr-statistics refresh-place-counties
+```
+
+This writes `data/reference/census/illinois-place-counties.json` (each place
+GEOID maps to a list of county GEOIDs) and
+`data/reference/census/illinois-place-counties-validation.json`. The validation
+file records source URLs, vintage, checksums, unmatched Gazetteer places,
+invalid codes, not-applicable place rows, and places spanning multiple
+counties. Place membership does not locate an address or facility within a
+multi-county city; use address-level geocoding for that question.
+
 The command fetches the official Census place and county Gazetteer files,
 validates Illinois places and all 102 counties, then records checksums and
 provenance. House maps frame the selected district and nearby company points;

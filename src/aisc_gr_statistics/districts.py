@@ -14,7 +14,6 @@ import requests
 from .address_normalization import normalize_street, normalize_text, normalize_zip
 from .census_map_references import (
     load_map_references,
-    normalize_city_name,
 )
 from .relationship_summary import relationship_summary
 from .report import (

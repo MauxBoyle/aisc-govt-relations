@@ -9,10 +9,10 @@ from aisc_gr_statistics.census_map_references import (
     MapPoint,
     MapReferenceError,
     MapReferences,
+    _gazetteer_points,
     load_map_references,
     normalize_city_name,
     point_for_company,
-    _gazetteer_points,
 )
 from aisc_gr_statistics.external_district_report import (
     _cluster_markers,
